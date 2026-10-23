@@ -145,59 +145,37 @@ wealth-os-family-office/
 
 ---
 
-## ⚡ Quickstart (Run in 2 Minutes)
+## 💡 System Design & Technical Implementation Highlights
 
-### Option A: Via Docker Compose (Recommended)
+WealthOS is engineered from first principles to resolve data fragmentation and computational complexity in multi-entity private wealth accounting:
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/<your-username>/wealth-os-family-office.git
-   cd wealth-os-family-office
-   ```
+### 1. Sovereign Multi-Entity Relational Architecture
+- **Multi-Tenant PostgreSQL Schemas**: Utilizes segregated database schemas (`persons`, `accounts`, `equities`, `mutual_funds`, `gold`, `insurance`, `alternatives`, `strategy_buckets`) to maintain strict boundaries between holding companies, family trusts, and individual members.
+- **Hierarchical Entity Modeling**: Maps complex legal ownership structures where individuals, HUFs, and private limited entities hold diversified accounts across institutional brokers and direct AMCs.
 
-2. **Launch with Docker Compose**:
-   ```bash
-   docker compose up --build
-   ```
+### 2. 5-Tier FIFO Tax-Lot Matching Pipeline
+- Reconstructs historical buy tranches under Indian Income Tax rules for accurate realized and unrealized capital gains.
+- Handles corporate actions (stock splits, bonus issues, face-value adjustments) without corrupting historical cost baselines.
+- Dynamically calculates Short-Term (STCG) and Long-Term (LTCG) tax exposure with holding period analytics.
 
-3. **Open the Dashboard**:
-   - Web Dashboard: `http://localhost:8000/portfolio/`
-   - Interactive API Docs: `http://localhost:8000/docs`
+### 3. AMFI-Synced TER Fee Drag & Leakage Engine
+- Ingests and normalizes AMFI Total Expense Ratio (TER) benchmarks.
+- Dynamically pairs Regular mutual fund folios with Direct plan equivalents to quantify distributor commission drag.
+- Computes real-time rupee-value fee leakage and projects multi-year compounded fee drag across portfolios.
 
-> *Note: On first startup, the database automatically initializes all PostgreSQL schemas and populates a synthetic family office portfolio with mock equities, mutual funds, SGBs, and insurance policies.*
+### 4. Sovereign Gold Bond (SGB) Tranche & YTM Tracker
+- Catalogs all RBI Sovereign Gold Bond tranches with issuance dates, redemption cycles, and semi-annual interest schedules.
+- Computes secondary market Yield-to-Maturity (YTM) relative to spot gold prices for capital redemption planning.
 
----
-
-### Option B: Local Virtualenv Setup
-
-1. **Install dependencies**:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
-
-2. **Set your environment variable** (or use local SQLite/PostgreSQL):
-   ```bash
-   export DATABASE_URL="postgresql://postgres:postgrespassword@localhost:5432/family_office"
-   ```
-
-3. **Seed synthetic data**:
-   ```bash
-   python seed_mock.py
-   ```
-
-4. **Start the server**:
-   ```bash
-   uvicorn main:app --reload --port 8000
-   ```
+### 5. Sovereign Privacy & Local Control
+- **Zero Third-Party SaaS Reliance**: Architecture designed for sovereign, self-hosted deployment, guaranteeing sensitive family balance sheets and trade books remain private.
 
 ---
 
 ## 🔒 Open-Core Architecture & Security
 
 This public repository is published as an **Open-Core Showcase Edition**:
-- **Full Operational Core**: The PostgreSQL 16 multi-entity schema, SQLAlchemy 2.0 ORM models, FastAPI backend endpoints, responsive glassmorphic dark-theme UI templates, and the synthetic portfolio generator (`seed_mock.py`) are 100% open, reproducible, and run out of the box via Docker Compose.
+- **Operational Core & Data Schemas**: The PostgreSQL 16 multi-entity schema architecture, SQLAlchemy 2.0 ORM models, FastAPI route contracts, and responsive glassmorphic UI templates are provided as a public architectural showcase.
 - **Reference Calculation Engines**: Algorithmic modules (`services/fifo_engine.py`, `services/ter_engine.py`, `services/cams_ingester.py`) are structured as clean Open-Core reference implementations and standard mathematical models. Proprietary client-specific mapping rules, private AMFI scraping caches, and internal decryption routines remain protected.
 - **Strict Zero-PII Guarantee**: All names, PAN cards, folios, trade books, and portfolio figures displayed across the repository and screenshots are 100% synthetic mock numbers.
 
