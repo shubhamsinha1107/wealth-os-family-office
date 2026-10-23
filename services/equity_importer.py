@@ -13,7 +13,7 @@ from models.enums import TransactionStatus, TransactionType, AccountType
 
 def clean_transaction_file(path):
     """
-    Parses and cleans the custom Nuvama/CBL/JM Excel transaction sheet format.
+    Parses and cleans the custom Broker 1/Broker 2/Broker 3 Excel transaction sheet format.
     Finds the header row dynamically.
     """
     import tempfile, shutil
@@ -96,7 +96,7 @@ def get_asset_mapping():
 
 def run_equity_import(db: Session = None) -> dict:
     """
-    Scans the DATA/DATA directory for CBL, JM, and NUV subdirectories.
+    Scans the DATA/DATA directory for BROKER_1, BROKER_2, and BROKER_3 subdirectories.
     Imports all Excel transaction sheets into PostgreSQL.
     """
     if db is None:
@@ -112,9 +112,12 @@ def run_equity_import(db: Session = None) -> dict:
     asset_to_symbol = get_asset_mapping()
 
     brokers_map = {
-        "NUV": "Nuvama Wealth",
-        "CBL": "Centrum Finverse",
-        "JM": "JM Financial"
+        "NUV": "Broker 3",
+        "CBL": "Broker 2",
+        "JM": "Broker 1",
+        "BROKER_1": "Broker 1",
+        "BROKER_2": "Broker 2",
+        "BROKER_3": "Broker 3"
     }
 
     # Fetch all active transaction signatures to optimize deduplication checks in-memory
@@ -282,12 +285,12 @@ def run_equity_import(db: Session = None) -> dict:
             row_broker_val = str(row.get("Broker Name", "")).strip().upper()
             if row_broker_val and row_broker_val not in ("0", "NAN", "NONE", ""):
                 row_inst_name = None
-                if "CENTRUM" in row_broker_val:
-                    row_inst_name = "Centrum Finverse"
-                elif "JM" in row_broker_val:
-                    row_inst_name = "JM Financial"
-                elif "NUVAMA" in row_broker_val or "EDELWEISS" in row_broker_val:
-                    row_inst_name = "Nuvama Wealth"
+                if "JM" in row_broker_val or "BROKER 1" in row_broker_val or "BROKER_1" in row_broker_val:
+                    row_inst_name = "Broker 1"
+                elif "CENTRUM" in row_broker_val or "CBL" in row_broker_val or "BROKER 2" in row_broker_val or "BROKER_2" in row_broker_val:
+                    row_inst_name = "Broker 2"
+                elif "NUVAMA" in row_broker_val or "EDELWEISS" in row_broker_val or "BROKER 3" in row_broker_val or "BROKER_3" in row_broker_val:
+                    row_inst_name = "Broker 3"
                 
                 if row_inst_name and row_inst_name != institution_name:
                     row_acc = db.query(Account).filter(
@@ -446,15 +449,15 @@ def run_global_equity_import(db: Session = None) -> dict:
 
     def get_broker_name(portfolio_name):
         p_upper = str(portfolio_name).upper()
-        if "CENTRUM" in p_upper:
-            return "Centrum Finverse"
-        elif "JM" in p_upper:
-            return "JM Financial"
-        elif "NUVAMA" in p_upper:
-            return "Nuvama Wealth"
+        if "JM" in p_upper or "BROKER 1" in p_upper or "BROKER_1" in p_upper:
+            return "Broker 1"
+        elif "CENTRUM" in p_upper or "CBL" in p_upper or "BROKER 2" in p_upper or "BROKER_2" in p_upper:
+            return "Broker 2"
+        elif "NUVAMA" in p_upper or "BROKER 3" in p_upper or "BROKER_3" in p_upper:
+            return "Broker 3"
         if "NEXUS CAPITAL" in p_upper:
-            return "Centrum Finverse"
-        return None
+            return "Broker 2"
+        return "Broker 1"
 
     txn_type_map = {
         "Buy": TransactionType.BUY,

@@ -20,9 +20,13 @@ PERSON_MAPPING = {
 
 # Portfolio Name to DB Account institution mapping
 INSTITUTION_MAPPING = {
-    "CENTRUM": "Centrum Finverse",
-    "JM": "JM Financial",
-    "NUVAMA": "Nuvama Wealth"
+    "CENTRUM": "Broker 2",
+    "CBL": "Broker 2",
+    "JM": "Broker 1",
+    "NUVAMA": "Broker 3",
+    "BROKER_1": "Broker 1",
+    "BROKER_2": "Broker 2",
+    "BROKER_3": "Broker 3"
 }
 
 # Regex to parse SGB details from Asset Name
@@ -131,7 +135,7 @@ def import_sgb_from_excel(db: Session, excel_path: str) -> dict:
             continue
             
         # 2. Resolve Account
-        # Identify institution from portfolio name (e.g. 'PATRIARCH - CENTRUM' -> CENTRUM -> Centrum Finverse)
+        # Identify institution from portfolio name (e.g. 'PATRIARCH - BROKER 1' -> BROKER 1 -> Broker 1)
         inst_key = None
         for k, v in INSTITUTION_MAPPING.items():
             if k in portfolio_name.upper():

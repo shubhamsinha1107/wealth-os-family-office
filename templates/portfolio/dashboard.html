@@ -333,12 +333,12 @@
                                     <a href="/mutual-funds/unique-funds?q=Nexus" style="color: #60a5fa; text-decoration: none;">NEXUS - MF</a>
                                 {% elif r.category == "DIRECT - MF" %}
                                     <a href="/mutual-funds/unique-funds?q=DIRECT" style="color: #60a5fa; text-decoration: none;">DIRECT - MF</a>
-                                {% elif r.category in ["APEX CUSTODY", "CBL"] %}
-                                    <a href="/equities/?broker=Apex" style="color: #60a5fa; text-decoration: none;">APEX CUSTODY</a>
-                                {% elif r.category in ["GLOBAL INVEST", "JMFL"] %}
-                                    <a href="/equities/?broker=Global" style="color: #60a5fa; text-decoration: none;">GLOBAL INVEST</a>
-                                {% elif r.category in ["SUMMIT SECURITIES", "NUVAMA"] %}
-                                    <a href="/equities/?broker=Summit" style="color: #60a5fa; text-decoration: none;">SUMMIT SECURITIES</a>
+                                {% elif r.category in ["BROKER 1", "GLOBAL INVEST", "JMFL"] %}
+                                    <a href="/equities/?broker=Broker1" style="color: #60a5fa; text-decoration: none;">BROKER 1</a>
+                                {% elif r.category in ["BROKER 2", "APEX CUSTODY", "CBL"] %}
+                                    <a href="/equities/?broker=Broker2" style="color: #60a5fa; text-decoration: none;">BROKER 2</a>
+                                {% elif r.category in ["BROKER 3", "SUMMIT SECURITIES", "NUVAMA"] %}
+                                    <a href="/equities/?broker=Broker3" style="color: #60a5fa; text-decoration: none;">BROKER 3</a>
                                 {% else %}
                                     <span style="color: #60a5fa;">{{ r.category }}</span>
                                 {% endif %}

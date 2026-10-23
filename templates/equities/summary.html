@@ -165,7 +165,7 @@
                         <th style="min-width: 40px;"></th>
                         {% for broker in brokers %}
                         <th colspan="2" class="broker-header-group" style="font-size: 12px; font-weight: 700; color: var(--text-primary);">
-                            {{ broker | upper | replace('CENTRUM FINVERSE', 'CENTRUM') | replace('JM FINANCIAL', 'JMFL') | replace('NUVAMA WEALTH', 'NUVAMA') }}
+                            {{ broker | upper | replace('CENTRUM FINVERSE', 'BROKER 2') | replace('CENTRUM', 'BROKER 2') | replace('CBL', 'BROKER 2') | replace('JM FINANCIAL', 'BROKER 1') | replace('JMFL', 'BROKER 1') | replace('JM', 'BROKER 1') | replace('NUVAMA WEALTH', 'BROKER 3') | replace('NUVAMA', 'BROKER 3') }}
                         </th>
                         {% endfor %}
                         <th colspan="2" class="broker-header-group" style="font-size: 12px; font-weight: 700; color: #f59e0b; background: rgba(245, 158, 11, 0.05);">

@@ -61,10 +61,10 @@ def parse_unlisted_shares_excel(file_path: str) -> list:
 
         def get_broker(ac_str):
             s = str(ac_str).upper()
-            if "JM" in s: return "JMFL"
-            if "NUVAMA" in s: return "NUVAMA"
-            if "CBL" in s or "CENTRUM" in s: return "CBL"
-            return "CBL"
+            if "JM" in s or "BROKER 1" in s or "BROKER_1" in s or "BROKER1" in s: return "Broker 1"
+            if "CENTRUM" in s or "CBL" in s or "BROKER 2" in s or "BROKER_2" in s or "BROKER2" in s: return "Broker 2"
+            if "NUVAMA" in s or "NUV" in s or "BROKER 3" in s or "BROKER_3" in s or "BROKER3" in s: return "Broker 3"
+            return "Broker 1"
 
         results = []
         for _, row in df.iterrows():
@@ -583,7 +583,7 @@ def get_broker_portfolio_data(db: Session) -> dict:
     from models.market_data import MFNav
     from sqlalchemy import text, func
 
-    rows_list = ["PRIME - MF", "NEXUS - MF", "APEX CUSTODY", "GLOBAL INVEST", "SUMMIT SECURITIES", "DIRECT - MF"]
+    rows_list = ["PRIME - MF", "NEXUS - MF", "BROKER 1", "BROKER 2", "BROKER 3", "DIRECT - MF"]
     cols_list = ["EQUITY", "UNLISTED", "GOLD", "SILVER", "DEBT", "SGB"]
 
     # Initialize matrix
@@ -591,15 +591,15 @@ def get_broker_portfolio_data(db: Session) -> dict:
 
     def get_broker(portfolio_name):
         pf = str(portfolio_name).upper()
-        if 'CENTRUM' in pf or 'CBL' in pf or 'APEX' in pf:
-            return 'APEX CUSTODY'
-        elif 'JM' in pf or 'GLOBAL' in pf:
-            return 'GLOBAL INVEST'
-        elif 'NUVAMA' in pf or 'SUMMIT' in pf:
-            return 'SUMMIT SECURITIES'
+        if 'JM' in pf or 'GLOBAL' in pf or 'BROKER 1' in pf or 'BROKER_1' in pf or 'BROKER1' in pf:
+            return 'BROKER 1'
+        elif 'CENTRUM' in pf or 'CBL' in pf or 'APEX' in pf or 'BROKER 2' in pf or 'BROKER_2' in pf or 'BROKER2' in pf:
+            return 'BROKER 2'
+        elif 'NUVAMA' in pf or 'SUMMIT' in pf or 'BROKER 3' in pf or 'BROKER_3' in pf or 'BROKER3' in pf:
+            return 'BROKER 3'
         return None
 
-    # 1. Excel Positions Report for CBL, JMFL, NUVAMA
+    # 1. Excel Positions Report for BROKER 1, BROKER 2, BROKER 3
     latest_report_file = get_latest_global_positions_file()
     if latest_report_file:
         try:

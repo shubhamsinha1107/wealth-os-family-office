@@ -969,7 +969,7 @@ def recalculate_equities(
 ):
     from urllib.parse import urlencode
     
-    # 1. Run Excel directory import (scans DATA/DATA/ for CBL, JM, NUV)
+    # 1. Run Excel directory import (scans DATA/DATA/ for BROKER_1, BROKER_2, BROKER_3)
     res = run_equity_import(db)
     
     files = res.get("files_processed", 0)

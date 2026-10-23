@@ -136,9 +136,9 @@ def seed_all(force: bool = False):
     # 2. MULTI-BROKER ACCOUNTS
     # =========================================================================
     brokers = [
-        ("PrimeWealth", "Prime Wealth Securities", AccountType.TRADING),
-        ("NexusCap", "Nexus Capital Finverse", AccountType.TRADING),
-        ("Zerodha", "Zerodha Broking Ltd.", AccountType.DEMAT),
+        ("Broker1", "Broker 1 Securities", AccountType.TRADING),
+        ("Broker2", "Broker 2 Finverse", AccountType.TRADING),
+        ("Broker3", "Broker 3 Wealth", AccountType.DEMAT),
         ("CAMS", "CAMS MF Service Provider", AccountType.MF_FOLIO),
     ]
     accounts = []
@@ -271,7 +271,7 @@ def seed_all(force: bool = False):
 
     for p_short, cat_indices, fol_prefix, target_inv in scheme_distribution:
         p_obj = p_map[p_short]
-        p_acc = acct_map.get((p_short, "PrimeWealth")) or acct_map.get((p_short, "Zerodha"))
+        p_acc = acct_map.get((p_short, "Broker1")) or acct_map.get((p_short, "Broker3"))
 
         for idx in cat_indices:
             full_n, clean_n, f_type, amfi, adv, el_pct, el_ten, lt_ten, cur_nav = mf_catalog[idx]
@@ -346,7 +346,7 @@ def seed_all(force: bool = False):
         gain_v = sale_v - cost_v
         days = (s_date - p_date).days
         p_obj = p_map[p_short]
-        p_acc = acct_map.get((p_short, "PrimeWealth")) or acct_map.get((p_short, "Zerodha"))
+        p_acc = acct_map.get((p_short, "Broker1")) or acct_map.get((p_short, "Broker3"))
 
         # 1. Historical Purchase Transaction
         p_txn = MFTransaction(
@@ -455,7 +455,7 @@ def seed_all(force: bool = False):
     for sym, comp_n, sector, cmp, avg_buy, allocations in equity_universe:
         for p_short, qty in allocations:
             p_obj = p_map[p_short]
-            p_acc = acct_map.get((p_short, "Zerodha")) or acct_map.get((p_short, "PrimeWealth"))
+            p_acc = acct_map.get((p_short, "Broker3")) or acct_map.get((p_short, "Broker1"))
             qty_dec = Decimal(str(qty))
             tot_val = (qty_dec * cmp).quantize(Decimal("0.01"))
 
@@ -505,10 +505,11 @@ def seed_all(force: bool = False):
         ("SGB 2031-32 Series II", "IN0020230018", Decimal("6263.00"), Decimal("7850.00"), date(2031, 9, 15), [("PATRIARCH", 750), ("MEMBER_1", 600)]),
     ]
 
-    for sgb_name, isin, issue_p, cmp_p, mat_date, allocs in sgb_tranches:
+    for sgb_idx, (sgb_name, isin, issue_p, cmp_p, mat_date, allocs) in enumerate(sgb_tranches):
+        b_tag = "Broker1" if sgb_idx < 2 else ("Broker2" if sgb_idx < 4 else "Broker3")
         for p_short, grams in allocs:
             p_obj = p_map[p_short]
-            p_acc = acct_map.get((p_short, "Zerodha"))
+            p_acc = acct_map.get((p_short, b_tag)) or acct_map.get((p_short, "Broker1"))
             grams_dec = Decimal(str(grams))
             cost_val = (grams_dec * issue_p).quantize(Decimal("0.01"))
             cur_val = (grams_dec * cmp_p).quantize(Decimal("0.01"))
@@ -544,7 +545,7 @@ def seed_all(force: bool = False):
     for p_short, a_type, manager, scheme, strat, invested, cur_v, inv_date in alts:
         alt_entry = Alternative(
             person_id=p_map[p_short].id,
-            account_id=acct_map.get((p_short, "PrimeWealth")).id,
+            account_id=acct_map.get((p_short, "Broker1")).id,
             alternative_type=a_type,
             manager_name=manager,
             scheme_name=scheme,
@@ -569,7 +570,7 @@ def seed_all(force: bool = False):
 
         unlisted_entry = UnlistedShare(
             person_id=p_map[p_short].id,
-            account_id=acct_map.get((p_short, "Zerodha")).id,
+            account_id=acct_map.get((p_short, "Broker3")).id,
             company_name=comp_n,
             isin=isin,
             quantity=qty,

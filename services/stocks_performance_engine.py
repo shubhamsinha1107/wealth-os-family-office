@@ -62,12 +62,12 @@ def load_stocks_holdings(file_path):
                 
             # Classify broker
             port_upper = str(port).upper()
-            if "CENTRUM" in port_upper or "CBL" in port_upper:
-                broker = "CBL / Centrum"
-            elif "NUVAMA" in port_upper:
-                broker = "Nuvama"
-            elif "JM" in port_upper:
-                broker = "JM Financial"
+            if "JM" in port_upper or "BROKER 1" in port_upper or "BROKER1" in port_upper:
+                broker = "Broker 1"
+            elif "CENTRUM" in port_upper or "CBL" in port_upper or "BROKER 2" in port_upper or "BROKER2" in port_upper:
+                broker = "Broker 2"
+            elif "NUVAMA" in port_upper or "BROKER 3" in port_upper or "BROKER3" in port_upper:
+                broker = "Broker 3"
             else:
                 broker = "Unknown"
                 
@@ -97,7 +97,7 @@ def load_stocks_holdings(file_path):
             pass
 
 def calculate_period_performance(start_data, end_data):
-    brokers = ["CBL / Centrum", "Nuvama", "JM Financial"]
+    brokers = ["Broker 1", "Broker 2", "Broker 3"]
     
     report = {}
     for b in brokers:

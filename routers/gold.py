@@ -47,12 +47,12 @@ templates.env.filters["format_sgb_l"] = format_sgb_l
 
 def get_broker_short_code(broker_name: str) -> str:
     name = broker_name.upper()
-    if "NUVAMA" in name:
-        return "NUV"
-    elif "JM" in name:
-        return "JM"
-    elif "CENTRUM" in name:
-        return "CENT"
+    if "NUVAMA" in name or "BROKER 3" in name or "BROKER3" in name:
+        return "Broker 3"
+    elif "JM" in name or "BROKER 1" in name or "BROKER1" in name:
+        return "Broker 1"
+    elif "CENTRUM" in name or "CBL" in name or "BROKER 2" in name or "BROKER2" in name:
+        return "Broker 2"
     elif "PHYSICAL" in name:
         return "Physical"
     return broker_name
@@ -114,12 +114,12 @@ def get_flat_holdings_list(db: Session) -> list:
         p_name = persons_map.get(h.person_id)
         acct = accounts_map.get(h.account_id)
         b_name = acct.institution_name if acct else ""
-        if "NUVAMA" in b_name.upper():
-            b_code = "NUV"
-        elif "JM" in b_name.upper():
-            b_code = "JM"
-        elif "CENTRUM" in b_name.upper():
-            b_code = "CENT"
+        if "NUVAMA" in b_name.upper() or "BROKER 3" in b_name.upper() or "BROKER3" in b_name.upper():
+            b_code = "Broker 3"
+        elif "JM" in b_name.upper() or "BROKER 1" in b_name.upper() or "BROKER1" in b_name.upper():
+            b_code = "Broker 1"
+        elif "CENTRUM" in b_name.upper() or "CBL" in b_name.upper() or "BROKER 2" in b_name.upper() or "BROKER2" in b_name.upper():
+            b_code = "Broker 2"
         else:
             b_code = b_name
             
@@ -187,10 +187,12 @@ def get_flat_holdings_list(db: Session) -> list:
         owner = parts[0]
         broker_code = parts[1]
         
-        if broker_code == "CBL":
-            broker_code = "CENT"
-        elif broker_code == "NUVAMA":
-            broker_code = "NUV"
+        if broker_code in ["CBL", "CENTRUM", "BROKER2", "BROKER_2"]:
+            broker_code = "Broker 2"
+        elif broker_code in ["NUVAMA", "NUV", "BROKER3", "BROKER_3"]:
+            broker_code = "Broker 3"
+        elif broker_code in ["JM", "JMFL", "BROKER1", "BROKER_1"]:
+            broker_code = "Broker 1"
             
         try:
             wb = openpyxl.load_workbook(f, data_only=True)
@@ -384,7 +386,7 @@ def get_flat_holdings_list(db: Session) -> list:
             pnl = current_value - total_cost
             return_pct = pnl / total_cost if total_cost > 0 else 0.0
             
-            if is_primary_purchase(purchase_date_dt, maturity_date_dt) or active_info["broker"] == "NUV":
+            if is_primary_purchase(purchase_date_dt, maturity_date_dt) or active_info["broker"] in ["Broker 3", "NUV"]:
                 tax_label = "0%"
             else:
                 tax_label = "12.5%" if is_long_term == "Yes" else "35%"
@@ -524,7 +526,7 @@ def compile_sgb_tables(db: Session) -> dict:
     issues_primary = {}
     issues_secondary = {}
     
-    brokers_list = ["JM Financial", "Nuvama Wealth", "Centrum Finverse"]
+    brokers_list = ["Broker 1", "Broker 2", "Broker 3"]
     broker_primary = {b: {p: {"qty": Decimal("0"), "cost": Decimal("0")} for p in PERSONS} for b in brokers_list}
     broker_secondary = {b: {p: {"qty": Decimal("0"), "cost": Decimal("0")} for p in PERSONS} for b in brokers_list}
     
@@ -538,12 +540,12 @@ def compile_sgb_tables(db: Session) -> dict:
         account = accounts_map.get(h.account_id)
         broker = account.institution_name if account else "Physical"
         
-        if "JM" in broker.upper():
-            broker_key = "JM Financial"
-        elif "NUVAMA" in broker.upper():
-            broker_key = "Nuvama Wealth"
-        elif "CENTRUM" in broker.upper():
-            broker_key = "Centrum Finverse"
+        if "JM" in broker.upper() or "BROKER 1" in broker.upper() or "BROKER1" in broker.upper():
+            broker_key = "Broker 1"
+        elif "CENTRUM" in broker.upper() or "CBL" in broker.upper() or "BROKER 2" in broker.upper() or "BROKER2" in broker.upper():
+            broker_key = "Broker 2"
+        elif "NUVAMA" in broker.upper() or "NUV" in broker.upper() or "BROKER 3" in broker.upper() or "BROKER3" in broker.upper():
+            broker_key = "Broker 3"
         else:
             broker_key = broker
             if broker_key not in broker_primary:
@@ -573,11 +575,11 @@ def compile_sgb_tables(db: Session) -> dict:
         prim_qty = Decimal("0")
         prim_avg = Decimal("0")
         
-        if broker_key == "Nuvama Wealth":
+        if broker_key in ["Broker 3", "Nuvama Wealth"]:
             is_primary = True
             prim_qty = qty
             prim_avg = avg_price
-        elif broker_key == "JM Financial" and prim_record:
+        elif (broker_key in ["Broker 1", "JM Financial"]) and prim_record:
             is_primary = True
             prim_qty = prim_record["qty"]
             prim_avg = prim_record["avg"]
