@@ -236,17 +236,17 @@ def dashboard(
     owners = db.query(Person).all()
     portfolio_to_code = {
         "APEX HOLDINGS PVT. LTD.": "APEX",
-        "FAMILY MEMBER 1":             "MR",
+        "FAMILY MEMBER 1":             "MEMBER_1",
         "FAMILY PATRIARCH":       "PATRIARCH",
-        "FAMILY MEMBER 2":            "VG",
-        "FAMILY MEMBER 3":         "SR",
+        "FAMILY MEMBER 2":            "MEMBER_2",
+        "FAMILY MEMBER 3":         "MEMBER_3",
         "NEXUS CAPITAL PRIVATE LIMITED": "NEXUS"
     }
     
     available_accounts = [{"id": 0, "name": "Consolidated Family Portfolio", "code": "CONSOLIDATED"}]
     for p in owners:
         code = portfolio_to_code.get(p.full_name.upper(), p.short_name)
-        if code in ["APEX", "PATRIARCH", "VG", "MR", "SR", "NEXUS"]:
+        if code in ["APEX", "PATRIARCH", "MEMBER_2", "MEMBER_1", "MEMBER_3", "NEXUS"]:
             available_accounts.append({"id": p.id, "name": p.full_name, "code": code})
             
     selected_acct = next((a for a in available_accounts if a["code"] == act.upper()), None)
@@ -1506,15 +1506,15 @@ def rerun_engine_trigger(db: Session = Depends(get_db)):
 # ------------------------------------------------------------
 @router.get("/account-report", response_class=HTMLResponse)
 def account_report_view(request: Request, act: str = None, db: Session = Depends(get_db)):
-    """Displays a consolidated account-wise report (APEX, MR, PATRIARCH, VG)."""
+    """Displays a consolidated account-wise report (APEX, MEMBER_1, PATRIARCH, MEMBER_2)."""
     from services.account_report_engine import get_account_report_data
     
     portfolio_to_code = {
         "APEX HOLDINGS PVT. LTD.": "APEX",
-        "FAMILY MEMBER 1":             "MR",
+        "FAMILY MEMBER 1":             "MEMBER_1",
         "FAMILY PATRIARCH":       "PATRIARCH",
-        "FAMILY MEMBER 2":            "VG",
-        "FAMILY MEMBER 3":         "SR",
+        "FAMILY MEMBER 2":            "MEMBER_2",
+        "FAMILY MEMBER 3":         "MEMBER_3",
         "NEXUS CAPITAL PRIVATE LIMITED": "NEXUS",
         "FAMILY MEMBER 4":            "MEMBER_4",
         "FAMILY MEMBER 5":            "MEMBER_5",
@@ -1526,11 +1526,11 @@ def account_report_view(request: Request, act: str = None, db: Session = Depends
     owners = db.query(Person).all()
     available_accounts = [
         {"id": 0, "name": "Consolidated Family Portfolio", "code": "CONSOLIDATED"},
-        {"id": "4_ACCOUNTS", "name": "Core 4 Accounts (PATRIARCH, MR, VG, APEX)", "code": "4_ACCOUNTS"}
+        {"id": "4_ACCOUNTS", "name": "Core 4 Accounts (PATRIARCH, MEMBER_1, MEMBER_2, APEX)", "code": "4_ACCOUNTS"}
     ]
     for p in owners:
         code = portfolio_to_code.get(p.full_name.upper(), p.short_name)
-        if code in ["APEX", "PATRIARCH", "VG", "MR", "SR", "NEXUS", "MEMBER_4", "MEMBER_5", "MEMBER_6", "MEMBER_7"]:
+        if code in ["APEX", "PATRIARCH", "MEMBER_2", "MEMBER_1", "MEMBER_3", "NEXUS", "MEMBER_4", "MEMBER_5", "MEMBER_6", "MEMBER_7"]:
             available_accounts.append({"id": p.id, "name": p.full_name, "code": code})
             
     # Default to CONSOLIDATED if not specified or not matching
@@ -2051,22 +2051,22 @@ def monthly_profits_view(
     
     portfolio_to_code = {
         "APEX HOLDINGS PVT. LTD.": "APEX",
-        "FAMILY MEMBER 1":             "MR",
+        "FAMILY MEMBER 1":             "MEMBER_1",
         "FAMILY PATRIARCH":       "PATRIARCH",
-        "FAMILY MEMBER 2":            "VG",
-        "FAMILY MEMBER 3":         "SR",
+        "FAMILY MEMBER 2":            "MEMBER_2",
+        "FAMILY MEMBER 3":         "MEMBER_3",
         "NEXUS CAPITAL PRIVATE LIMITED": "NEXUS"
     }
     
-    core_person_ids = [p.id for p in owners if portfolio_to_code.get(p.full_name.upper(), p.short_name) in ["APEX", "PATRIARCH", "VG", "MR"]]
+    core_person_ids = [p.id for p in owners if portfolio_to_code.get(p.full_name.upper(), p.short_name) in ["APEX", "PATRIARCH", "MEMBER_2", "MEMBER_1"]]
     
     available_accounts = [
         {"id": 0, "name": "Consolidated (All Entities)", "code": "CONSOLIDATED"},
-        {"id": -1, "name": "Core 4 (APEX, MR, VG, PATRIARCH)", "code": "CORE"}
+        {"id": -1, "name": "Core 4 (APEX, MEMBER_1, MEMBER_2, PATRIARCH)", "code": "CORE"}
     ]
     for p in owners:
         code = portfolio_to_code.get(p.full_name.upper(), p.short_name)
-        if code in ["APEX", "PATRIARCH", "VG", "MR", "SR", "NEXUS"]:
+        if code in ["APEX", "PATRIARCH", "MEMBER_2", "MEMBER_1", "MEMBER_3", "NEXUS"]:
             available_accounts.append({"id": p.id, "name": p.full_name, "code": code})
             
     # Default to CONSOLIDATED if act is invalid
@@ -2162,17 +2162,17 @@ def category_alpha_view(
     owners = db.query(Person).all()
     portfolio_to_code = {
         "APEX HOLDINGS PVT. LTD.": "APEX",
-        "FAMILY MEMBER 1":             "MR",
+        "FAMILY MEMBER 1":             "MEMBER_1",
         "FAMILY PATRIARCH":       "PATRIARCH",
-        "FAMILY MEMBER 2":            "VG",
-        "FAMILY MEMBER 3":         "SR",
+        "FAMILY MEMBER 2":            "MEMBER_2",
+        "FAMILY MEMBER 3":         "MEMBER_3",
         "NEXUS CAPITAL PRIVATE LIMITED": "NEXUS"
     }
     
     available_accounts = [{"id": 0, "name": "Consolidated Family Portfolio", "code": "CONSOLIDATED"}]
     for p in owners:
         code = portfolio_to_code.get(p.full_name.upper(), p.short_name)
-        if code in ["APEX", "PATRIARCH", "VG", "MR", "SR", "NEXUS"]:
+        if code in ["APEX", "PATRIARCH", "MEMBER_2", "MEMBER_1", "MEMBER_3", "NEXUS"]:
             available_accounts.append({"id": p.id, "name": p.full_name, "code": code})
             
     selected_acct = next((a for a in available_accounts if a["code"] == act.upper()), None)

@@ -53,10 +53,10 @@ def parse_unlisted_shares_excel(file_path: str) -> list:
         def get_owner(ac_str):
             s = str(ac_str).upper()
             if "PATRIARCH" in s: return "PATRIARCH"
-            if "MR" in s: return "MR"
+            if "MEMBER_1" in s: return "MEMBER_1"
             if "APEX" in s: return "APEX"
-            if "VG" in s: return "VG"
-            if "SR" in s: return "SR"
+            if "MEMBER_2" in s: return "MEMBER_2"
+            if "MEMBER_3" in s: return "MEMBER_3"
             return "APEX" # Default fallback
 
         def get_broker(ac_str):
@@ -99,7 +99,7 @@ def parse_aif_excel(file_path: str) -> list:
         
         # Filter out empty or total rows
         df = df[df["A/C"].notna()]
-        df = df[df["A/C"].astype(str).str.strip().isin(["APEX", "MR", "PATRIARCH", "VG", "SR"])]
+        df = df[df["A/C"].astype(str).str.strip().isin(["APEX", "MEMBER_1", "PATRIARCH", "MEMBER_2", "MEMBER_3"])]
         
         results = []
         for _, row in df.iterrows():
@@ -180,26 +180,26 @@ def get_consolidated_portfolio_data(db: Session) -> dict:
         "APEX HOLDINGS PVT. LTD.": "APEX",
         "APEX HOLDINGS PRIVATE LIMITED": "APEX",
         "APEX": "APEX",
-        "FAMILY MEMBER 1": "MR",
-        "MR": "MR",
+        "FAMILY MEMBER 1": "MEMBER_1",
+        "MEMBER_1": "MEMBER_1",
         "FAMILY PATRIARCH": "PATRIARCH",
         "FAMILY PATRIARCH": "PATRIARCH",
         "PATRIARCH": "PATRIARCH",
-        "FAMILY MEMBER 2": "VG",
-        "VG": "VG",
-        "FAMILY MEMBER 3": "SR",
-        "SR": "SR"
+        "FAMILY MEMBER 2": "MEMBER_2",
+        "MEMBER_2": "MEMBER_2",
+        "FAMILY MEMBER 3": "MEMBER_3",
+        "MEMBER_3": "MEMBER_3"
     }
 
     all_persons = db.query(Person).filter(Person.is_active == True).all()
     person_code_map = {}
     for p in all_persons:
         code = portfolio_to_code.get(p.full_name.upper(), p.short_name)
-        if code in ["APEX", "MR", "PATRIARCH", "VG", "SR"]:
+        if code in ["APEX", "MEMBER_1", "PATRIARCH", "MEMBER_2", "MEMBER_3"]:
             person_code_map[p.id] = code
 
     # Target family codes in order
-    target_codes = ["PATRIARCH", "MR", "APEX", "SR", "VG"]
+    target_codes = ["PATRIARCH", "MEMBER_1", "APEX", "MEMBER_3", "MEMBER_2"]
 
     # Helper structure to initialize category dictionary
     def init_cat_dict():
@@ -237,14 +237,14 @@ def get_consolidated_portfolio_data(db: Session) -> dict:
                 code = None
                 if 'PATRIARCH' in portfolio_name:
                     code = 'PATRIARCH'
-                elif 'MR' in portfolio_name:
-                    code = 'MR'
+                elif 'MEMBER_1' in portfolio_name:
+                    code = 'MEMBER_1'
                 elif 'APEX' in portfolio_name:
                     code = 'APEX'
-                elif 'SR' in portfolio_name:
-                    code = 'SR'
-                elif 'VG' in portfolio_name:
-                    code = 'VG'
+                elif 'MEMBER_3' in portfolio_name:
+                    code = 'MEMBER_3'
+                elif 'MEMBER_2' in portfolio_name:
+                    code = 'MEMBER_2'
                     
                 if not code or code not in target_codes:
                     continue
@@ -910,7 +910,7 @@ def export_portfolio_overview_xlsx(db: Session) -> str:
     # TABLE 1: Asset Allocation & Performance Overview
     # ────────────────────────────────────────────────────────
     # Headers
-    headers_1 = ["Category", "PATRIARCH", "MR", "APEX", "SR", "VG", "TOTAL", "%Chg", "Expo"]
+    headers_1 = ["Category", "PATRIARCH", "MEMBER_1", "APEX", "MEMBER_3", "MEMBER_2", "TOTAL", "%Chg", "Expo"]
     start_row = 4
     ws.row_dimensions[start_row].height = 26
     
@@ -935,8 +935,8 @@ def export_portfolio_overview_xlsx(db: Session) -> str:
         cell.fill = row_fill
         cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
         
-        # PATRIARCH to VG columns (centered, wrap text!)
-        for col_idx, code in enumerate(["PATRIARCH", "MR", "APEX", "SR", "VG"], start=3):
+        # PATRIARCH to MEMBER_2 columns (centered, wrap text!)
+        for col_idx, code in enumerate(["PATRIARCH", "MEMBER_1", "APEX", "MEMBER_3", "MEMBER_2"], start=3):
             val_str = fmt_pair(r[code]["invested"], r[code]["current"])
             cell = ws.cell(row=current_row, column=col_idx, value=val_str)
             cell.font = regular_font
@@ -984,7 +984,7 @@ def export_portfolio_overview_xlsx(db: Session) -> str:
     cell.border = double_bottom_border
     cell.alignment = Alignment(horizontal="left", vertical="center")
     
-    for col_idx, code in enumerate(["PATRIARCH", "MR", "APEX", "SR", "VG"], start=3):
+    for col_idx, code in enumerate(["PATRIARCH", "MEMBER_1", "APEX", "MEMBER_3", "MEMBER_2"], start=3):
         val_str = fmt_pair(gt[code]["invested"], gt[code]["current"])
         cell = ws.cell(row=current_row, column=col_idx, value=val_str)
         cell.font = bold_font
@@ -1029,7 +1029,7 @@ def export_portfolio_overview_xlsx(db: Session) -> str:
     cell.border = double_bottom_border
     cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
     
-    for col_idx, code in enumerate(["PATRIARCH", "MR", "APEX", "SR", "VG"], start=3):
+    for col_idx, code in enumerate(["PATRIARCH", "MEMBER_1", "APEX", "MEMBER_3", "MEMBER_2"], start=3):
         val_str = fmt_pair(gt_ex[code]["invested"], gt_ex[code]["current"])
         cell = ws.cell(row=current_row, column=col_idx, value=val_str)
         cell.font = bold_font

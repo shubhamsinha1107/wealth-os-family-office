@@ -14,9 +14,9 @@ BROKER_FOLDER_MAP = {
 OWNER_NAME_MAP = {
     "NEXUS": ["NEXUS CAPITAL", "NEXUS CAPITAL PVT", "NEXUS CAPITAL PRIVATE LIMITED", "NEXUS"],
     "PATRIARCH": ["FAMILY PATRIARCH", "FAMILY PATRIARCH", "FAMILY PATRIARCH", "PATRIARCH"],
-    "MR": ["FAMILY MEMBER 1", "MEMBER_1", "MR"],
-    "VG": ["FAMILY MEMBER 2", "FAMILY MEMBER 2", "FAMILY MEMBER 2", "MEMBER_2", "VG"],
-    "SR": ["FAMILY MEMBER 3", "MEMBER_3", "SR"],
+    "MEMBER_1": ["FAMILY MEMBER 1", "MEMBER_1"],
+    "MEMBER_2": ["FAMILY MEMBER 2", "MEMBER_2"],
+    "MEMBER_3": ["FAMILY MEMBER 3", "MEMBER_3"],
     "APEX": ["APEX HOLDINGS PVT", "APEX HOLDINGS", "APEX"]
 }
 
@@ -132,9 +132,9 @@ def detect_file_metadata(file_path: str) -> Dict[str, Any]:
 
     # 3. Detect Owner in header/text
     # Note: Top-right corner often contains managing company address ("APEX HOLDINGS PRIVATE LIMITED", accounts@familyoffice.internal).
-    # Specific entity names (NEXUS, PATRIARCH, MR, VG, SR) are checked in priority order.
+    # Specific entity names (NEXUS, PATRIARCH, MEMBER_1, MEMBER_2, MEMBER_3) are checked in priority order.
     detected_owner = "Unknown"
-    for o_code in ["NEXUS", "PATRIARCH", "MR", "VG", "SR", "APEX"]:
+    for o_code in ["NEXUS", "PATRIARCH", "MEMBER_1", "MEMBER_2", "MEMBER_3", "APEX"]:
         keywords = OWNER_NAME_MAP[o_code]
         if any(kw in text_dump for kw in keywords):
             detected_owner = o_code

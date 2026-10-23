@@ -11,16 +11,16 @@ from services.performance_engine import calculate_xirr
 def get_account_report_data(db: Session, person_id: any = None) -> dict:
     """
     Calculates Asset Class Summary, Fund Type Summary, and Detailed Asset table
-    for a given person, Core 4 Accounts (PATRIARCH, MR, VG, APEX), or Consolidated family portfolio
+    for a given person, Core 4 Accounts (PATRIARCH, MEMBER_1, MEMBER_2, APEX), or Consolidated family portfolio
     dynamically from active database transactions.
     """
     # 1. Map person IDs to account codes
     portfolio_to_code = {
         "APEX HOLDINGS PVT. LTD.": "APEX",
-        "FAMILY MEMBER 1":             "MR",
+        "FAMILY MEMBER 1":             "MEMBER_1",
         "FAMILY PATRIARCH":       "PATRIARCH",
-        "FAMILY MEMBER 2":            "VG",
-        "FAMILY MEMBER 3":         "SR",
+        "FAMILY MEMBER 2":            "MEMBER_2",
+        "FAMILY MEMBER 3":         "MEMBER_3",
         "FAMILY MEMBER 4":            "MEMBER_4",
         "FAMILY MEMBER 5":            "MEMBER_5",
         "FAMILY MEMBER 6":            "MEMBER_6",
@@ -33,7 +33,7 @@ def get_account_report_data(db: Session, person_id: any = None) -> dict:
         code = portfolio_to_code.get(p.full_name.upper(), p.short_name)
         person_code_map[p.id] = code
 
-    four_codes = ["PATRIARCH", "MR", "VG", "APEX"]
+    four_codes = ["PATRIARCH", "MEMBER_1", "MEMBER_2", "APEX"]
     is_four_accounts = (person_id == "4_ACCOUNTS" or str(person_id).upper() in ["4_ACCOUNTS", "4ACCOUNTS", "4_ACCOUNT", "4"])
     is_consolidated = (person_id is None or person_id == 0 or str(person_id).upper() == "CONSOLIDATED")
 

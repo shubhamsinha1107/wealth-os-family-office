@@ -12,10 +12,10 @@ from models.accounts import Account
 # Family Name to DB Person short_name or full_name mapping
 PERSON_MAPPING = {
     "FAMILY PATRIARCH": "PATRIARCH",
-    "FAMILY MEMBER 1": "MR",
+    "FAMILY MEMBER 1": "MEMBER_1",
     "APEX HOLDINGS PVT. LTD.": "APEX",
-    "FAMILY MEMBER 3": "SR",
-    "FAMILY MEMBER 2": "VG"
+    "FAMILY MEMBER 3": "MEMBER_3",
+    "FAMILY MEMBER 2": "MEMBER_2"
 }
 
 # Portfolio Name to DB Account institution mapping

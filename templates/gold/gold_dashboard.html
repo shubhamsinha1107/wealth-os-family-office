@@ -176,9 +176,9 @@
                         <th rowspan="2" style="width: 120px;">Maturity</th>
                         <th rowspan="2" style="text-align: right; width: 90px;">CMP</th>
                         <th colspan="3" style="text-align: center; border-left: 1px solid rgba(255,255,255,0.08);">PATRIARCH</th>
-                        <th colspan="3" style="text-align: center; border-left: 1px solid rgba(255,255,255,0.08);">MR</th>
-                        <th colspan="3" style="text-align: center; border-left: 1px solid rgba(255,255,255,0.08);">VG</th>
-                        <th colspan="3" style="text-align: center; border-left: 1px solid rgba(255,255,255,0.08);">SR</th>
+                        <th colspan="3" style="text-align: center; border-left: 1px solid rgba(255,255,255,0.08);">MEMBER_1</th>
+                        <th colspan="3" style="text-align: center; border-left: 1px solid rgba(255,255,255,0.08);">MEMBER_2</th>
+                        <th colspan="3" style="text-align: center; border-left: 1px solid rgba(255,255,255,0.08);">MEMBER_3</th>
                         <th colspan="5" style="text-align: center; border-left: 1px solid rgba(255,255,255,0.08);">TOTAL</th>
                     </tr>
                     <tr style="font-size: 11px; color: var(--text-secondary);">
@@ -186,15 +186,15 @@
                         <th style="text-align: right; border-left: 1px solid rgba(255,255,255,0.08);">Qty</th>
                         <th style="text-align: right;">Avg</th>
                         <th style="text-align: right;">Value</th>
-                        <!-- MR -->
+                        <!-- MEMBER_1 -->
                         <th style="text-align: right; border-left: 1px solid rgba(255,255,255,0.08);">Qty</th>
                         <th style="text-align: right;">Avg</th>
                         <th style="text-align: right;">Value</th>
-                        <!-- VG -->
+                        <!-- MEMBER_2 -->
                         <th style="text-align: right; border-left: 1px solid rgba(255,255,255,0.08);">Qty</th>
                         <th style="text-align: right;">Avg</th>
                         <th style="text-align: right;">Value</th>
-                        <!-- SR -->
+                        <!-- MEMBER_3 -->
                         <th style="text-align: right; border-left: 1px solid rgba(255,255,255,0.08);">Qty</th>
                         <th style="text-align: right;">Avg</th>
                         <th style="text-align: right;">Value</th>
@@ -226,37 +226,37 @@
                                 {% if r.holdings.PATRIARCH.qty > 0 %}₹{{ (r.holdings.PATRIARCH.qty * r.last_price)|format_inr }}{% else %}—{% endif %}
                             </td>
                             
-                            <!-- MR -->
+                            <!-- MEMBER_1 -->
                             <td style="text-align: right; border-left: 1px solid rgba(255,255,255,0.05); color: #fbbf24; font-weight: 500;">
-                                {% if r.holdings.MR.qty > 0 %}{{ "{:,.0f}".format(r.holdings.MR.qty) }}{% else %}—{% endif %}
+                                {% if r.holdings.MEMBER_1.qty > 0 %}{{ "{:,.0f}".format(r.holdings.MEMBER_1.qty) }}{% else %}—{% endif %}
                             </td>
                             <td style="text-align: right; color: var(--text-secondary);">
-                                {% if r.holdings.MR.qty > 0 %}₹{{ r.holdings.MR.avg|format_inr }}{% else %}—{% endif %}
+                                {% if r.holdings.MEMBER_1.qty > 0 %}₹{{ r.holdings.MEMBER_1.avg|format_inr }}{% else %}—{% endif %}
                             </td>
                             <td style="text-align: right; color: #fbbf24;">
-                                {% if r.holdings.MR.qty > 0 %}₹{{ (r.holdings.MR.qty * r.last_price)|format_inr }}{% else %}—{% endif %}
+                                {% if r.holdings.MEMBER_1.qty > 0 %}₹{{ (r.holdings.MEMBER_1.qty * r.last_price)|format_inr }}{% else %}—{% endif %}
                             </td>
                             
-                            <!-- VG -->
+                            <!-- MEMBER_2 -->
                             <td style="text-align: right; border-left: 1px solid rgba(255,255,255,0.05); color: #34d399; font-weight: 500;">
-                                {% if r.holdings.VG.qty > 0 %}{{ "{:,.0f}".format(r.holdings.VG.qty) }}{% else %}—{% endif %}
+                                {% if r.holdings.MEMBER_2.qty > 0 %}{{ "{:,.0f}".format(r.holdings.MEMBER_2.qty) }}{% else %}—{% endif %}
                             </td>
                             <td style="text-align: right; color: var(--text-secondary);">
-                                {% if r.holdings.VG.qty > 0 %}₹{{ r.holdings.VG.avg|format_inr }}{% else %}—{% endif %}
+                                {% if r.holdings.MEMBER_2.qty > 0 %}₹{{ r.holdings.MEMBER_2.avg|format_inr }}{% else %}—{% endif %}
                             </td>
                             <td style="text-align: right; color: #34d399;">
-                                {% if r.holdings.VG.qty > 0 %}₹{{ (r.holdings.VG.qty * r.last_price)|format_inr }}{% else %}—{% endif %}
+                                {% if r.holdings.MEMBER_2.qty > 0 %}₹{{ (r.holdings.MEMBER_2.qty * r.last_price)|format_inr }}{% else %}—{% endif %}
                             </td>
                             
-                            <!-- SR -->
+                            <!-- MEMBER_3 -->
                             <td style="text-align: right; border-left: 1px solid rgba(255,255,255,0.05); color: #60a5fa; font-weight: 500;">
-                                {% if r.holdings.SR.qty > 0 %}{{ "{:,.0f}".format(r.holdings.SR.qty) }}{% else %}—{% endif %}
+                                {% if r.holdings.MEMBER_3.qty > 0 %}{{ "{:,.0f}".format(r.holdings.MEMBER_3.qty) }}{% else %}—{% endif %}
                             </td>
                             <td style="text-align: right; color: var(--text-secondary);">
-                                {% if r.holdings.SR.qty > 0 %}₹{{ r.holdings.SR.avg|format_inr }}{% else %}—{% endif %}
+                                {% if r.holdings.MEMBER_3.qty > 0 %}₹{{ r.holdings.MEMBER_3.avg|format_inr }}{% else %}—{% endif %}
                             </td>
                             <td style="text-align: right; color: #60a5fa;">
-                                {% if r.holdings.SR.qty > 0 %}₹{{ (r.holdings.SR.qty * r.last_price)|format_inr }}{% else %}—{% endif %}
+                                {% if r.holdings.MEMBER_3.qty > 0 %}₹{{ (r.holdings.MEMBER_3.qty * r.last_price)|format_inr }}{% else %}—{% endif %}
                             </td>
                             
                             <!-- TOTAL -->
@@ -297,37 +297,37 @@
                                 ₹{{ (totals.PATRIARCH.cost)|format_inr }}
                             </td>
                             
-                            <!-- MR -->
+                            <!-- MEMBER_1 -->
                             <td style="text-align: right; border-left: 1px solid rgba(255,255,255,0.05); color: #fbbf24;">
-                                {{ "{:,.0f}".format(totals.MR.qty) }}
+                                {{ "{:,.0f}".format(totals.MEMBER_1.qty) }}
                             </td>
                             <td style="text-align: right; color: var(--text-secondary);">
-                                ₹{{ totals.MR.avg|format_inr }}
+                                ₹{{ totals.MEMBER_1.avg|format_inr }}
                             </td>
                             <td style="text-align: right; color: #fbbf24;">
-                                ₹{{ (totals.MR.cost)|format_inr }}
+                                ₹{{ (totals.MEMBER_1.cost)|format_inr }}
                             </td>
                             
-                            <!-- VG -->
+                            <!-- MEMBER_2 -->
                             <td style="text-align: right; border-left: 1px solid rgba(255,255,255,0.05); color: #34d399;">
-                                {{ "{:,.0f}".format(totals.VG.qty) }}
+                                {{ "{:,.0f}".format(totals.MEMBER_2.qty) }}
                             </td>
                             <td style="text-align: right; color: var(--text-secondary);">
-                                ₹{{ totals.VG.avg|format_inr }}
+                                ₹{{ totals.MEMBER_2.avg|format_inr }}
                             </td>
                             <td style="text-align: right; color: #34d399;">
-                                ₹{{ (totals.VG.cost)|format_inr }}
+                                ₹{{ (totals.MEMBER_2.cost)|format_inr }}
                             </td>
                             
-                            <!-- SR -->
+                            <!-- MEMBER_3 -->
                             <td style="text-align: right; border-left: 1px solid rgba(255,255,255,0.05); color: #60a5fa;">
-                                {{ "{:,.0f}".format(totals.SR.qty) }}
+                                {{ "{:,.0f}".format(totals.MEMBER_3.qty) }}
                             </td>
                             <td style="text-align: right; color: var(--text-secondary);">
-                                ₹{{ totals.SR.avg|format_inr }}
+                                ₹{{ totals.MEMBER_3.avg|format_inr }}
                             </td>
                             <td style="text-align: right; color: #60a5fa;">
-                                ₹{{ (totals.SR.cost)|format_inr }}
+                                ₹{{ (totals.MEMBER_3.cost)|format_inr }}
                             </td>
                             
                             <!-- TOTAL -->
@@ -558,9 +558,9 @@
                         <tr>
                             <th>Market Segment</th>
                             <th style="text-align: right; color: #c084fc;">PATRIARCH Qty</th>
-                            <th style="text-align: right; color: #fbbf24;">MR Qty</th>
-                            <th style="text-align: right; color: #34d399;">VG Qty</th>
-                            <th style="text-align: right; color: #60a5fa;">SR Qty</th>
+                            <th style="text-align: right; color: #fbbf24;">MEMBER_1 Qty</th>
+                            <th style="text-align: right; color: #34d399;">MEMBER_2 Qty</th>
+                            <th style="text-align: right; color: #60a5fa;">MEMBER_3 Qty</th>
                             <th style="text-align: right; font-weight: bold;">Total Qty</th>
                             <th style="text-align: right;">Weighted Avg</th>
                         </tr>
@@ -569,27 +569,27 @@
                         <tr>
                             <td style="font-weight: 600;">PRIMARY</td>
                             <td style="text-align: right; color: #c084fc;">{{ "{:,.0f}".format(grand_totals.primary.PATRIARCH.qty) if grand_totals.primary.PATRIARCH.qty > 0 else "—" }}</td>
-                            <td style="text-align: right; color: #fbbf24;">{{ "{:,.0f}".format(grand_totals.primary.MR.qty) if grand_totals.primary.MR.qty > 0 else "—" }}</td>
-                            <td style="text-align: right; color: #34d399;">{{ "{:,.0f}".format(grand_totals.primary.VG.qty) if grand_totals.primary.VG.qty > 0 else "—" }}</td>
-                            <td style="text-align: right; color: #60a5fa;">{{ "{:,.0f}".format(grand_totals.primary.SR.qty) if grand_totals.primary.SR.qty > 0 else "—" }}</td>
+                            <td style="text-align: right; color: #fbbf24;">{{ "{:,.0f}".format(grand_totals.primary.MEMBER_1.qty) if grand_totals.primary.MEMBER_1.qty > 0 else "—" }}</td>
+                            <td style="text-align: right; color: #34d399;">{{ "{:,.0f}".format(grand_totals.primary.MEMBER_2.qty) if grand_totals.primary.MEMBER_2.qty > 0 else "—" }}</td>
+                            <td style="text-align: right; color: #60a5fa;">{{ "{:,.0f}".format(grand_totals.primary.MEMBER_3.qty) if grand_totals.primary.MEMBER_3.qty > 0 else "—" }}</td>
                             <td style="text-align: right; font-weight: 700; color: var(--text-primary);">{{ "{:,.0f}".format(grand_totals.primary.TOTAL.qty) }}</td>
                             <td style="text-align: right; font-weight: 500;">₹{{ grand_totals.primary.TOTAL.avg|format_inr }}</td>
                         </tr>
                         <tr>
                             <td style="font-weight: 600;">SECONDARY</td>
                             <td style="text-align: right; color: #c084fc;">{{ "{:,.0f}".format(grand_totals.secondary.PATRIARCH.qty) if grand_totals.secondary.PATRIARCH.qty > 0 else "—" }}</td>
-                            <td style="text-align: right; color: #fbbf24;">{{ "{:,.0f}".format(grand_totals.secondary.MR.qty) if grand_totals.secondary.MR.qty > 0 else "—" }}</td>
-                            <td style="text-align: right; color: #34d399;">{{ "{:,.0f}".format(grand_totals.secondary.VG.qty) if grand_totals.secondary.VG.qty > 0 else "—" }}</td>
-                            <td style="text-align: right; color: #60a5fa;">{{ "{:,.0f}".format(grand_totals.secondary.SR.qty) if grand_totals.secondary.SR.qty > 0 else "—" }}</td>
+                            <td style="text-align: right; color: #fbbf24;">{{ "{:,.0f}".format(grand_totals.secondary.MEMBER_1.qty) if grand_totals.secondary.MEMBER_1.qty > 0 else "—" }}</td>
+                            <td style="text-align: right; color: #34d399;">{{ "{:,.0f}".format(grand_totals.secondary.MEMBER_2.qty) if grand_totals.secondary.MEMBER_2.qty > 0 else "—" }}</td>
+                            <td style="text-align: right; color: #60a5fa;">{{ "{:,.0f}".format(grand_totals.secondary.MEMBER_3.qty) if grand_totals.secondary.MEMBER_3.qty > 0 else "—" }}</td>
                             <td style="text-align: right; font-weight: 700; color: var(--text-primary);">{{ "{:,.0f}".format(grand_totals.secondary.TOTAL.qty) }}</td>
                             <td style="text-align: right; font-weight: 500;">₹{{ grand_totals.secondary.TOTAL.avg|format_inr }}</td>
                         </tr>
                         <tr style="font-weight: 700; background: rgba(255,255,255,0.03); border-top: 2px solid var(--glass-border);">
                             <td>TOTAL SGBs</td>
                             <td style="text-align: right; color: #c084fc;">{{ "{:,.0f}".format(grand_totals.consolidated.PATRIARCH.qty) }}</td>
-                            <td style="text-align: right; color: #fbbf24;">{{ "{:,.0f}".format(grand_totals.consolidated.MR.qty) }}</td>
-                            <td style="text-align: right; color: #34d399;">{{ "{:,.0f}".format(grand_totals.consolidated.VG.qty) }}</td>
-                            <td style="text-align: right; color: #60a5fa;">{{ "{:,.0f}".format(grand_totals.consolidated.SR.qty) }}</td>
+                            <td style="text-align: right; color: #fbbf24;">{{ "{:,.0f}".format(grand_totals.consolidated.MEMBER_1.qty) }}</td>
+                            <td style="text-align: right; color: #34d399;">{{ "{:,.0f}".format(grand_totals.consolidated.MEMBER_2.qty) }}</td>
+                            <td style="text-align: right; color: #60a5fa;">{{ "{:,.0f}".format(grand_totals.consolidated.MEMBER_3.qty) }}</td>
                             <td style="text-align: right; color: #fbbf24;">{{ "{:,.0f}".format(grand_totals.consolidated.TOTAL.qty) }}</td>
                             <td style="text-align: right; color: #fbbf24;">₹{{ grand_totals.consolidated.TOTAL.avg|format_inr }}</td>
                         </tr>
@@ -611,9 +611,9 @@
                                 <th>Broker</th>
                                 <th>Metric</th>
                                 <th style="text-align: right; color: #c084fc;">PATRIARCH</th>
-                                <th style="text-align: right; color: #fbbf24;">MR</th>
-                                <th style="text-align: right; color: #34d399;">VG</th>
-                                <th style="text-align: right; color: #60a5fa;">SR</th>
+                                <th style="text-align: right; color: #fbbf24;">MEMBER_1</th>
+                                <th style="text-align: right; color: #34d399;">MEMBER_2</th>
+                                <th style="text-align: right; color: #60a5fa;">MEMBER_3</th>
                                 <th style="text-align: right; font-weight: bold;">TOTAL</th>
                             </tr>
                         </thead>
@@ -623,17 +623,17 @@
                                 <td rowspan="2" style="font-weight: 600; vertical-align: middle;">{{ broker }}</td>
                                 <td style="font-size: 11px; color: var(--text-secondary);">Qty</td>
                                 <td style="text-align: right;">{{ "{:,.0f}".format(p_data.PATRIARCH.qty) if p_data.PATRIARCH.qty > 0 else "—" }}</td>
-                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.MR.qty) if p_data.MR.qty > 0 else "—" }}</td>
-                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.VG.qty) if p_data.VG.qty > 0 else "—" }}</td>
-                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.SR.qty) if p_data.SR.qty > 0 else "—" }}</td>
+                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.MEMBER_1.qty) if p_data.MEMBER_1.qty > 0 else "—" }}</td>
+                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.MEMBER_2.qty) if p_data.MEMBER_2.qty > 0 else "—" }}</td>
+                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.MEMBER_3.qty) if p_data.MEMBER_3.qty > 0 else "—" }}</td>
                                 <td style="text-align: right; font-weight: bold;">{{ "{:,.0f}".format(p_data.TOTAL.qty) }}</td>
                             </tr>
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                                 <td style="font-size: 11px; color: var(--text-secondary);">Avg</td>
                                 <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.PATRIARCH.avg|format_inr if p_data.PATRIARCH.qty > 0 else "—" }}</td>
-                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.MR.avg|format_inr if p_data.MR.qty > 0 else "—" }}</td>
-                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.VG.avg|format_inr if p_data.VG.qty > 0 else "—" }}</td>
-                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.SR.avg|format_inr if p_data.SR.qty > 0 else "—" }}</td>
+                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.MEMBER_1.avg|format_inr if p_data.MEMBER_1.qty > 0 else "—" }}</td>
+                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.MEMBER_2.avg|format_inr if p_data.MEMBER_2.qty > 0 else "—" }}</td>
+                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.MEMBER_3.avg|format_inr if p_data.MEMBER_3.qty > 0 else "—" }}</td>
                                 <td style="text-align: right; font-weight: bold; color: var(--text-secondary);">₹{{ p_data.TOTAL.avg|format_inr }}</td>
                             </tr>
                             {% endfor %}
@@ -652,9 +652,9 @@
                                 <th>Broker</th>
                                 <th>Metric</th>
                                 <th style="text-align: right; color: #c084fc;">PATRIARCH</th>
-                                <th style="text-align: right; color: #fbbf24;">MR</th>
-                                <th style="text-align: right; color: #34d399;">VG</th>
-                                <th style="text-align: right; color: #60a5fa;">SR</th>
+                                <th style="text-align: right; color: #fbbf24;">MEMBER_1</th>
+                                <th style="text-align: right; color: #34d399;">MEMBER_2</th>
+                                <th style="text-align: right; color: #60a5fa;">MEMBER_3</th>
                                 <th style="text-align: right; font-weight: bold;">TOTAL</th>
                             </tr>
                         </thead>
@@ -666,17 +666,17 @@
                                 <td rowspan="2" style="font-weight: 600; vertical-align: middle;">{{ broker }}</td>
                                 <td style="font-size: 11px; color: var(--text-secondary);">Qty</td>
                                 <td style="text-align: right;">{{ "{:,.0f}".format(p_data.PATRIARCH.qty) if p_data.PATRIARCH.qty > 0 else "—" }}</td>
-                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.MR.qty) if p_data.MR.qty > 0 else "—" }}</td>
-                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.VG.qty) if p_data.VG.qty > 0 else "—" }}</td>
-                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.SR.qty) if p_data.SR.qty > 0 else "—" }}</td>
+                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.MEMBER_1.qty) if p_data.MEMBER_1.qty > 0 else "—" }}</td>
+                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.MEMBER_2.qty) if p_data.MEMBER_2.qty > 0 else "—" }}</td>
+                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.MEMBER_3.qty) if p_data.MEMBER_3.qty > 0 else "—" }}</td>
                                 <td style="text-align: right; font-weight: bold;">{{ "{:,.0f}".format(p_data.TOTAL.qty) }}</td>
                             </tr>
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                                 <td style="font-size: 11px; color: var(--text-secondary);">Avg</td>
                                 <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.PATRIARCH.avg|format_inr if p_data.PATRIARCH.qty > 0 else "—" }}</td>
-                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.MR.avg|format_inr if p_data.MR.qty > 0 else "—" }}</td>
-                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.VG.avg|format_inr if p_data.VG.qty > 0 else "—" }}</td>
-                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.SR.avg|format_inr if p_data.SR.qty > 0 else "—" }}</td>
+                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.MEMBER_1.avg|format_inr if p_data.MEMBER_1.qty > 0 else "—" }}</td>
+                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.MEMBER_2.avg|format_inr if p_data.MEMBER_2.qty > 0 else "—" }}</td>
+                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.MEMBER_3.avg|format_inr if p_data.MEMBER_3.qty > 0 else "—" }}</td>
                                 <td style="text-align: right; font-weight: bold; color: var(--text-secondary);">₹{{ p_data.TOTAL.avg|format_inr }}</td>
                             </tr>
                             {% endif %}

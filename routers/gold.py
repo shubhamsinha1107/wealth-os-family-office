@@ -430,7 +430,7 @@ def run_gold_migrations(db: Session):
             print(f"Migration note: {e}")
     db.commit()
 
-PERSONS = ["PATRIARCH", "MR", "VG", "SR"]
+PERSONS = ["PATRIARCH", "MEMBER_1", "MEMBER_2", "MEMBER_3"]
 
 def load_primary_sgb_map() -> dict:
     excel_path = "SGB LIST.xlsx"
@@ -453,9 +453,9 @@ def load_primary_sgb_map() -> dict:
                 
                 cols = {
                     "PATRIARCH": (12, 13),
-                    "MR": (14, 15),
-                    "VG": (16, 17),
-                    "SR": (18, 19)
+                    "MEMBER_1": (14, 15),
+                    "MEMBER_2": (16, 17),
+                    "MEMBER_3": (18, 19)
                 }
                 
                 primary_data[mat_key] = {}
@@ -473,28 +473,28 @@ def load_primary_sgb_map() -> dict:
             
     primary_data = {
         "2028-07": {
-            "MR": {"qty": Decimal("1000"), "avg": Decimal("4852")},
-            "VG": {"qty": Decimal("1000"), "avg": Decimal("4681")}
+            "MEMBER_1": {"qty": Decimal("1000"), "avg": Decimal("4852")},
+            "MEMBER_2": {"qty": Decimal("1000"), "avg": Decimal("4681")}
         },
         "2028-08": {
             "PATRIARCH": {"qty": Decimal("946"), "avg": Decimal("5284")},
-            "MR": {"qty": Decimal("946"), "avg": Decimal("5334")}
+            "MEMBER_1": {"qty": Decimal("946"), "avg": Decimal("5334")}
         },
         "2029-03": {
-            "MR": {"qty": Decimal("1000"), "avg": Decimal("4612")},
-            "VG": {"qty": Decimal("1000"), "avg": Decimal("4621")}
+            "MEMBER_1": {"qty": Decimal("1000"), "avg": Decimal("4612")},
+            "MEMBER_2": {"qty": Decimal("1000"), "avg": Decimal("4621")}
         },
         "2029-06": {
-            "VG": {"qty": Decimal("2000"), "avg": Decimal("4792")},
-            "SR": {"qty": Decimal("2000"), "avg": Decimal("4792")}
+            "MEMBER_2": {"qty": Decimal("2000"), "avg": Decimal("4792")},
+            "MEMBER_3": {"qty": Decimal("2000"), "avg": Decimal("4792")}
         },
         "2031-12": {
-            "MR": {"qty": Decimal("1500"), "avg": Decimal("6149")},
-            "VG": {"qty": Decimal("1000"), "avg": Decimal("6149")}
+            "MEMBER_1": {"qty": Decimal("1500"), "avg": Decimal("6149")},
+            "MEMBER_2": {"qty": Decimal("1000"), "avg": Decimal("6149")}
         },
         "2032-02": {
             "PATRIARCH": {"qty": Decimal("1000"), "avg": Decimal("6263")},
-            "MR": {"qty": Decimal("1000"), "avg": Decimal("6213")}
+            "MEMBER_1": {"qty": Decimal("1000"), "avg": Decimal("6213")}
         }
     }
     return primary_data
@@ -864,7 +864,7 @@ def add_pivoted_sheet(wb, sheet_name, title_text, rows, grand_totals, cmp_val):
     ws.cell(row=h_row_1, column=4).alignment = Alignment(horizontal="center", vertical="center")
     ws.cell(row=h_row_1, column=4).fill = fill_header
     
-    persons = ["PATRIARCH", "MR", "VG", "SR"]
+    persons = ["PATRIARCH", "MEMBER_1", "MEMBER_2", "MEMBER_3"]
     for i, p in enumerate(persons):
         start_col = 5 + i * 3
         ws.merge_cells(start_row=h_row_1, start_column=start_col, end_row=h_row_1, end_column=start_col+2)
@@ -1297,7 +1297,7 @@ def export_sgb_schedule(db: Session = Depends(get_db)):
         cell.font = font_header_grp
         cell.alignment = align_center
         
-        cols_mapping = {3: "PATRIARCH", 5: "MR", 7: "VG", 9: "SR"}
+        cols_mapping = {3: "PATRIARCH", 5: "MEMBER_1", 7: "MEMBER_2", 9: "MEMBER_3"}
         for col_idx, name in cols_mapping.items():
             ws.merge_cells(start_row=h_grp_row, start_column=col_idx, end_row=h_grp_row, end_column=col_idx+1)
             cell = ws.cell(row=h_grp_row, column=col_idx, value=name)

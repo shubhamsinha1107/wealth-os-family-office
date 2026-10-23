@@ -115,10 +115,10 @@ def seed_all(force: bool = False):
     # =========================================================================
     persons_data = [
         ("Family Patriarch", "PATRIARCH", PersonType.INDIVIDUAL, "ABCDE1234F"),
-        ("Family Member 1", "MR", PersonType.INDIVIDUAL, "BCDEF2345G"),
-        ("Family Member 2", "VG", PersonType.INDIVIDUAL, "CDEFG3456H"),
+        ("Family Member 1", "MEMBER_1", PersonType.INDIVIDUAL, "BCDEF2345G"),
+        ("Family Member 2", "MEMBER_2", PersonType.INDIVIDUAL, "CDEFG3456H"),
         ("Apex Holdings Pvt. Ltd.", "APEX", PersonType.COMPANY, "DEFGH4567J"),
-        ("Family Member 3", "SR", PersonType.INDIVIDUAL, "EFGHI5678K"),
+        ("Family Member 3", "MEMBER_3", PersonType.INDIVIDUAL, "EFGHI5678K"),
         ("Nexus Capital Private Limited", "NEXUS", PersonType.COMPANY, "FGHIJ6789L"),
         ("Family Member 4", "MEMBER_4", PersonType.INDIVIDUAL, "GHIJK7890M"),
         ("Family Member 5", "MEMBER_5", PersonType.INDIVIDUAL, "HIJKL8901N"),
@@ -260,10 +260,10 @@ def seed_all(force: bool = False):
     scheme_distribution = [
         # (Entity short, Catalog slice, Folio prefix, Target invested per scheme approx)
         ("PATRIARCH", [0, 1, 4, 16, 20, 24, 28], "FOL-PAT", Decimal("1500000")),
-        ("MR",        [0, 4, 8, 12, 16, 20, 30], "FOL-MR",  Decimal("2200000")),
-        ("VG",        [1, 5, 9, 13, 17, 21, 29], "FOL-VG",  Decimal("1800000")),
+        ("MEMBER_1",  [0, 4, 8, 12, 16, 20, 30], "FOL-M1",  Decimal("2200000")),
+        ("MEMBER_2",  [1, 5, 9, 13, 17, 21, 29], "FOL-M2",  Decimal("1800000")),
         ("APEX",      [2, 6, 10, 18, 20, 21, 25],"FOL-APX", Decimal("3500000")),
-        ("SR",        [3, 7, 11, 14, 19, 22, 31],"FOL-SR",  Decimal("1200000")),
+        ("MEMBER_3",  [3, 7, 11, 14, 19, 22, 31],"FOL-M3",  Decimal("1200000")),
         ("NEXUS",     [8, 12, 15, 23, 26, 27],   "FOL-NEX", Decimal("2500000")),
         ("MEMBER_4",  [4, 12, 16, 20],           "FOL-M4",  Decimal("800000")),
         ("MEMBER_5",  [8, 14, 18, 22],           "FOL-M5",  Decimal("600000")),
@@ -336,8 +336,8 @@ def seed_all(force: bool = False):
     # Seed some historical Realized Capital Gains (Redemptions) for Booked Profit analytics
     sample_realized_sales = [
         ("PATRIARCH", "HDFC Top 100 Fund - Regular Plan - Growth", "119062", Decimal("1500.0000"), Decimal("680.00"), Decimal("950.00"), date(2021, 5, 10), date(2024, 2, 15), "LTCG", "2023-2024"),
-        ("MR", "Parag Parikh Flexi Cap Fund - Direct Plan", "122639", Decimal("5000.0000"), Decimal("45.20"), Decimal("68.50"), date(2022, 1, 15), date(2024, 6, 20), "LTCG", "2024-2025"),
-        ("VG", "ICICI Prudential Bluechip Fund - Direct Plan - Growth", "120586", Decimal("3500.0000"), Decimal("85.00"), Decimal("98.50"), date(2023, 9, 10), date(2024, 3, 5), "STCG", "2023-2024"),
+        ("MEMBER_1", "Parag Parikh Flexi Cap Fund - Direct Plan", "122639", Decimal("5000.0000"), Decimal("45.20"), Decimal("68.50"), date(2022, 1, 15), date(2024, 6, 20), "LTCG", "2024-2025"),
+        ("MEMBER_2", "ICICI Prudential Bluechip Fund - Direct Plan - Growth", "120586", Decimal("3500.0000"), Decimal("85.00"), Decimal("98.50"), date(2023, 9, 10), date(2024, 3, 5), "STCG", "2023-2024"),
         ("APEX", "Kotak Equity Arbitrage Fund - Regular Plan - Growth", "103328", Decimal("25000.0000"), Decimal("31.20"), Decimal("36.10"), date(2022, 8, 1), date(2024, 7, 10), "LTCG", "2024-2025"),
     ]
     for p_short, s_name, amfi, s_units, p_rate, s_rate, p_date, s_date, tax_cat, fy in sample_realized_sales:
@@ -433,23 +433,23 @@ def seed_all(force: bool = False):
     # =========================================================================
     equity_universe = [
         ("RELIANCE", "Reliance Industries Ltd.", "Oil & Gas / Conglomerate", Decimal("2950.00"), Decimal("2250.00"), [("PATRIARCH", 1800), ("APEX", 3200)]),
-        ("TCS", "Tata Consultancy Services Ltd.", "IT Services", Decimal("3980.00"), Decimal("3350.00"), [("PATRIARCH", 1200), ("MR", 1500)]),
-        ("HDFCBANK", "HDFC Bank Ltd.", "Banking & Finance", Decimal("1680.00"), Decimal("1420.00"), [("APEX", 4500), ("VG", 2000)]),
-        ("INFY", "Infosys Ltd.", "IT Services", Decimal("1780.00"), Decimal("1410.00"), [("MR", 2500), ("SR", 1400)]),
+        ("TCS", "Tata Consultancy Services Ltd.", "IT Services", Decimal("3980.00"), Decimal("3350.00"), [("PATRIARCH", 1200), ("MEMBER_1", 1500)]),
+        ("HDFCBANK", "HDFC Bank Ltd.", "Banking & Finance", Decimal("1680.00"), Decimal("1420.00"), [("APEX", 4500), ("MEMBER_2", 2000)]),
+        ("INFY", "Infosys Ltd.", "IT Services", Decimal("1780.00"), Decimal("1410.00"), [("MEMBER_1", 2500), ("MEMBER_3", 1400)]),
         ("ICICIBANK", "ICICI Bank Ltd.", "Banking & Finance", Decimal("1240.00"), Decimal("920.00"), [("APEX", 5000), ("PATRIARCH", 2200)]),
         ("LT", "Larsen & Toubro Ltd.", "Infrastructure & Eng.", Decimal("3650.00"), Decimal("2850.00"), [("PATRIARCH", 800), ("APEX", 1200)]),
-        ("BHARTIARTL", "Bharti Airtel Ltd.", "Telecommunications", Decimal("1650.00"), Decimal("950.00"), [("MR", 2200), ("VG", 1500)]),
+        ("BHARTIARTL", "Bharti Airtel Ltd.", "Telecommunications", Decimal("1650.00"), Decimal("950.00"), [("MEMBER_1", 2200), ("MEMBER_2", 1500)]),
         ("ITC", "ITC Ltd.", "FMCG & Hotels", Decimal("495.00"), Decimal("380.00"), [("PATRIARCH", 8000), ("APEX", 12000)]),
-        ("TITAN", "Titan Company Ltd.", "Consumer Discretionary", Decimal("3420.00"), Decimal("2650.00"), [("VG", 900), ("SR", 600)]),
-        ("BAJFINANCE", "Bajaj Finance Ltd.", "NBFC & Lending", Decimal("7150.00"), Decimal("5800.00"), [("MR", 550), ("APEX", 850)]),
-        ("SUNPHARMA", "Sun Pharmaceutical Industries Ltd.", "Healthcare & Pharma", Decimal("1860.00"), Decimal("1150.00"), [("PATRIARCH", 1600), ("VG", 1100)]),
-        ("TATAMOTORS", "Tata Motors Ltd.", "Automobiles & EV", Decimal("940.00"), Decimal("620.00"), [("MR", 3500), ("SR", 2000)]),
+        ("TITAN", "Titan Company Ltd.", "Consumer Discretionary", Decimal("3420.00"), Decimal("2650.00"), [("MEMBER_2", 900), ("MEMBER_3", 600)]),
+        ("BAJFINANCE", "Bajaj Finance Ltd.", "NBFC & Lending", Decimal("7150.00"), Decimal("5800.00"), [("MEMBER_1", 550), ("APEX", 850)]),
+        ("SUNPHARMA", "Sun Pharmaceutical Industries Ltd.", "Healthcare & Pharma", Decimal("1860.00"), Decimal("1150.00"), [("PATRIARCH", 1600), ("MEMBER_2", 1100)]),
+        ("TATAMOTORS", "Tata Motors Ltd.", "Automobiles & EV", Decimal("940.00"), Decimal("620.00"), [("MEMBER_1", 3500), ("MEMBER_3", 2000)]),
         ("SBIN", "State Bank of India", "Banking & Finance", Decimal("820.00"), Decimal("590.00"), [("APEX", 4000), ("PATRIARCH", 2500)]),
-        ("HINDUNILVR", "Hindustan Unilever Ltd.", "FMCG", Decimal("2680.00"), Decimal("2450.00"), [("VG", 850), ("PATRIARCH", 950)]),
-        ("NTPC", "NTPC Ltd.", "Power & Utilities", Decimal("410.00"), Decimal("235.00"), [("APEX", 7500), ("SR", 3500)]),
-        ("M&M", "Mahindra & Mahindra Ltd.", "Automobiles & Agri", Decimal("2980.00"), Decimal("1650.00"), [("MR", 1400), ("VG", 900)]),
+        ("HINDUNILVR", "Hindustan Unilever Ltd.", "FMCG", Decimal("2680.00"), Decimal("2450.00"), [("MEMBER_2", 850), ("PATRIARCH", 950)]),
+        ("NTPC", "NTPC Ltd.", "Power & Utilities", Decimal("410.00"), Decimal("235.00"), [("APEX", 7500), ("MEMBER_3", 3500)]),
+        ("M&M", "Mahindra & Mahindra Ltd.", "Automobiles & Agri", Decimal("2980.00"), Decimal("1650.00"), [("MEMBER_1", 1400), ("MEMBER_2", 900)]),
         ("POWERGRID", "Power Grid Corporation of India", "Power & Utilities", Decimal("335.00"), Decimal("210.00"), [("PATRIARCH", 5000), ("APEX", 8000)]),
-        ("MARUTI", "Maruti Suzuki India Ltd.", "Automobiles", Decimal("12450.00"), Decimal("9800.00"), [("MR", 250), ("APEX", 300)]),
+        ("MARUTI", "Maruti Suzuki India Ltd.", "Automobiles", Decimal("12450.00"), Decimal("9800.00"), [("MEMBER_1", 250), ("APEX", 300)]),
     ]
 
     for sym, comp_n, sector, cmp, avg_buy, allocations in equity_universe:
@@ -498,11 +498,11 @@ def seed_all(force: bool = False):
     # =========================================================================
     sgb_tranches = [
         ("SGB 2026-27 Series I", "IN0020160026", Decimal("3119.00"), Decimal("7850.00"), date(2026, 8, 12), [("PATRIARCH", 350), ("APEX", 500)]),
-        ("SGB 2027-28 Series II", "IN0020170041", Decimal("3788.00"), Decimal("7850.00"), date(2027, 10, 24), [("MR", 400), ("VG", 300)]),
+        ("SGB 2027-28 Series II", "IN0020170041", Decimal("3788.00"), Decimal("7850.00"), date(2027, 10, 24), [("MEMBER_1", 400), ("MEMBER_2", 300)]),
         ("SGB 2028-29 Series I", "IN0020200085", Decimal("4852.00"), Decimal("7850.00"), date(2028, 5, 18), [("PATRIARCH", 600), ("APEX", 800)]),
-        ("SGB 2029-30 Series III", "IN0020210092", Decimal("5117.00"), Decimal("7850.00"), date(2029, 11, 20), [("MR", 550), ("SR", 350)]),
-        ("SGB 2030-31 Series I", "IN0020220034", Decimal("5611.00"), Decimal("7850.00"), date(2030, 6, 28), [("VG", 500), ("APEX", 650)]),
-        ("SGB 2031-32 Series II", "IN0020230018", Decimal("6263.00"), Decimal("7850.00"), date(2031, 9, 15), [("PATRIARCH", 750), ("MR", 600)]),
+        ("SGB 2029-30 Series III", "IN0020210092", Decimal("5117.00"), Decimal("7850.00"), date(2029, 11, 20), [("MEMBER_1", 550), ("MEMBER_3", 350)]),
+        ("SGB 2030-31 Series I", "IN0020220034", Decimal("5611.00"), Decimal("7850.00"), date(2030, 6, 28), [("MEMBER_2", 500), ("APEX", 650)]),
+        ("SGB 2031-32 Series II", "IN0020230018", Decimal("6263.00"), Decimal("7850.00"), date(2031, 9, 15), [("PATRIARCH", 750), ("MEMBER_1", 600)]),
     ]
 
     for sgb_name, isin, issue_p, cmp_p, mat_date, allocs in sgb_tranches:
@@ -539,7 +539,7 @@ def seed_all(force: bool = False):
     alts = [
         ("APEX", AlternativeType.AIF, "Alpha Growth Asset Managers", "Alpha Dynamic Private Equity Fund II", "AIF Cat II - Pre-IPO & Growth Equity", Decimal("35000000.00"), Decimal("48500000.00"), date(2021, 6, 15)),
         ("PATRIARCH", AlternativeType.AIF, "Renaissance Credit Partners", "Renaissance Private Credit AIF Cat II", "AIF Cat II - Structured Senior Debt", Decimal("25000000.00"), Decimal("31200000.00"), date(2022, 3, 10)),
-        ("MR", AlternativeType.PMS, "Marcellus Investment Managers", "Consistent Compounders PMS", "Large Cap Focused Portfolio", Decimal("20000000.00"), Decimal("27400000.00"), date(2021, 11, 20)),
+        ("MEMBER_1", AlternativeType.PMS, "Marcellus Investment Managers", "Consistent Compounders PMS", "Large Cap Focused Portfolio", Decimal("20000000.00"), Decimal("27400000.00"), date(2021, 11, 20)),
     ]
     for p_short, a_type, manager, scheme, strat, invested, cur_v, inv_date in alts:
         alt_entry = Alternative(
@@ -560,7 +560,7 @@ def seed_all(force: bool = False):
     # Unlisted Pre-IPO Shares
     unlisted_stocks = [
         ("APEX", "National Stock Exchange of India Ltd. (NSE)", "INE753I01010", Decimal("4500.0000"), Decimal("3200.00"), Decimal("6150.00"), date(2022, 4, 15)),
-        ("MR", "Tata Technologies Ltd. (Pre-IPO holding)", "INE142M01025", Decimal("8000.0000"), Decimal("450.00"), Decimal("1080.00"), date(2022, 9, 10)),
+        ("MEMBER_1", "Tata Technologies Ltd. (Pre-IPO holding)", "INE142M01025", Decimal("8000.0000"), Decimal("450.00"), Decimal("1080.00"), date(2022, 9, 10)),
         ("PATRIARCH", "HDB Financial Services Ltd.", "INE756I01020", Decimal("6000.0000"), Decimal("680.00"), Decimal("950.00"), date(2021, 12, 1)),
     ]
     for p_short, comp_n, isin, qty, buy_p, cmp_p, p_date in unlisted_stocks:
@@ -589,8 +589,8 @@ def seed_all(force: bool = False):
     # =========================================================================
     insurance_sample = [
         ("PATRIARCH", "HDFC Life Click 2 Protect 3D Plus", "POL-HDFC-99120", Decimal("100000000.00"), Decimal("225000.00"), "ANNUAL", InsuranceType.TERM, Decimal("0.00")),
-        ("MR", "Max Life Smart Wealth Plan", "POL-MAX-44810", Decimal("25000000.00"), Decimal("500000.00"), "ANNUAL", InsuranceType.ULIP, Decimal("2150000.00")),
-        ("VG", "ICICI Prudential iProtect Smart", "POL-ICICI-66230", Decimal("50000000.00"), Decimal("145000.00"), "ANNUAL", InsuranceType.TERM, Decimal("0.00")),
+        ("MEMBER_1", "Max Life Smart Wealth Plan", "POL-MAX-44810", Decimal("25000000.00"), Decimal("500000.00"), "ANNUAL", InsuranceType.ULIP, Decimal("2150000.00")),
+        ("MEMBER_2", "ICICI Prudential iProtect Smart", "POL-ICICI-66230", Decimal("50000000.00"), Decimal("145000.00"), "ANNUAL", InsuranceType.TERM, Decimal("0.00")),
         ("APEX", "Tata AIA Life Fortune Pro", "POL-TATA-88190", Decimal("30000000.00"), Decimal("650000.00"), "ANNUAL", InsuranceType.ULIP, Decimal("3450000.00")),
     ]
     for p_short, pol_name, pol_num, sum_ass, annual_prem, freq, ptype, surr_val in insurance_sample:

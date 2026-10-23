@@ -73,7 +73,7 @@ def get_sync_status() -> dict:
 
 
 def _resolve_person_id(ac_code: str, db: Session) -> int:
-    """Maps owner code (APEX, MR, PATRIARCH, etc.) to person_id."""
+    """Maps owner code (APEX, MEMBER_1, PATRIARCH, etc.) to person_id."""
     clean_code = str(ac_code or "").strip().upper()
     person = db.query(Person).filter(Person.short_name == clean_code).first()
     if person:
@@ -82,8 +82,8 @@ def _resolve_person_id(ac_code: str, db: Session) -> int:
     if "PATRIARCH" in clean_code:
         p = db.query(Person).filter(Person.short_name == "PATRIARCH").first()
         if p: return p.id
-    if "MR" in clean_code:
-        p = db.query(Person).filter(Person.short_name == "MR").first()
+    if "MEMBER_1" in clean_code:
+        p = db.query(Person).filter(Person.short_name == "MEMBER_1").first()
         if p: return p.id
     if "APEX" in clean_code:
         p = db.query(Person).filter(Person.short_name == "APEX").first()
@@ -278,7 +278,7 @@ def sync_aif_from_excel(db: Session, file_path: str = None) -> dict:
     active_rows = []
     for r in range(4, 25):
         ac_val = ws.cell(r, 1).value
-        if not ac_val or str(ac_val).strip().upper() not in ["APEX", "MR", "PATRIARCH", "VG", "SR"]:
+        if not ac_val or str(ac_val).strip().upper() not in ["APEX", "MEMBER_1", "PATRIARCH", "MEMBER_2", "MEMBER_3"]:
             continue
 
         inv_date_raw = ws.cell(r, 2).value

@@ -64,9 +64,9 @@ def get_account_portfolio_snapshots(db: Session, codes: List[str]):
                 code = None
                 if "APEX" in pname: code = "APEX"
                 elif "PATRIARCH" in pname: code = "PATRIARCH"
-                elif "MR" in pname: code = "MR"
-                elif "VG" in pname: code = "VG"
-                elif "SR" in pname: code = "SR"
+                elif "MEMBER_1" in pname: code = "MEMBER_1"
+                elif "MEMBER_2" in pname: code = "MEMBER_2"
+                elif "MEMBER_3" in pname: code = "MEMBER_3"
                 elif "QUEENS" in pname or "NEXUS" in pname: code = "NEXUS"
 
                 if code in snapshots:
@@ -196,7 +196,7 @@ def get_booked_profits_matrix(
     }
 
     # Primary member codes requested by user
-    primary_members = ["APEX", "PATRIARCH", "MR", "VG", "SR", "NEXUS"]
+    primary_members = ["APEX", "PATRIARCH", "MEMBER_1", "MEMBER_2", "MEMBER_3", "NEXUS"]
 
     # Fetch all persons
     persons = db.query(Person).all()
@@ -236,7 +236,7 @@ def get_booked_profits_matrix(
         mf_data.setdefault(p_code, {}).setdefault(fy, 0.0)
         mf_data[p_code][fy] += float(g.get("gain_loss", 0.0))
 
-    # Process primary members only (APEX, PATRIARCH, MR, VG, SR, NEXUS)
+    # Process primary members only (APEX, PATRIARCH, MEMBER_1, MEMBER_2, MEMBER_3, NEXUS)
     members_to_process = primary_members
     
     # Fetch current Portfolio Snapshots (Invested Capital and Current AUM) and Dry Powder

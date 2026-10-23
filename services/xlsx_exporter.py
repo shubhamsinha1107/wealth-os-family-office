@@ -191,7 +191,7 @@ def _export_portfolio_xlsx_impl(db: Session, financial_year: str, owner_id: int 
         persons = db.query(Person).filter(Person.id == owner_id).all()
     else:
         # Default to all seeded individual/company owners with transaction records
-        persons = db.query(Person).filter(Person.short_name.in_(['PATRIARCH', 'MR', 'VG', 'APEX'])).all()
+        persons = db.query(Person).filter(Person.short_name.in_(['PATRIARCH', 'MEMBER_1', 'MEMBER_2', 'APEX'])).all()
         if not persons:
             persons = db.query(Person).all()
             

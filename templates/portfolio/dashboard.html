@@ -235,10 +235,10 @@
                         <tr>
                             <th style="text-align: left;">Category</th>
                             <th style="text-align: right;">PATRIARCH</th>
-                            <th style="text-align: right;">MR</th>
+                            <th style="text-align: right;">MEMBER_1</th>
                             <th style="text-align: right;">APEX</th>
-                            <th style="text-align: right;">SR</th>
-                            <th style="text-align: right;">VG</th>
+                            <th style="text-align: right;">MEMBER_3</th>
+                            <th style="text-align: right;">MEMBER_2</th>
                             <th style="text-align: right; color: #f8fafc; font-weight: 700;">TOTAL</th>
                             <th style="text-align: center;">% Return</th>
                             <th style="text-align: center;">Exposure</th>
@@ -249,10 +249,10 @@
                         <tr>
                             <td style="font-weight: 600; color: #60a5fa;">{{ r.category }}</td>
                             <td style="text-align: right; font-family: monospace;">{{ r.PATRIARCH }}</td>
-                            <td style="text-align: right; font-family: monospace;">{{ r.MR }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ r.MEMBER_1 }}</td>
                             <td style="text-align: right; font-family: monospace;">{{ r.APEX }}</td>
-                            <td style="text-align: right; font-family: monospace;">{{ r.SR }}</td>
-                            <td style="text-align: right; font-family: monospace;">{{ r.VG }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ r.MEMBER_3 }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ r.MEMBER_2 }}</td>
                             <td style="text-align: right; font-weight: 700; color: #f8fafc; font-family: monospace;">{{ r.TOTAL }}</td>
                             <td style="text-align: center;">
                                 <span class="badge-pct {% if r.pct_change >= 0 %}pct-positive{% else %}pct-negative{% endif %}">
@@ -269,10 +269,10 @@
                         <tr class="tr-total">
                             <td style="color: #a78bfa !important; font-weight: 700;">{{ grand_total.category }}</td>
                             <td style="text-align: right; font-family: monospace;">{{ grand_total.PATRIARCH }}</td>
-                            <td style="text-align: right; font-family: monospace;">{{ grand_total.MR }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ grand_total.MEMBER_1 }}</td>
                             <td style="text-align: right; font-family: monospace;">{{ grand_total.APEX }}</td>
-                            <td style="text-align: right; font-family: monospace;">{{ grand_total.SR }}</td>
-                            <td style="text-align: right; font-family: monospace;">{{ grand_total.VG }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ grand_total.MEMBER_3 }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ grand_total.MEMBER_2 }}</td>
                             <td style="text-align: right; font-weight: 800; font-family: monospace; color: #a78bfa !important;">{{ grand_total.TOTAL }}</td>
                             <td style="text-align: center;">
                                 <span class="badge-pct {% if grand_total.pct_change >= 0 %}pct-positive{% else %}pct-negative{% endif %}" style="border-width: 2px;">
@@ -284,10 +284,10 @@
                         <tr class="tr-total" style="border-top: 1px dashed rgba(255, 255, 255, 0.15);">
                             <td style="color: #c084fc !important; font-weight: 700;">{{ grand_total_ex_sgb.category }}</td>
                             <td style="text-align: right; font-family: monospace;">{{ grand_total_ex_sgb.PATRIARCH }}</td>
-                            <td style="text-align: right; font-family: monospace;">{{ grand_total_ex_sgb.MR }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ grand_total_ex_sgb.MEMBER_1 }}</td>
                             <td style="text-align: right; font-family: monospace;">{{ grand_total_ex_sgb.APEX }}</td>
-                            <td style="text-align: right; font-family: monospace;">{{ grand_total_ex_sgb.SR }}</td>
-                            <td style="text-align: right; font-family: monospace;">{{ grand_total_ex_sgb.VG }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ grand_total_ex_sgb.MEMBER_3 }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ grand_total_ex_sgb.MEMBER_2 }}</td>
                             <td style="text-align: right; font-weight: 800; font-family: monospace; color: #c084fc !important;">{{ grand_total_ex_sgb.TOTAL }}</td>
                             <td style="text-align: center;">
                                 <span class="badge-pct {% if grand_total_ex_sgb.pct_change >= 0 %}pct-positive{% else %}pct-negative{% endif %}" style="border-width: 2px;">

@@ -60,7 +60,7 @@ def portfolio_dashboard(request: Request, from_date: str = None, till_date: str 
             "TOTAL": format_pair(row["TOTAL"]["invested"], row["TOTAL"]["current"]),
             "TOTAL_raw": row["TOTAL"]
         }
-        for code in ["PATRIARCH", "MR", "APEX", "SR", "VG"]:
+        for code in ["PATRIARCH", "MEMBER_1", "APEX", "MEMBER_3", "MEMBER_2"]:
             f_row[code] = format_pair(row[code]["invested"], row[code]["current"])
             f_row[f"{code}_raw"] = row[code]
         formatted_rows.append(f_row)
@@ -74,7 +74,7 @@ def portfolio_dashboard(request: Request, from_date: str = None, till_date: str 
         "TOTAL": format_pair(gt["TOTAL"]["invested"], gt["TOTAL"]["current"]),
         "TOTAL_raw": gt["TOTAL"]
     }
-    for code in ["PATRIARCH", "MR", "APEX", "SR", "VG"]:
+    for code in ["PATRIARCH", "MEMBER_1", "APEX", "MEMBER_3", "MEMBER_2"]:
         formatted_gt[code] = format_pair(gt[code]["invested"], gt[code]["current"])
         formatted_gt[f"{code}_raw"] = gt[code]
 
@@ -87,7 +87,7 @@ def portfolio_dashboard(request: Request, from_date: str = None, till_date: str 
         "TOTAL": format_pair(gt_ex_sgb["TOTAL"]["invested"], gt_ex_sgb["TOTAL"]["current"]),
         "TOTAL_raw": gt_ex_sgb["TOTAL"]
     }
-    for code in ["PATRIARCH", "MR", "APEX", "SR", "VG"]:
+    for code in ["PATRIARCH", "MEMBER_1", "APEX", "MEMBER_3", "MEMBER_2"]:
         formatted_gt_ex_sgb[code] = format_pair(gt_ex_sgb[code]["invested"], gt_ex_sgb[code]["current"])
         formatted_gt_ex_sgb[f"{code}_raw"] = gt_ex_sgb[code]
 

@@ -432,14 +432,14 @@ def run_global_equity_import(db: Session = None) -> dict:
         p_upper = str(portfolio_name).upper()
         if "FAMILY PATRIARCH" in p_upper or "FAMILY PATRIARCH" in p_upper:
             return "PATRIARCH"
-        elif "MEMBER_1" in p_upper:
-            return "MR"
+        elif "MEMBER_1" in p_upper or "FAMILY MEMBER 1" in p_upper:
+            return "MEMBER_1"
         elif "APEX" in p_upper:
             return "APEX"
-        elif "MEMBER_2" in p_upper:
-            return "VG"
-        elif "MEMBER_3" in p_upper:
-            return "SR"
+        elif "MEMBER_2" in p_upper or "FAMILY MEMBER 2" in p_upper:
+            return "MEMBER_2"
+        elif "MEMBER_3" in p_upper or "FAMILY MEMBER 3" in p_upper:
+            return "MEMBER_3"
         elif "NEXUS CAPITAL" in p_upper:
             return "NEXUS"
         return None
