@@ -243,6 +243,8 @@ def calculate_realtime_ter_cost(
         "cumulative_broker_lakhs": sum(y["broker_exp_lakhs"] for y in historical_years),
         "cumulative_total_lakhs": sum(y["total_exp_lakhs"] for y in historical_years),
         "cumulative_broker_cr": sum(y["broker_exp_lakhs"] for y in historical_years) / 100.0,
+        "cumulative_base_cr": sum(y["base_exp_lakhs"] for y in historical_years) / 100.0,
+        "cumulative_total_cr": sum(y["total_exp_lakhs"] for y in historical_years) / 100.0,
     }
 
     period_options = [
