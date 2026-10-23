@@ -13,7 +13,7 @@ from sqlalchemy import text
 from database import engine, SessionLocal, Base
 from models.persons import Person
 from models.accounts import Account
-from models.enums import PersonType, AccountType, TransactionType, TransactionStatus
+from models.enums import PersonType, AccountType, TransactionType, TransactionStatus, GoldType, InsuranceType, InsuranceStatus
 from models.strategy_buckets import StrategyBucket, AssetClass
 from models.equities import EquityHolding, EquityTransaction
 from models.mutual_funds import MFHolding, MFTransaction, MFDetail
@@ -171,11 +171,9 @@ def seed_all():
     for reg_name, dir_name, units, avg_nav, cur_nav, amfi in mf_schemes:
         mf_detail = MFDetail(
             scheme_name=reg_name,
-            clean_name=reg_name.replace(" - Regular Plan - Growth", ""),
-            direct_scheme_name=dir_name,
-            amfi_code=amfi,
-            fund_family="Multi-Asset Sample AMC",
-            category="Equity: Flexi / Large Cap"
+            clean_name=reg_name.replace(" - Regular Plan - Growth", "").replace(" - Regular Plan", "").strip(),
+            fund_type="Equity: Flexi / Large Cap",
+            advisor="Prime Wealth"
         )
         db.add(mf_detail)
 
@@ -219,11 +217,15 @@ def seed_all():
         gold_hold = GoldHolding(
             person_id=persons[2].id,
             account_id=accounts[4].id,
-            holding_name=sgb_name,
+            description=sgb_name,
             isin=isin,
-            gold_type="SGB",
+            gold_type=GoldType.SGB,
             quantity_grams=Decimal(str(grams)),
-            purchase_price=avg_p,
+            purchase_price_per_gram=avg_p,
+            total_cost=Decimal(str(grams)) * avg_p,
+            sgb_series=sgb_name,
+            sgb_units=Decimal(str(grams)),
+            sgb_issue_price=avg_p,
             last_price=cur_p,
             current_value=Decimal(str(grams)) * cur_p,
             as_of_date=date.today()
@@ -232,22 +234,23 @@ def seed_all():
 
     # 8. SAMPLE INSURANCE POLICIES
     insurance_sample = [
-        ("HDFC Life Click 2 Protect Super", "POL-HDFC-99120", Decimal("50000000"), Decimal("125000"), "ANNUAL", "TERM_LIFE"),
-        ("Max Life Smart Wealth Plan", "POL-MAX-44810", Decimal("10000000"), Decimal("250000"), "ANNUAL", "ULIP"),
+        ("HDFC Life Click 2 Protect Super", "POL-HDFC-99120", Decimal("50000000"), Decimal("125000"), "ANNUAL", InsuranceType.TERM),
+        ("Max Life Smart Wealth Plan", "POL-MAX-44810", Decimal("10000000"), Decimal("250000"), "ANNUAL", InsuranceType.ULIP),
     ]
     for pol_name, pol_num, sum_ass, annual_prem, freq, ptype in insurance_sample:
         policy = InsurancePolicy(
-            person_id=persons[0].id,
+            insured_person_id=persons[0].id,
+            holder_person_id=persons[0].id,
             insurer_name=pol_name.split()[0],
             plan_name=pol_name,
             policy_number=pol_num,
-            policy_type=ptype,
+            insurance_type=ptype,
             sum_assured=sum_ass,
-            annual_premium=annual_prem,
+            premium_amount=annual_prem,
             premium_frequency=freq,
-            start_date=date(2020, 1, 15),
-            maturity_date=date(2045, 1, 15),
-            status="ACTIVE",
+            policy_start_date=date(2020, 1, 15),
+            policy_end_date=date(2045, 1, 15),
+            status=InsuranceStatus.ACTIVE,
             surrendered_amount=Decimal("0.00")
         )
         db.add(policy)
@@ -255,13 +258,13 @@ def seed_all():
     db.commit()
     db.close()
     print("=" * 65)
-    print("🎉 SYNTHETIC SEED SUCCESSFUL!")
-    print(f"  • Generated {len(persons)} Family Entities / Persons (with synthetic PANs)")
-    print(f"  • Generated {len(accounts)} Multi-Broker Accounts")
-    print(f"  • Generated {len(sample_stocks)} Bluechip Equity Holdings & Trade Records")
-    print(f"  • Generated {len(mf_schemes)} Mutual Fund Holdings (Direct & Regular for TER testing)")
-    print(f"  • Generated {len(sgbs)} Sovereign Gold Bond Tranches")
-    print(f"  • Generated {len(insurance_sample)} Insurance Policies")
+    print("[SUCCESS] SYNTHETIC SEED SUCCESSFUL!")
+    print(f"  * Generated {len(persons)} Family Entities / Persons (with synthetic PANs)")
+    print(f"  * Generated {len(accounts)} Multi-Broker Accounts")
+    print(f"  * Generated {len(sample_stocks)} Bluechip Equity Holdings & Trade Records")
+    print(f"  * Generated {len(mf_schemes)} Mutual Fund Holdings (Direct & Regular for TER testing)")
+    print(f"  * Generated {len(sgbs)} Sovereign Gold Bond Tranches")
+    print(f"  * Generated {len(insurance_sample)} Insurance Policies")
     print("=" * 65)
 
 
