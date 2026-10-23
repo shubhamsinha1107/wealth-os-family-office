@@ -1,0 +1,834 @@
+<!-- templates/equities/pnl_report.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equities Capital Gains</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <script src="/static/js/backup.js?v=2"></script>
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/mutual-funds/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue); box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <a href="/equities/" class="nav-link">Holdings AUM</a>
+                <a href="/equities/pnl" class="nav-link active">Capital Gains (FIFO)</a>
+                <a href="/equities/summary" class="nav-link">Summary by A/C</a>
+                <a href="/equities/transactions" class="nav-link">Transactions Ledger</a>
+                <a href="/equities/unmatched" class="nav-link">Fix Unmatched Buys</a>
+                <a href="/equities/diagnostics" class="nav-link">File Health Check {% if file_validation and file_validation.has_errors %}<span style="background: #ef4444; color: white; border-radius: 10px; padding: 1px 6px; font-size: 10px; margin-left: 4px;">{{ file_validation.invalid_count }}</span>{% endif %}</a>
+                <a href="/equities/performance" class="nav-link">Performance (Dietz)</a>
+            </div>
+        </header>
+
+        {% if file_validation and file_validation.has_errors %}
+        <div style="background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.3); color: #c7d2fe; padding: 12px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>
+                    <strong>File Status:</strong> {{ file_validation.invalid_count }} file(s) in <code>DATA/DATA/</code> are summary reports or pending transaction ledgers.
+                    <a href="/equities/diagnostics" style="color: #60a5fa; text-decoration: underline; margin-left: 8px;">View File Status &rarr;</a>
+                </span>
+            </div>
+            <button onclick="this.parentElement.remove()" style="background: none; border: none; color: #c7d2fe; cursor: pointer; font-size: 18px; line-height: 1;">&times;</button>
+        </div>
+        {% endif %}
+
+        {% if success_msg %}
+        <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>{{ success_msg }}</span>
+            </div>
+            <button onclick="this.parentElement.remove()" style="background: none; border: none; color: #34d399; cursor: pointer; font-size: 18px; line-height: 1;">&times;</button>
+        </div>
+        {% endif %}
+
+        <!-- Filters Form -->
+        <div class="glass-card" style="padding: 16px 24px;">
+            <form id="pnlFilterForm" action="/equities/pnl" method="GET" style="display: flex; gap: 16px; align-items: flex-end; margin: 0; flex-wrap: wrap;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Owner / Member</label>
+                    <select name="person_id" style="background: #1e293b; border: 1px solid var(--glass-border); color: white; padding: 8px 14px; border-radius: 8px; outline: none; font-size: 13px; min-width: 160px;" onchange="this.form.submit()">
+                        <option value="">All Members</option>
+                        {% for p in persons %}
+                        <option value="{{ p.id }}" {% if selected_person == p.id %}selected{% endif %}>{{ p.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Financial Year</label>
+                    <select name="fy" style="background: #1e293b; border: 1px solid var(--glass-border); color: white; padding: 8px 14px; border-radius: 8px; outline: none; font-size: 13px; min-width: 140px;" onchange="this.form.submit()">
+                        <option value="">All Years</option>
+                        {% for year in available_fys %}
+                        <option value="{{ year }}" {% if selected_fy == year %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Quarter</label>
+                    <select name="quarter" style="background: #1e293b; border: 1px solid var(--glass-border); color: white; padding: 8px 14px; border-radius: 8px; outline: none; font-size: 13px; min-width: 140px;" onchange="this.form.submit()">
+                        <option value="">All Quarters (Full FY)</option>
+                        <option value="Q1" {% if selected_quarter == 'Q1' %}selected{% endif %}>Q1 (Apr - Jun)</option>
+                        <option value="Q2" {% if selected_quarter == 'Q2' %}selected{% endif %}>Q2 (Jul - Sep)</option>
+                        <option value="Q3" {% if selected_quarter == 'Q3' %}selected{% endif %}>Q3 (Oct - Dec)</option>
+                        <option value="Q4" {% if selected_quarter == 'Q4' %}selected{% endif %}>Q4 (Jan - Mar)</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Asset Class</label>
+                    <select name="asset_class" style="background: #1e293b; border: 1px solid var(--glass-border); color: white; padding: 8px 14px; border-radius: 8px; outline: none; font-size: 13px; min-width: 140px;" onchange="this.form.submit()">
+                        <option value="">All Classes</option>
+                        <option value="EQUITY" {% if selected_asset_class == 'EQUITY' %}selected{% endif %}>Listed Equity</option>
+                        <option value="GOLD_ETF" {% if selected_asset_class == 'GOLD_ETF' %}selected{% endif %}>Gold ETF</option>
+                        <option value="SILVER_ETF" {% if selected_asset_class == 'SILVER_ETF' %}selected{% endif %}>Silver ETF</option>
+                        <option value="DEBT_ETF" {% if selected_asset_class == 'DEBT_ETF' %}selected{% endif %}>Debt / Liquid ETF</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Broker</label>
+                    <select name="broker" style="background: #1e293b; border: 1px solid var(--glass-border); color: white; padding: 8px 14px; border-radius: 8px; outline: none; font-size: 13px; min-width: 140px;" onchange="this.form.submit()">
+                        <option value="">All Brokers</option>
+                        {% for b in brokers %}
+                        <option value="{{ b }}" {% if selected_broker == b %}selected{% endif %}>{{ b }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Search Symbol</label>
+                    <input type="text" id="symbolSearch" placeholder="Type to filter..." 
+                           style="background: #1e293b; border: 1px solid var(--glass-border); color: white; padding: 8px 14px; border-radius: 8px; outline: none; font-size: 13px; min-width: 150px;"
+                           oninput="filterTable()">
+                </div>
+                <div style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
+                    <a href="/equities/recalculate?fy={{ selected_fy or '' }}&person_id={{ selected_person or '' }}&broker={{ selected_broker or '' }}&asset_class={{ selected_asset_class or '' }}&redirect_to=pnl" 
+                       onclick="this.innerHTML='⏳ Ingesting & Recalculating...'; this.style.pointerEvents='none'; this.style.opacity='0.7';"
+                       title="Ingest new Excel sheets in DATA/DATA/ and recalculate FIFO gains"
+                       style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border: 1px solid rgba(59, 130, 246, 0.4); color: white; text-decoration: none; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"></path>
+                        </svg>
+                        <span>Recalculate & Ingest</span>
+                    </a>
+                    <a href="/equities/pnl" style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; background: rgba(100, 116, 139, 0.3); border: 1px solid var(--glass-border); color: var(--text-secondary); text-decoration: none; transition: all 0.2s ease;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
+                        ↺ Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Realized Gains Summary Cards -->
+        <div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div class="glass-card metric-card" style="padding: 18px 20px; border-left: 4px solid var(--accent-green);">
+                <div class="metric-title" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Total Realized Gains</div>
+                <div class="metric-value" style="font-size: 24px; font-weight: 700; color: {% if summary.total_gain >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; margin: 6px 0;">
+                    ₹{{ summary.total_gain|format_inr }}
+                </div>
+                <div class="metric-change" style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary);">
+                    <span>Allowable Net Profit</span>
+                    <span style="font-weight: 600; color: {% if summary.return_on_cost >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                        {% if summary.return_on_cost >= 0 %}+{% endif %}{{ "{:,.2f}".format(summary.return_on_cost) }}% on cost
+                    </span>
+                </div>
+            </div>
+            
+            <div class="glass-card metric-card" style="padding: 18px 20px; border-left: 4px solid #3b82f6;">
+                <div class="metric-title" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Short Term Gains (STCG)</div>
+                <div class="metric-value" style="font-size: 24px; font-weight: 700; color: {% if summary.stcg >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; margin: 6px 0;">
+                    ₹{{ summary.stcg|format_inr }}
+                </div>
+                <div class="metric-change" style="font-size: 11px; color: var(--text-secondary);">&lt; 1 Year Holding (Sec 111A + Slab)</div>
+            </div>
+
+            <div class="glass-card metric-card" style="padding: 18px 20px; border-left: 4px solid #8b5cf6;">
+                <div class="metric-title" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Long Term Gains (LTCG)</div>
+                <div class="metric-value" style="font-size: 24px; font-weight: 700; color: {% if summary.ltcg >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; margin: 6px 0;">
+                    ₹{{ summary.ltcg|format_inr }}
+                </div>
+                <div class="metric-change" style="font-size: 11px; color: var(--text-secondary);">&gt; 1 Year Holding (Sec 112 / 112A)</div>
+            </div>
+
+            <div class="glass-card metric-card" style="padding: 18px 20px; border-left: 4px solid #f59e0b;">
+                <div class="metric-title" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Intraday Gains (Speculative)</div>
+                <div class="metric-value" style="font-size: 24px; font-weight: 700; color: {% if summary.intraday >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; margin: 6px 0;">
+                    ₹{{ summary.intraday|format_inr }}
+                </div>
+                <div class="metric-change" style="font-size: 11px; color: var(--text-secondary);">Sec 43(5) Same Day Trades</div>
+            </div>
+
+            <div class="glass-card metric-card" style="padding: 18px 20px; border-left: 4px solid #06b6d4;">
+                <div class="metric-title" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Gross Turnover & Cost</div>
+                <div class="metric-value" style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 6px 0;">
+                    ₹{{ summary.total_sales|format_la_cr }}
+                </div>
+                <div class="metric-change" style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary);">
+                    <span>Cost: ₹{{ summary.total_cost|format_la_cr }}</span>
+                    <span>{{ summary.total_trades }} Trades</span>
+                </div>
+            </div>
+
+            <div class="glass-card metric-card" style="padding: 18px 20px; border-left: 4px solid #10b981;">
+                <div class="metric-title" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Execution Quality</div>
+                <div class="metric-value" style="font-size: 20px; font-weight: 700; color: var(--accent-green); margin: 6px 0;">
+                    {{ "{:.1f}".format(summary.win_rate) }}% Win Rate
+                </div>
+                <div class="metric-change" style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary);">
+                    <span>{{ summary.profit_trades }}W / {{ summary.loss_trades }}L</span>
+                    <span style="font-weight: 600; color: var(--accent-blue);">PF: {{ "{:.2f}".format(summary.profit_factor) }}x</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── Tax Slab Bifurcation Section ─── -->
+        {% if tax_slabs %}
+        <div class="glass-card" style="padding: 24px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <svg width="20" height="20" fill="none" stroke="#f59e0b" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                    </svg>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">
+                        Tax Slab Rate Bifurcation
+                    </h3>
+                    <span style="font-size: 12px; color: var(--text-secondary);">
+                        (As per Income Tax Act — Budget 2024 revised rates)
+                    </span>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px;">
+                {% for slab in tax_slabs %}
+                <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.7) 100%); border: 1px solid var(--glass-border); border-radius: 12px; padding: 20px; position: relative; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                    <!-- Rate badge -->
+                    <div style="position: absolute; top: 14px; right: 14px; background: {% if slab.rate == 'Slab Rate' %}linear-gradient(135deg, #f59e0b, #d97706){% elif slab.rate == '20%' %}linear-gradient(135deg, #ef4444, #dc2626){% else %}linear-gradient(135deg, #10b981, #059669){% endif %}; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; color: white;">
+                        {{ slab.rate }}
+                    </div>
+                    
+                    <!-- Section label -->
+                    <div style="font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+                        {{ slab.section }}
+                    </div>
+                    
+                    <!-- Label -->
+                    <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 10px; padding-right: 60px; line-height: 1.3;">
+                        {{ slab.label }}
+                    </div>
+                    
+                    <!-- Net Gain -->
+                    <div style="font-size: 22px; font-weight: 700; color: {% if slab.total_gain >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; margin-bottom: 12px;">
+                        ₹{{ slab.total_gain|format_inr }}
+                    </div>
+                    
+                    <!-- Profit / Loss breakdown -->
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
+                        <div>
+                            <span style="color: var(--accent-green); font-weight: 600;">▲ Profits:</span>
+                            <span style="color: var(--text-primary);">₹{{ slab.total_profit|format_la_cr }}</span>
+                            <span style="color: var(--text-secondary); opacity: 0.7;">({{ slab.profit_count }})</span>
+                        </div>
+                        <div>
+                            <span style="color: var(--accent-red); font-weight: 600;">▼ Losses:</span>
+                            <span style="color: var(--text-primary);">₹{{ slab.total_loss|format_la_cr }}</span>
+                            <span style="color: var(--text-secondary); opacity: 0.7;">({{ slab.loss_count }})</span>
+                        </div>
+                    </div>
+
+                    <!-- Progress Win Ratio Bar -->
+                    <div style="width: 100%; background: rgba(239, 68, 68, 0.3); height: 4px; border-radius: 2px; overflow: hidden; margin-top: 8px;">
+                        <div style="background: #10b981; height: 100%; width: {{ slab.win_rate }}%;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-secondary); margin-top: 4px;">
+                        <span>Win Rate: {{ "{:.1f}".format(slab.win_rate) }}%</span>
+                        <span>Turnover: ₹{{ slab.total_sales|format_la_cr }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ─── Capital Gains Summary: Quarter-wise & Schedule CG ─── -->
+        {% if quarterly_summary or period_summary %}
+        <div class="glass-card" style="padding: 24px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(59, 130, 246, 0.3);">
+                        <svg width="22" height="22" fill="none" stroke="#60a5fa" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <h3 id="summaryCardTitle" style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-primary);">
+                                Quarter-wise Capital Gains Summary
+                            </h3>
+                            <span id="summaryCardBadge" style="font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(59, 130, 246, 0.2); color: #60a5fa; font-weight: 600; border: 1px solid rgba(59, 130, 246, 0.4);">
+                                Quarterly (Q1 - Q4)
+                            </span>
+                        </div>
+                        <span id="summaryCardDesc" style="font-size: 12px; color: var(--text-secondary);">
+                            Standard quarterly breakdown: Q1 (Apr-Jun), Q2 (Jul-Sep), Q3 (Oct-Dec), Q4 (Jan-Mar)
+                        </span>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <!-- View Mode Tab Selector -->
+                    <div style="display: inline-flex; background: rgba(15, 23, 42, 0.6); padding: 3px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <button type="button" id="tabQuarterly" onclick="switchSummaryView('quarterly')" class="btn" style="padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; background: var(--accent-blue); color: white; border: none; cursor: pointer; transition: all 0.2s;">
+                            📅 Quarter-wise (Q1-Q4)
+                        </button>
+                        <button type="button" id="tabScheduleCG" onclick="switchSummaryView('scheduleCG')" class="btn" style="padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; background: transparent; color: var(--text-secondary); border: none; cursor: pointer; transition: all 0.2s;">
+                            🏛️ Schedule CG (Adv Tax 5-Periods)
+                        </button>
+                    </div>
+
+                    <button onclick="exportActiveSummaryToCSV()" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; cursor: pointer;">
+                        📥 Export CSV
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Table 1: Quarter-wise Summary (Default) -->
+            {% if quarterly_summary %}
+            <div id="quarterlyTableContainer" class="table-container" style="margin-top: 0;">
+                <table id="quarterlyTable" style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="background: rgba(30, 41, 59, 0.85); border-bottom: 2px solid var(--glass-border);">
+                            <th style="padding: 12px; color: white; font-weight: 600;">Quarter</th>
+                            <th style="padding: 12px; color: white; font-weight: 600;">Period Dates</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Intra-day Speculative</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Short-Term Capital Gain</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Long-Term Capital Gain</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right; background: rgba(59, 130, 246, 0.1);">Total Quarter Net Gain</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Cumulative FY Gain</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in quarterly_summary.quarters %}
+                        <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); {% if selected_quarter == row.key %}background: rgba(59, 130, 246, 0.12); border-left: 3px solid #60a5fa;{% endif %}">
+                            <td style="padding: 12px; font-weight: 700; color: var(--text-primary);">
+                                <span style="background: rgba(59, 130, 246, 0.2); color: #93c5fd; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; border: 1px solid rgba(59, 130, 246, 0.3);">
+                                    {{ row.name }}
+                                </span>
+                            </td>
+                            <td style="padding: 12px; color: var(--text-secondary); font-size: 13px;">
+                                {{ row.period }}
+                            </td>
+                            <td style="padding: 12px; text-align: right; font-weight: 500; color: {% if row.intraday >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; font-family: monospace;">
+                                ₹{{ row.intraday|format_inr }}
+                            </td>
+                            <td style="padding: 12px; text-align: right; font-weight: 500; color: {% if row.stcg >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; font-family: monospace;">
+                                ₹{{ row.stcg|format_inr }}
+                            </td>
+                            <td style="padding: 12px; text-align: right; font-weight: 500; color: {% if row.ltcg >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; font-family: monospace;">
+                                ₹{{ row.ltcg|format_inr }}
+                            </td>
+                            <td style="padding: 12px; text-align: right; font-weight: 700; background: rgba(59, 130, 246, 0.05); color: {% if row.total >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; font-family: monospace;">
+                                ₹{{ row.total|format_inr }}
+                            </td>
+                            <td style="padding: 12px; text-align: right; font-weight: 600; color: var(--text-primary); font-family: monospace;">
+                                ₹{{ row.cumulative|format_inr }}
+                            </td>
+                            <td style="padding: 12px; text-align: center;">
+                                {% if selected_quarter == row.key %}
+                                <a href="/equities/pnl?fy={{ selected_fy }}&person_id={{ selected_person or '' }}&asset_class={{ selected_asset_class or '' }}&broker={{ selected_broker or '' }}" 
+                                   style="display: inline-block; padding: 4px 10px; font-size: 11px; font-weight: 600; border-radius: 4px; background: rgba(239, 68, 68, 0.2); color: #f87171; text-decoration: none; border: 1px solid rgba(239, 68, 68, 0.3);">
+                                    ✕ Clear Filter
+                                </a>
+                                {% else %}
+                                <a href="/equities/pnl?fy={{ selected_fy }}&quarter={{ row.key }}&person_id={{ selected_person or '' }}&asset_class={{ selected_asset_class or '' }}&broker={{ selected_broker or '' }}" 
+                                   style="display: inline-block; padding: 4px 10px; font-size: 11px; font-weight: 600; border-radius: 4px; background: rgba(59, 130, 246, 0.2); color: #60a5fa; text-decoration: none; border: 1px solid rgba(59, 130, 246, 0.3);">
+                                    🔍 Filter {{ row.key }}
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        <!-- Grand Total -->
+                        <tr style="border-top: 2px solid var(--glass-border); border-bottom: 2px solid var(--glass-border); background: rgba(30, 41, 59, 0.75);">
+                            <td colspan="2" style="padding: 14px 12px; font-weight: 700; color: var(--text-primary);">{{ quarterly_summary.grand_total.period }}</td>
+                            <td style="padding: 14px 12px; text-align: right; font-weight: 700; color: {% if quarterly_summary.grand_total.intraday >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; font-family: monospace;">
+                                ₹{{ quarterly_summary.grand_total.intraday|format_inr }}
+                            </td>
+                            <td style="padding: 14px 12px; text-align: right; font-weight: 700; color: {% if quarterly_summary.grand_total.stcg >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; font-family: monospace;">
+                                ₹{{ quarterly_summary.grand_total.stcg|format_inr }}
+                            </td>
+                            <td style="padding: 14px 12px; text-align: right; font-weight: 700; color: {% if quarterly_summary.grand_total.ltcg >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; font-family: monospace;">
+                                ₹{{ quarterly_summary.grand_total.ltcg|format_inr }}
+                            </td>
+                            <td style="padding: 14px 12px; text-align: right; font-weight: 800; font-size: 15px; background: rgba(59, 130, 246, 0.15); color: {% if quarterly_summary.grand_total.total >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; font-family: monospace;">
+                                ₹{{ quarterly_summary.grand_total.total|format_inr }}
+                            </td>
+                            <td style="padding: 14px 12px; text-align: right; font-weight: 800; color: var(--accent-blue); font-family: monospace;">
+                                ₹{{ quarterly_summary.grand_total.total|format_inr }}
+                            </td>
+                            <td style="padding: 14px 12px; text-align: center; color: var(--text-secondary); font-size: 12px;">Full FY</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            <!-- Table 2: Schedule CG (Advance Tax 5 Periods) -->
+            {% if period_summary %}
+            <div id="scheduleCGTableContainer" class="table-container" style="margin-top: 0; display: none;">
+                <table id="scheduleCGTable" style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="background: rgba(30, 41, 59, 0.85); border-bottom: 2px solid var(--glass-border);">
+                            <th style="padding: 12px; color: white; font-weight: 600;">Installment Period</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: center;">Adv. Tax Target</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Intra-day Speculative</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Short-Term Capital Gain</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Long-Term Capital Gain</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right; background: rgba(59, 130, 246, 0.1);">Total Period Net Gain</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Cumulative FY Gain</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in period_summary.periods %}
+                        <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                            <td style="padding: 12px; font-weight: 600; color: var(--text-primary);">{{ row.period }}</td>
+                            <td style="padding: 12px; text-align: center;">
+                                <span style="background: rgba(100, 116, 139, 0.2); border: 1px solid var(--glass-border); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; color: var(--text-secondary);">
+                                    {{ row.adv_tax_due }}
+                                </span>
+                            </td>
+                            <td style="padding: 12px; text-align: right; font-weight: 500; color: {% if row.intraday >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; font-family: monospace;">
+                                ₹{{ row.intraday|format_inr }}
+                            </td>
+                            <td style="padding: 12px; text-align: right; font-weight: 500; color: {% if row.stcg >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; font-family: monospace;">
+                                ₹{{ row.stcg|format_inr }}
+                            </td>
+                            <td style="padding: 12px; text-align: right; font-weight: 500; color: {% if row.ltcg >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; font-family: monospace;">
+                                ₹{{ row.ltcg|format_inr }}
+                            </td>
+                            <td style="padding: 12px; text-align: right; font-weight: 700; background: rgba(59, 130, 246, 0.05); color: {% if row.total >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; font-family: monospace;">
+                                ₹{{ row.total|format_inr }}
+                            </td>
+                            <td style="padding: 12px; text-align: right; font-weight: 600; color: var(--text-primary); font-family: monospace;">
+                                ₹{{ row.cumulative|format_inr }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        <!-- Grand Total -->
+                        <tr style="border-top: 2px solid var(--glass-border); border-bottom: 2px solid var(--glass-border); background: rgba(30, 41, 59, 0.75);">
+                            <td style="padding: 14px 12px; font-weight: 700; color: var(--text-primary);">{{ period_summary.grand_total.period }}</td>
+                            <td style="padding: 14px 12px; text-align: center; font-weight: 700; color: var(--accent-green);">100%</td>
+                            <td style="padding: 14px 12px; text-align: right; font-weight: 700; color: {% if period_summary.grand_total.intraday >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; font-family: monospace;">
+                                ₹{{ period_summary.grand_total.intraday|format_inr }}
+                            </td>
+                            <td style="padding: 14px 12px; text-align: right; font-weight: 700; color: {% if period_summary.grand_total.stcg >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; font-family: monospace;">
+                                ₹{{ period_summary.grand_total.stcg|format_inr }}
+                            </td>
+                            <td style="padding: 14px 12px; text-align: right; font-weight: 700; color: {% if period_summary.grand_total.ltcg >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; font-family: monospace;">
+                                ₹{{ period_summary.grand_total.ltcg|format_inr }}
+                            </td>
+                            <td style="padding: 14px 12px; text-align: right; font-weight: 800; font-size: 15px; background: rgba(59, 130, 246, 0.15); color: {% if period_summary.grand_total.total >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; font-family: monospace;">
+                                ₹{{ period_summary.grand_total.total|format_inr }}
+                            </td>
+                            <td style="padding: 14px 12px; text-align: right; font-weight: 800; color: var(--accent-blue); font-family: monospace;">
+                                ₹{{ period_summary.grand_total.total|format_inr }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- ─── Member / Entity Contribution Matrix ─── -->
+        {% if entity_summary and entity_summary|length > 1 %}
+        <div class="glass-card" style="padding: 24px; margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+                <svg width="20" height="20" fill="none" stroke="#a78bfa" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                </svg>
+                <div>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">
+                        Family Member & Corporate Entity Contribution Matrix
+                    </h3>
+                    <span style="font-size: 12px; color: var(--text-secondary);">
+                        Entity-wise capital allocation, turnover, and taxable capital gains distribution
+                    </span>
+                </div>
+            </div>
+
+            <div class="table-container" style="margin-top: 0;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="background: rgba(30, 41, 59, 0.8); border-bottom: 2px solid var(--glass-border);">
+                            <th style="padding: 12px; color: white; font-weight: 600;">Entity / Member</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: center;">Type / PAN</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Trades</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Turnover (Sales)</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">STCG 111A (20%)</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Slab STCG</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">LTCG</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Total Net P&L</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Share %</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ent in entity_summary %}
+                        <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                            <td style="padding: 12px; font-weight: 600; color: #a78bfa;">
+                                {{ ent.full_name }} ({{ ent.owner }})
+                            </td>
+                            <td style="padding: 12px; text-align: center; font-size: 11px; color: var(--text-secondary);">
+                                <span style="background: rgba(148, 163, 184, 0.15); padding: 2px 6px; border-radius: 4px;">{{ ent.person_type }}</span>
+                                <span style="margin-left: 4px; font-family: monospace;">{{ ent.pan }}</span>
+                            </td>
+                            <td style="padding: 12px; text-align: right; color: var(--text-secondary);">{{ ent.trades }}</td>
+                            <td style="padding: 12px; text-align: right; font-weight: 500;">₹{{ ent.sales|format_la_cr }}</td>
+                            <td style="padding: 12px; text-align: right; color: {% if ent.stcg_111a >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                ₹{{ ent.stcg_111a|format_la_cr }}
+                            </td>
+                            <td style="padding: 12px; text-align: right; color: {% if ent.stcg_slab >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                ₹{{ ent.stcg_slab|format_la_cr }}
+                            </td>
+                            <td style="padding: 12px; text-align: right; color: {% if ent.ltcg >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                ₹{{ ent.ltcg|format_la_cr }}
+                            </td>
+                            <td style="padding: 12px; text-align: right; font-weight: 700; color: {% if ent.total_gain >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                ₹{{ ent.total_gain|format_inr }}
+                            </td>
+                            <td style="padding: 12px; text-align: right; font-weight: 600; color: var(--accent-blue);">
+                                {{ "{:.1f}".format(ent.share_pct) }}%
+                            </td>
+                            <td style="padding: 12px; text-align: center;">
+                                <a href="/equities/pnl?fy={{ selected_fy }}&person_id={{ ent.person_id or '' }}" style="font-size: 11px; padding: 3px 8px; border-radius: 4px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; text-decoration: none;">Filter</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ─── Broker Execution Quality Matrix ─── -->
+        {% if broker_summary and broker_summary|length > 1 %}
+        <div class="glass-card" style="padding: 24px; margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+                <svg width="20" height="20" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
+                </svg>
+                <div>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">
+                        Broker Execution & Performance Matrix
+                    </h3>
+                    <span style="font-size: 12px; color: var(--text-secondary);">
+                        Turnover, win rate, and profit factor comparison across custodians
+                    </span>
+                </div>
+            </div>
+
+            <div class="table-container" style="margin-top: 0;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="background: rgba(30, 41, 59, 0.8); border-bottom: 2px solid var(--glass-border);">
+                            <th style="padding: 12px; color: white; font-weight: 600;">Broker Name</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Closed Trades</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Sales Turnover</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Gross Profits</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Gross Losses</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Net Realized Gain</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: center;">Win Rate</th>
+                            <th style="padding: 12px; color: white; font-weight: 600; text-align: right;">Profit Factor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in broker_summary %}
+                        <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                            <td style="padding: 12px; font-weight: 600; color: var(--text-primary);">{{ b.broker }}</td>
+                            <td style="padding: 12px; text-align: right; color: var(--text-secondary);">{{ b.trades }}</td>
+                            <td style="padding: 12px; text-align: right; font-weight: 500;">₹{{ b.sales|format_la_cr }}</td>
+                            <td style="padding: 12px; text-align: right; color: var(--accent-green);">₹{{ b.profits|format_la_cr }}</td>
+                            <td style="padding: 12px; text-align: right; color: var(--accent-red);">₹{{ b.losses|format_la_cr }}</td>
+                            <td style="padding: 12px; text-align: right; font-weight: 700; color: {% if b.net_gain >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                ₹{{ b.net_gain|format_inr }}
+                            </td>
+                            <td style="padding: 12px; text-align: center; font-weight: 600;">
+                                <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 2px 8px; border-radius: 4px; font-size: 11px;">
+                                    {{ "{:.1f}".format(b.win_rate) }}%
+                                </span>
+                            </td>
+                            <td style="padding: 12px; text-align: right; font-weight: 700; color: var(--accent-blue);">
+                                {{ "{:.2f}".format(b.profit_factor) }}x
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- P&L Matches Table -->
+        <div class="glass-card" style="padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">
+                    Realized Gain/Loss Trades Ledger
+                    <span style="color: var(--text-secondary); font-weight: 400; font-size: 13px; margin-left: 8px;">
+                        ({{ gains|length }} matched trades)
+                    </span>
+                </h3>
+                <button onclick="exportTradesToCSV()" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; cursor: pointer;">
+                    📥 Export Filtered Trades (CSV)
+                </button>
+            </div>
+            <div class="table-container" style="margin-top: 0;">
+                <table id="pnlTable" style="margin-top: 0; width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Owner</th>
+                            <th>Broker</th>
+                            <th>Symbol</th>
+                            <th>Asset Class</th>
+                            <th>Trade Type</th>
+                            <th style="text-align: center;">Buy Date</th>
+                            <th style="text-align: right;">Buy Price</th>
+                            <th style="text-align: center;">Sell Date</th>
+                            <th style="text-align: right;">Sell Price</th>
+                            <th style="text-align: right;">Qty Sold</th>
+                            <th style="text-align: right;">Cost Value</th>
+                            <th style="text-align: right;">Sale Proceeds</th>
+                            <th style="text-align: right;">Realized PnL</th>
+                            <th style="text-align: center;">Holding (Days)</th>
+                            <th style="text-align: center;">Tax Class</th>
+                            <th style="text-align: center;">Tax Rate</th>
+                            <th style="text-align: center;">FY</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if gains %}
+                            {% for g in gains %}
+                            <tr>
+                                <td style="font-weight: 600; color: #a78bfa;">{{ g.owner }}</td>
+                                <td style="color: var(--text-secondary); font-weight: 500;">{{ g.broker }}</td>
+                                <td style="font-family: monospace; font-weight: 600;">{{ g.symbol }}</td>
+                                <td style="font-size: 11px;">
+                                    {% if g.asset_class == 'GOLD_ETF' %}
+                                        <span style="background: linear-gradient(135deg, #f59e0b22, #d9770622); border: 1px solid #f59e0b44; color: #f59e0b; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;">GOLD</span>
+                                    {% elif g.asset_class == 'SILVER_ETF' %}
+                                        <span style="background: linear-gradient(135deg, #94a3b822, #64748b22); border: 1px solid #94a3b844; color: #94a3b8; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;">SILVER</span>
+                                    {% elif g.asset_class == 'DEBT_ETF' %}
+                                        <span style="background: linear-gradient(135deg, #6366f122, #818cf822); border: 1px solid #6366f144; color: #818cf8; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;">DEBT</span>
+                                    {% else %}
+                                        <span style="background: linear-gradient(135deg, #3b82f622, #60a5fa22); border: 1px solid #3b82f644; color: #60a5fa; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;">EQUITY</span>
+                                    {% endif %}
+                                </td>
+                                <td style="font-size: 11px;">
+                                    <span class="badge {% if g.trade_type == 'INTRADAY' %}badge-negative{% else %}badge-positive{% endif %}" style="background: rgba(30, 41, 59, 0.8);">
+                                        {{ g.trade_type }}
+                                    </span>
+                                </td>
+                                <td style="text-align: center; color: var(--text-secondary); font-size: 12px;">
+                                    {{ g.purchase_date if g.purchase_date else "N/A" }}
+                                </td>
+                                <td style="text-align: right; color: var(--text-secondary);">
+                                    ₹{{ "{:,.2f}".format(g.purchase_rate) }}
+                                </td>
+                                <td style="text-align: center; color: var(--text-secondary); font-size: 12px;">
+                                    {{ g.sale_date }}
+                                </td>
+                                <td style="text-align: right; color: var(--accent-blue);">
+                                    ₹{{ "{:,.2f}".format(g.sale_rate) }}
+                                </td>
+                                <td style="text-align: right; font-weight: 500;">
+                                    {{ "{:,.2f}".format(g.units_sold) }}
+                                </td>
+                                <td style="text-align: right; color: var(--text-secondary);">
+                                    ₹{{ g.cost_value|format_inr }}
+                                </td>
+                                <td style="text-align: right; font-weight: 500;">
+                                    ₹{{ g.sale_value|format_inr }}
+                                </td>
+                                <td style="text-align: right; font-weight: 600; color: {% if g.gain_loss >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                    ₹{{ g.gain_loss|format_inr }}
+                                </td>
+                                <td style="text-align: center; color: var(--text-secondary);">
+                                    {{ g.holding_days }}
+                                </td>
+                                <td style="text-align: center;">
+                                    <span class="badge {% if g.tax_category == 'LTCG' %}badge-positive{% elif g.tax_category == 'STCG' %}badge-negative{% else %}badge-neutral{% endif %}">
+                                        {{ g.tax_category }}
+                                    </span>
+                                </td>
+                                <td style="text-align: center; font-size: 11px;">
+                                    <span style="background: {% if g.tax_rate == 'Slab Rate' %}rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3){% elif g.tax_rate == '20%' %}rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3){% else %}rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3){% endif %}; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 10px;">
+                                        {{ g.tax_rate }}
+                                    </span>
+                                </td>
+                                <td style="text-align: center; font-size: 11px; color: var(--text-secondary);">
+                                    {{ g.financial_year }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="17" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                    No capital gain matches found in DB for the selected filters.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Client-side symbol search filter (instant, no server round-trip)
+        function filterTable() {
+            const query = document.getElementById('symbolSearch').value.toUpperCase().trim();
+            const table = document.getElementById('pnlTable');
+            const rows = table.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const symbolCell = row.cells[2];
+                if (!symbolCell) return;
+                const symbol = symbolCell.textContent.toUpperCase().trim();
+                row.style.display = (query === '' || symbol.includes(query)) ? '' : 'none';
+            });
+        }
+
+        // Switch between Quarter-wise and Schedule CG views
+        let currentSummaryView = 'quarterly';
+
+        function switchSummaryView(view) {
+            currentSummaryView = view;
+            const qContainer = document.getElementById('quarterlyTableContainer');
+            const scgContainer = document.getElementById('scheduleCGTableContainer');
+            const tabQ = document.getElementById('tabQuarterly');
+            const tabSCG = document.getElementById('tabScheduleCG');
+            const title = document.getElementById('summaryCardTitle');
+            const badge = document.getElementById('summaryCardBadge');
+            const desc = document.getElementById('summaryCardDesc');
+
+            if (view === 'quarterly') {
+                if (qContainer) qContainer.style.display = 'block';
+                if (scgContainer) scgContainer.style.display = 'none';
+                if (tabQ) {
+                    tabQ.style.background = 'var(--accent-blue)';
+                    tabQ.style.color = '#fff';
+                    tabQ.style.fontWeight = '600';
+                }
+                if (tabSCG) {
+                    tabSCG.style.background = 'transparent';
+                    tabSCG.style.color = 'var(--text-secondary)';
+                    tabSCG.style.fontWeight = '500';
+                }
+                if (title) title.innerText = 'Quarter-wise Capital Gains Summary';
+                if (badge) {
+                    badge.innerText = 'Quarterly (Q1 - Q4)';
+                    badge.style.color = '#60a5fa';
+                    badge.style.background = 'rgba(59, 130, 246, 0.2)';
+                    badge.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+                }
+                if (desc) desc.innerText = 'Standard quarterly breakdown: Q1 (Apr-Jun), Q2 (Jul-Sep), Q3 (Oct-Dec), Q4 (Jan-Mar)';
+            } else {
+                if (qContainer) qContainer.style.display = 'none';
+                if (scgContainer) scgContainer.style.display = 'block';
+                if (tabSCG) {
+                    tabSCG.style.background = 'var(--accent-blue)';
+                    tabSCG.style.color = '#fff';
+                    tabSCG.style.fontWeight = '600';
+                }
+                if (tabQ) {
+                    tabQ.style.background = 'transparent';
+                    tabQ.style.color = 'var(--text-secondary)';
+                    tabQ.style.fontWeight = '500';
+                }
+                if (title) title.innerText = 'Period-wise Capital Gains Summary (Schedule CG)';
+                if (badge) {
+                    badge.innerText = 'Advance Tax 5-Periods';
+                    badge.style.color = '#a78bfa';
+                    badge.style.background = 'rgba(167, 139, 250, 0.2)';
+                    badge.style.borderColor = 'rgba(167, 139, 250, 0.4)';
+                }
+                if (desc) desc.innerText = 'Quarterly tax installment timeline for Advance Tax computation & ITR reporting';
+            }
+        }
+
+        // Export Active Summary (Quarterly or Schedule CG) Table to CSV
+        function exportActiveSummaryToCSV() {
+            const tableId = (currentSummaryView === 'quarterly') ? 'quarterlyTable' : 'scheduleCGTable';
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            let csv = [];
+            for (let row of table.rows) {
+                let rowData = [];
+                for (let cell of row.cells) {
+                    // skip Action column if quarterly table
+                    if (currentSummaryView === 'quarterly' && cell.cellIndex === 7) continue;
+                    rowData.push('"' + cell.innerText.replace(/"/g, '""').replace(/₹/g, '').trim() + '"');
+                }
+                csv.push(rowData.join(','));
+            }
+            let filename = (currentSummaryView === 'quarterly') ? "Quarterly_Capital_Gains_Summary.csv" : "Schedule_CG_Advance_Tax_Summary.csv";
+            let csvFile = new Blob([csv.join('\n')], {type: "text/csv;charset=utf-8;"});
+            let link = document.createElement("a");
+            link.href = URL.createObjectURL(csvFile);
+            link.download = filename;
+            link.click();
+        }
+
+        // Backward compatibility
+        function exportScheduleCGToCSV() {
+            exportActiveSummaryToCSV();
+        }
+
+        // Export Filtered Trades Table to CSV
+        function exportTradesToCSV() {
+            const table = document.getElementById('pnlTable');
+            if (!table) return;
+            let csv = [];
+            for (let row of table.rows) {
+                if (row.style.display === 'none') continue;
+                let rowData = [];
+                for (let cell of row.cells) {
+                    rowData.push('"' + cell.innerText.replace(/"/g, '""').replace(/₹/g, '').trim() + '"');
+                }
+                csv.push(rowData.join(','));
+            }
+            let csvFile = new Blob([csv.join('\n')], {type: "text/csv;charset=utf-8;"});
+            let link = document.createElement("a");
+            link.href = URL.createObjectURL(csvFile);
+            link.download = "Realized_Trades_Capital_Gains_Ledger.csv";
+            link.click();
+        }
+    </script>
+</body>
+</html>

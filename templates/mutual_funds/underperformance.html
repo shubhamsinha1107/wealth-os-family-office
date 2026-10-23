@@ -1,0 +1,678 @@
+<!-- templates/mutual_funds/underperformance.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Institutional Underperformance & Historical Diagnostics - Family Office</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=6">
+    <script src="/static/js/backup.js?v=2"></script>
+    <style>
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .kpi-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 18px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            backdrop-filter: blur(12px);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        .kpi-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--text-secondary);
+            letter-spacing: 0.05em;
+        }
+        .kpi-value {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .kpi-sub {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .kpi-card.tactical-exit {
+            border-color: rgba(245, 158, 11, 0.5);
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(15, 23, 42, 0.6) 100%);
+        }
+        .kpi-card.buy-dip {
+            border-color: rgba(59, 130, 246, 0.5);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(15, 23, 42, 0.6) 100%);
+        }
+        .kpi-card.stop-loss {
+            border-color: rgba(239, 68, 68, 0.5);
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(15, 23, 42, 0.6) 100%);
+        }
+        .kpi-card.winning-hold {
+            border-color: rgba(16, 185, 129, 0.5);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.6) 100%);
+        }
+
+        .controls-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .timeframe-btn {
+            padding: 7px 15px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 600;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .timeframe-btn.active, .timeframe-btn:hover {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+        .select-input, .search-box {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-family: inherit;
+            outline: none;
+        }
+        .select-input:focus, .search-box:focus {
+            border-color: var(--accent-blue);
+        }
+
+        /* Metric Badges */
+        .metric-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .metric-pass {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .metric-fail {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        /* Composite Score Badge */
+        .score-badge {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 46px;
+            height: 30px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 13.5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .score-cut { background: rgba(239, 68, 68, 0.25); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.5); }
+        .score-review { background: rgba(249, 115, 22, 0.25); color: #f97316; border: 1px solid rgba(249, 115, 22, 0.5); }
+        .score-watch { background: rgba(245, 158, 11, 0.25); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.5); }
+        .score-hold { background: rgba(16, 185, 129, 0.25); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.5); }
+
+        /* Multi-horizon Matrix Pills */
+        .horizon-grid {
+            display: inline-flex;
+            gap: 3px;
+        }
+        .horizon-pill {
+            padding: 3px 5px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            font-family: monospace;
+        }
+        .horizon-pass { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+        .horizon-fail { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+        .horizon-na { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2); }
+
+        /* Tactical 4-Quadrant Badges */
+        .tactical-pill {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            display: inline-block;
+            white-space: nowrap;
+        }
+        .badge-tactical-exit {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.5);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+        }
+        .badge-buy-dip {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.5);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+        }
+        .badge-stop-loss {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+        }
+        .badge-winning-hold {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+
+        /* Modal styling */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 820px;
+            padding: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-close {
+            position: absolute;
+            top: 16px; right: 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .modal-close:hover { color: white; }
+
+        table th {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+        .pillar-bar-bg {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            height: 8px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .pillar-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/mutual-funds/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue); box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <a href="/mutual-funds/" class="nav-link">Holdings AUM</a>
+                <a href="/mutual-funds/pnl" class="nav-link">Capital Gains (FIFO)</a>
+                <a href="/mutual-funds/performance" class="nav-link">XIRR &amp; CAGR</a>
+                <a href="/mutual-funds/sips" class="nav-link">SIP Tracker</a>
+                <a href="/mutual-funds/transactions" class="nav-link">Transactions Ledger</a>
+                <a href="/mutual-funds/account-report" class="nav-link">Account Report</a>
+                <a href="/mutual-funds/monthly-profits" class="nav-link">Monthly Profits</a>
+                <a href="/mutual-funds/category-alpha" class="nav-link">Category Alpha & Rotation</a>
+                <a href="/mutual-funds/ter-cost" class="nav-link">TER & Broker Costs</a>
+                <a href="/mutual-funds/unique-funds" class="nav-link">Unique Funds</a>
+                <a href="/mutual-funds/underperforming" class="nav-link active">Underperformance Diagnostics</a>
+                <a href="/mutual-funds/compare-nav" class="nav-link">Compare NAVs</a>
+                <a href="/mutual-funds/upload" class="nav-link">Upload CAS PDF</a>
+            </div>
+        </header>
+
+        <!-- 4-Quadrant Tactical Matrix KPI Cards -->
+        <div class="kpi-container">
+            <div class="kpi-card tactical-exit">
+                <div class="kpi-title">🟡 Tactical Exits (Switch Opportunity)</div>
+                <div class="kpi-value" style="color: #f59e0b;">{{ data.tactical_exit_count }}</div>
+                <div class="kpi-sub">Bad Fund Quality + Personal Profit (Exit at Gain!)</div>
+            </div>
+
+            <div class="kpi-card buy-dip">
+                <div class="kpi-title">🔵 Buy The Dip (SIP / Accumulate)</div>
+                <div class="kpi-value" style="color: #60a5fa;">{{ data.buy_dip_count }}</div>
+                <div class="kpi-sub">Good Fund Quality + Entry Loss (Average Down)</div>
+            </div>
+
+            <div class="kpi-card stop-loss">
+                <div class="kpi-title">🔴 Stop Loss / Tax Harvest</div>
+                <div class="kpi-value" style="color: #ef4444;">{{ data.stop_loss_count }}</div>
+                <div class="kpi-sub">Bad Fund Quality + Entry Loss (Cut &amp; Harvest)</div>
+            </div>
+
+            <div class="kpi-card winning-hold">
+                <div class="kpi-title">🟢 Winning Holds</div>
+                <div class="kpi-value" style="color: #10b981;">{{ data.winning_hold_count }}</div>
+                <div class="kpi-sub">Good Fund Quality + Personal Profit (Compound)</div>
+            </div>
+        </div>
+
+        <!-- Controls panel -->
+        <div class="controls-card">
+            <div class="filter-group">
+                <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">📅 Evaluation Date:</span>
+                <input type="date" id="asOfDateInput" class="select-input" style="font-weight: 600; border-color: rgba(16, 185, 129, 0.5); background: rgba(16, 185, 129, 0.1);" value="{{ selected_as_of_date }}" max="{{ max_date }}" onchange="changeAsOfDate(this.value)">
+
+                <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-left: 6px;">Horizon:</span>
+                <a href="/mutual-funds/underperforming?timeframe=1y&category={{ selected_category }}&status={{ selected_status }}&scope={{ selected_scope }}&timing={{ selected_timing }}&sort={{ selected_sort }}&as_of_date={{ selected_as_of_date }}" class="timeframe-btn {% if selected_timeframe == '1y' %}active{% endif %}">1 Year</a>
+                <a href="/mutual-funds/underperforming?timeframe=3y&category={{ selected_category }}&status={{ selected_status }}&scope={{ selected_scope }}&timing={{ selected_timing }}&sort={{ selected_sort }}&as_of_date={{ selected_as_of_date }}" class="timeframe-btn {% if selected_timeframe == '3y' %}active{% endif %}">3 Years</a>
+                <a href="/mutual-funds/underperforming?timeframe=5y&category={{ selected_category }}&status={{ selected_status }}&scope={{ selected_scope }}&timing={{ selected_timing }}&sort={{ selected_sort }}&as_of_date={{ selected_as_of_date }}" class="timeframe-btn {% if selected_timeframe == '5y' %}active{% endif %}">5 Years</a>
+            </div>
+
+            <div class="filter-group">
+                <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Scope:</span>
+                <select class="select-input" style="font-weight: 600; border-color: rgba(59, 130, 246, 0.4);" onchange="window.location.href='/mutual-funds/underperforming?timeframe={{ selected_timeframe }}&category={{ selected_category }}&status={{ selected_status }}&timing={{ selected_timing }}&sort={{ selected_sort }}&as_of_date={{ selected_as_of_date }}&scope=' + this.value">
+                    <option value="PORTFOLIO" {% if selected_scope == 'PORTFOLIO' %}selected{% endif %}>💼 Current Holdings Only</option>
+                    <option value="ALL" {% if selected_scope == 'ALL' %}selected{% endif %}>🌐 All Tracked Schemes</option>
+                </select>
+
+                <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-left: 4px;">Tactical Overlay:</span>
+                <select class="select-input" style="font-weight: 600; border-color: rgba(245, 158, 11, 0.4);" onchange="window.location.href='/mutual-funds/underperforming?timeframe={{ selected_timeframe }}&category={{ selected_category }}&status={{ selected_status }}&scope={{ selected_scope }}&sort={{ selected_sort }}&as_of_date={{ selected_as_of_date }}&timing=' + this.value">
+                    <option value="ALL" {% if selected_timing == 'ALL' %}selected{% endif %}>All Tactical Scenarios</option>
+                    <option value="TACTICAL_EXIT" {% if selected_timing == 'TACTICAL_EXIT' %}selected{% endif %}>🟡 Tactical Exits Only (Bad Fund + Profit)</option>
+                    <option value="BUY_DIP" {% if selected_timing == 'BUY_DIP' %}selected{% endif %}>🔵 Buy Dip Candidates Only (Good Fund + Loss)</option>
+                    <option value="STOP_LOSS" {% if selected_timing == 'STOP_LOSS' %}selected{% endif %}>🔴 Stop Losses Only (Bad Fund + Loss)</option>
+                    <option value="WINNING_HOLD" {% if selected_timing == 'WINNING_HOLD' %}selected{% endif %}>🟢 Winning Holds Only (Good Fund + Profit)</option>
+                </select>
+
+                <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-left: 4px;">Sort By:</span>
+                <select class="select-input" style="font-weight: 600;" onchange="window.location.href='/mutual-funds/underperforming?timeframe={{ selected_timeframe }}&category={{ selected_category }}&status={{ selected_status }}&scope={{ selected_scope }}&timing={{ selected_timing }}&as_of_date={{ selected_as_of_date }}&sort=' + this.value">
+                    <option value="SCORE_ASC" {% if selected_sort == 'SCORE_ASC' %}selected{% endif %}>🎯 Composite Score (Cut Candidates First)</option>
+                    <option value="SCORE_DESC" {% if selected_sort == 'SCORE_DESC' %}selected{% endif %}>🎯 Composite Score (Highest First)</option>
+                    <option value="PNL_ASC" {% if selected_sort == 'PNL_ASC' %}selected{% endif %}>📉 Personal Entry PnL (Worst First)</option>
+                    <option value="PNL_DESC" {% if selected_sort == 'PNL_DESC' %}selected{% endif %}>📈 Personal Entry PnL (Best First)</option>
+                    <option value="MOMENTUM_ASC" {% if selected_sort == 'MOMENTUM_ASC' %}selected{% endif %}>📉 6M Relative Momentum (Worst First)</option>
+                    <option value="AUM_DESC" {% if selected_sort == 'AUM_DESC' %}selected{% endif %}>💰 AUM Value (High to Low)</option>
+                    <option value="CAGR_ASC" {% if selected_sort == 'CAGR_ASC' %}selected{% endif %}>📈 ROC / CAGR (Low to High)</option>
+                    <option value="SHARPE_ASC" {% if selected_sort == 'SHARPE_ASC' %}selected{% endif %}>📊 Sharpe Ratio (Low to High)</option>
+                    <option value="MDD_DESC" {% if selected_sort == 'MDD_DESC' %}selected{% endif %}>📉 Max Drawdown (Worst First)</option>
+                    <option value="NAME_ASC" {% if selected_sort == 'NAME_ASC' %}selected{% endif %}>🔤 Scheme Name (A to Z)</option>
+                </select>
+
+                <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-left: 4px;">Category:</span>
+                <select class="select-input" onchange="window.location.href='/mutual-funds/underperforming?timeframe={{ selected_timeframe }}&status={{ selected_status }}&scope={{ selected_scope }}&timing={{ selected_timing }}&sort={{ selected_sort }}&as_of_date={{ selected_as_of_date }}&category=' + this.value">
+                    <option value="ALL" {% if selected_category == 'ALL' %}selected{% endif %}>All Categories ({{ data.available_categories|length }})</option>
+                    {% for cat in data.available_categories %}
+                    <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+
+                <input type="text" id="tableSearch" class="search-box" placeholder="Search scheme..." onkeyup="filterTable()">
+            </div>
+        </div>
+
+        <!-- Historical View Notification Banner if past date selected -->
+        {% if selected_as_of_date != max_date %}
+        <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 8px; padding: 10px 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 13px; font-weight: 600; color: #34d399;">
+                ⏳ Historical Diagnostics View as of <strong>{{ selected_as_of_date }}</strong>
+            </div>
+            <a href="/mutual-funds/underperforming?timeframe={{ selected_timeframe }}&category={{ selected_category }}&status={{ selected_status }}&scope={{ selected_scope }}&timing={{ selected_timing }}&sort={{ selected_sort }}&as_of_date={{ max_date }}" style="color: white; font-size: 12px; text-decoration: underline;">Reset to Today</a>
+        </div>
+        {% endif %}
+
+        <!-- Main Diagnostic Table -->
+        <div class="glass-card" style="padding: 0; overflow-x: auto;">
+            <table id="diagnosticsTable" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: rgba(15, 23, 42, 0.8); border-bottom: 1px solid var(--glass-border);">
+                        <th onclick="sortTable(0)" style="padding: 14px 14px; text-align: left; cursor: pointer; user-select: none;">Scheme Name / AMC ↕</th>
+                        <th onclick="sortTable(1)" style="padding: 14px 10px; text-align: left; cursor: pointer; user-select: none;">Category ↕</th>
+                        <th onclick="sortTable(2)" style="padding: 14px 10px; text-align: right; cursor: pointer; user-select: none;">AUM (₹) ↕</th>
+                        <th onclick="sortTable(3)" style="padding: 14px 10px; text-align: center; cursor: pointer; user-select: none;">Cost vs As Of NAV ↕</th>
+                        <th onclick="sortTable(4)" style="padding: 14px 10px; text-align: center; cursor: pointer; user-select: none;">Personal PnL % ↕</th>
+                        <th onclick="sortTable(5)" style="padding: 14px 10px; text-align: center; cursor: pointer; user-select: none;">5-Pillar Score ↕</th>
+                        <th style="padding: 14px 10px; text-align: center;">Persistence [ 6M | 12M | 24M | 36M ]</th>
+                        <th onclick="sortTable(7)" style="padding: 14px 10px; text-align: center; cursor: pointer; user-select: none;">6M Relative Momentum ↕</th>
+                        <th style="padding: 14px 14px; text-align: center;">Tactical Entry &amp; Strategy Decision</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fund in data.funds %}
+                    <tr class="fund-row" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                        <td style="padding: 14px 14px;">
+                            <div style="font-weight: 600; color: var(--text-primary); font-size: 13.5px;">{{ fund.scheme_name }}</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+                                AMFI: <span style="font-family: monospace;">{{ fund.amfi_code }}</span> | Advisor: {{ fund.advisor }}
+                            </div>
+                        </td>
+
+                        <td style="padding: 14px 10px;">
+                            <span class="status-badge" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);">
+                                {{ fund.category }}
+                            </span>
+                        </td>
+
+                        <td style="padding: 14px 10px; text-align: right; font-weight: 600;">
+                            {% if fund.total_value > 0 %}
+                            ₹{{ "{:,.0f}".format(fund.total_value) }}
+                            {% else %}
+                            <span style="color: var(--text-secondary); font-weight: normal;">Tracked</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Cost NAV vs As Of NAV -->
+                        <td style="padding: 14px 10px; text-align: center;">
+                            {% if fund.in_portfolio and fund.weighted_avg_nav > 0 %}
+                            <div style="font-weight: 600; font-size: 12.5px; color: var(--text-primary);">₹{{ fund.weighted_avg_nav }}</div>
+                            <div style="font-size: 10.5px; color: var(--text-secondary);">As Of: ₹{{ fund.latest_nav }}</div>
+                            {% else %}
+                            <span style="color: var(--text-secondary); font-size: 11px;">N/A (Tracked)</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Personal Entry PnL % -->
+                        <td style="padding: 14px 10px; text-align: center;">
+                            {% if fund.in_portfolio and fund.weighted_avg_nav > 0 %}
+                            <div style="font-weight: 700; font-size: 13.5px; color: {% if fund.personal_pnl_pct >= 0 %}#34d399{% else %}#f87171{% endif %};">
+                                {% if fund.personal_pnl_pct >= 0 %}+{% endif %}{{ fund.personal_pnl_pct }}%
+                            </div>
+                            <div style="font-size: 10px; color: var(--text-secondary);">Return on Cost</div>
+                            {% else %}
+                            <span style="color: var(--text-secondary); font-size: 11px;">-</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- 5-Pillar Composite Score -->
+                        <td style="padding: 14px 10px; text-align: center;">
+                            <span class="score-badge {% if fund.composite_score < 50 %}score-cut{% elif fund.composite_score < 65 %}score-review{% elif fund.composite_score < 80 %}score-watch{% else %}score-hold{% endif %}">
+                                {{ fund.composite_score }}
+                            </span>
+                        </td>
+
+                        <!-- Horizon Persistence Matrix -->
+                        <td style="padding: 14px 10px; text-align: center;">
+                            <div class="horizon-grid">
+                                {% for h in ['6m', '12m', '24m', '36m'] %}
+                                {% set cell = fund.h_matrix[h] %}
+                                <span class="horizon-pill {% if cell.status == 'PASS' %}horizon-pass{% elif cell.status == 'FAIL' %}horizon-fail{% else %}horizon-na{% endif %}" title="{{ h|upper }}: Fund {{ cell.cagr }}% vs Cat Avg {{ cell.bm_avg }}%">
+                                    {{ h|upper }}: {% if cell.status == 'PASS' %}+{% elif cell.status == 'FAIL' %}-{% else %}N/A{% endif %}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </td>
+
+                        <!-- 6M Relative Momentum -->
+                        <td style="padding: 14px 10px; text-align: center;">
+                            <div style="font-weight: 700; color: {% if fund.rel_roc_6m >= 0 %}#34d399{% else %}#f87171{% endif %};">
+                                {% if fund.rel_roc_6m >= 0 %}+{% endif %}{{ fund.rel_roc_6m }}%
+                            </div>
+                            <div style="font-size: 10px; color: var(--text-secondary);">vs Cat Avg</div>
+                        </td>
+
+                        <!-- Tactical Entry & Strategy Decision -->
+                        <td style="padding: 14px 14px; text-align: center;">
+                            <span class="tactical-pill {% if fund.timing_code == 'TACTICAL_EXIT' %}badge-tactical-exit{% elif fund.timing_code == 'BUY_DIP' %}badge-buy-dip{% elif fund.timing_code == 'STOP_LOSS' %}badge-stop-loss{% else %}badge-winning-hold{% endif %}">
+                                {{ fund.timing_label }}
+                            </span>
+                            <div style="font-size: 10.5px; color: var(--text-secondary); margin-top: 3px;">
+                                {{ fund.timing_sub }}
+                            </div>
+                            <div style="margin-top: 4px;">
+                                <button onclick="openPillarModal({{ fund | tojson | forceescape }})" style="background: none; border: none; color: var(--accent-blue); font-size: 11px; font-weight: 600; cursor: pointer; text-decoration: underline;">
+                                    Inspect Details
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    {% if not data.funds %}
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                            No schemes match the selected category or filter criteria.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 5-Pillar Score & Personal Entry Breakdown Modal -->
+    <div id="pillarModal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closePillarModal()">&times;</button>
+            <h2 id="modalSchemeName" style="font-size: 18px; margin-bottom: 4px; color: var(--text-primary);"></h2>
+            <div id="modalMeta" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 20px;"></div>
+
+            <!-- Personal Entry Timing Box -->
+            <div id="personalEntryBox" style="background: rgba(15, 23, 42, 0.8); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+                <h3 style="font-size: 13.5px; color: var(--text-primary); margin-bottom: 8px; font-weight: 700;">Tactical Entry &amp; Timing Attribution</h3>
+                <div id="personalEntryDetails" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;"></div>
+            </div>
+
+            <!-- 5-Pillar Breakdown Bars -->
+            <h3 style="font-size: 14px; color: var(--text-primary); margin-bottom: 12px; border-bottom: 1px solid var(--glass-border); padding-bottom: 6px;">5-Pillar Fund Quality Score Breakdown (0 - 100 Points)</h3>
+            <div id="pillarsContainer" style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px;"></div>
+
+            <!-- Multi-Horizon Comparison Matrix Table -->
+            <h3 style="font-size: 14px; color: var(--text-primary); margin-bottom: 12px; border-bottom: 1px solid var(--glass-border); padding-bottom: 6px;">Multi-Horizon Persistence (Fund vs Category Avg)</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--glass-border); text-align: left;">
+                        <th style="padding: 8px;">Horizon Window</th>
+                        <th style="padding: 8px; text-align: center;">Fund Return</th>
+                        <th style="padding: 8px; text-align: center;">Category Peer Avg</th>
+                        <th style="padding: 8px; text-align: center;">Excess Return</th>
+                        <th style="padding: 8px; text-align: center;">Horizon Status</th>
+                    </tr>
+                </thead>
+                <tbody id="horizonTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function changeAsOfDate(newDate) {
+            if (!newDate) return;
+            const url = new URL(window.location.href);
+            url.searchParams.set('as_of_date', newDate);
+            window.location.href = url.toString();
+        }
+
+        let sortDirections = {};
+        function sortTable(n) {
+            const table = document.getElementById("diagnosticsTable");
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll("tr.fund-row"));
+            
+            const isAsc = !sortDirections[n];
+            sortDirections[n] = isAsc;
+
+            rows.sort((rowA, rowB) => {
+                const cellA = rowA.cells[n].innerText.trim();
+                const cellB = rowB.cells[n].innerText.trim();
+
+                const numA = parseFloat(cellA.replace(/[^0-9.-]/g, ''));
+                const numB = parseFloat(cellB.replace(/[^0-9.-]/g, ''));
+
+                if (!isNaN(numA) && !isNaN(numB) && cellA.match(/\d/) && cellB.match(/\d/)) {
+                    return isAsc ? numA - numB : numB - numA;
+                }
+                return isAsc ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        function filterTable() {
+            const input = document.getElementById('tableSearch').value.toUpperCase();
+            const rows = document.querySelectorAll('.fund-row');
+            rows.forEach(row => {
+                const text = row.textContent || row.innerText;
+                row.style.display = text.toUpperCase().includes(input) ? '' : 'none';
+            });
+        }
+
+        function openPillarModal(fund) {
+            document.getElementById('modalSchemeName').innerText = fund.scheme_name;
+            document.getElementById('modalMeta').innerText = `Category: ${fund.category} | Composite Cut Score: ${fund.composite_score} / 100 (${fund.status_label})`;
+
+            // Personal Entry Box Details
+            let entryHtml = `
+                <div>
+                    <div style="font-size: 11px; color: var(--text-secondary);">Avg Cost NAV</div>
+                    <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">${fund.weighted_avg_nav > 0 ? '₹' + fund.weighted_avg_nav : 'N/A'}</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: var(--text-secondary);">As Of Date NAV</div>
+                    <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">${fund.latest_nav > 0 ? '₹' + fund.latest_nav : 'N/A'}</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: var(--text-secondary);">Personal Entry PnL %</div>
+                    <div style="font-weight: 700; font-size: 14px; color: ${fund.personal_pnl_pct >= 0 ? '#34d399' : '#f87171'};">${fund.personal_pnl_pct >= 0 ? '+' : ''}${fund.personal_pnl_pct}%</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: var(--text-secondary);">Tactical Strategy Action</div>
+                    <div style="font-weight: 700; font-size: 13px;">${fund.timing_label}</div>
+                    <div style="font-size: 10px; color: var(--text-secondary);">${fund.timing_sub}</div>
+                </div>
+            `;
+            document.getElementById('personalEntryDetails').innerHTML = entryHtml;
+
+            const p = fund.pillars || {};
+            const pillarList = [
+                { title: 'Pillar 1: Excess Return & Alpha', score: p.p1_excess_return || 0, desc: `12M Return ${fund.cagr}% vs Cat Avg ${fund.cat_avg_cagr}%` },
+                { title: 'Pillar 2: Risk-Adjusted Efficiency', score: p.p2_risk_adjusted || 0, desc: `Sharpe ${fund.sharpe} vs Cat ${fund.cat_avg_sharpe} | Sortino ${fund.sortino} vs Cat ${fund.cat_avg_sortino}` },
+                { title: 'Pillar 3: Downside Protection & Max Drawdown', score: p.p3_downside_protection || 0, desc: `Max Drawdown -${fund.max_drawdown}% vs Cat Avg -${fund.cat_avg_mdd}%` },
+                { title: 'Pillar 4: Relative Momentum & Trend', score: p.p4_relative_momentum || 0, desc: `6M Relative ROC ${fund.rel_roc_6m}% vs Category` },
+                { title: 'Pillar 5: Multi-Horizon Persistence', score: p.p5_persistence || 0, desc: `Consistency across 6M, 12M, 24M, and 36M windows` }
+            ];
+
+            let phtml = '';
+            pillarList.forEach(item => {
+                const pct = (item.score / 20.0) * 100.0;
+                const barColor = item.score >= 15 ? '#10b981' : (item.score >= 10 ? '#f59e0b' : '#ef4444');
+                phtml += `
+                    <div>
+                        <div style="display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 600; margin-bottom: 4px;">
+                            <span>${item.title}</span>
+                            <span>${item.score} / 20 pts</span>
+                        </div>
+                        <div class="pillar-bar-bg">
+                            <div class="pillar-bar-fill" style="width: ${pct}%; background: ${barColor};"></div>
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">${item.desc}</div>
+                    </div>
+                `;
+            });
+            document.getElementById('pillarsContainer').innerHTML = phtml;
+
+            // Horizon Matrix Table
+            const hLabels = { '6m': '6 Months', '12m': '12 Months (1 Year)', '24m': '24 Months (2 Years)', '36m': '36 Months (3 Years)' };
+            let hhtml = '';
+            ['6m', '12m', '24m', '36m'].forEach(h => {
+                const hData = (fund.h_matrix || {})[h] || {};
+                const retStr = hData.cagr != null ? hData.cagr + '%' : 'N/A';
+                const bmStr = hData.bm_avg != null ? hData.bm_avg + '%' : 'N/A';
+                const diffStr = hData.diff != null ? (hData.diff >= 0 ? '+' + hData.diff + '%' : hData.diff + '%') : 'N/A';
+                const statusBadge = hData.status === 'PASS' ? 
+                    `<span class="metric-badge metric-pass">OUTPERFORMING</span>` : 
+                    (hData.status === 'FAIL' ? `<span class="metric-badge metric-fail">UNDERPERFORMING</span>` : `<span class="metric-badge">N/A</span>`);
+
+                hhtml += `
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 10px; font-weight: 600;">${hLabels[h]}</td>
+                        <td style="padding: 10px; text-align: center; font-weight: 700;">${retStr}</td>
+                        <td style="padding: 10px; text-align: center; color: var(--text-secondary);">${bmStr}</td>
+                        <td style="padding: 10px; text-align: center; font-weight: 600; color: ${hData.diff >= 0 ? '#34d399' : '#f87171'};">${diffStr}</td>
+                        <td style="padding: 10px; text-align: center;">${statusBadge}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('horizonTableBody').innerHTML = hhtml;
+
+            document.getElementById('pillarModal').style.display = 'flex';
+        }
+
+        function closePillarModal() {
+            document.getElementById('peerModal').style.display = 'none';
+            document.getElementById('pillarModal').style.display = 'none';
+        }
+
+        window.onclick = function(e) {
+            const modal = document.getElementById('pillarModal');
+            if (e.target === modal) closePillarModal();
+        }
+    </script>
+</body>
+</html>

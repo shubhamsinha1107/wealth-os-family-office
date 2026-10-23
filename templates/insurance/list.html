@@ -1,0 +1,332 @@
+<!-- templates/insurance/list.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insurance Policies</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=5">
+    <script src="/static/js/backup.js?v=2"></script>
+    <style>
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        .module-selector {
+            display: flex;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+        }
+        .module-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .module-link:hover {
+            color: var(--text-primary);
+        }
+        .module-link.active {
+            color: var(--text-primary);
+            background: var(--accent-blue);
+            box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);
+        }
+        .excel-filter {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 5px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            outline: none;
+            font-family: inherit;
+            transition: border-color 0.2s ease;
+        }
+        .excel-filter:focus {
+            border-color: var(--accent-blue);
+        }
+        .sort-header {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s ease;
+        }
+        .sort-header:hover {
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div class="header-top">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div class="module-selector">
+                        <a href="/portfolio/" class="module-link">Portfolio Overview</a>
+                        <a href="/mutual-funds/" class="module-link">Mutual Funds</a>
+                        <a href="/equities/" class="module-link">Equities</a>
+                        <a href="/insurance/" class="module-link active">Insurance</a>
+                        <a href="/alternatives/unlisted/" class="module-link">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" class="module-link">AIF / PMS</a>
+                        <a href="/gold/" class="module-link">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs" style="justify-content: space-between; align-items: center; width: 100%; padding-right: 12px; box-sizing: border-box;">
+                <div style="display: flex; gap: 8px;">
+                    <a href="/insurance/" class="nav-link active">Policies List</a>
+                </div>
+                <a class="btn-primary" href="/insurance/add" style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;">
+                    + Add Policy
+                </a>
+            </div>
+        </header>
+
+        <!-- Policies Table Card -->
+        <div class="glass-card" style="padding: 24px;">
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+                <a href="/insurance/export" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease; text-decoration: none;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path>
+                    </svg>
+                    <span>Export to Excel</span>
+                </a>
+            </div>
+            <div class="table-container" style="margin-top: 0;">
+                <table id="policies-table" class="table-compact" style="margin-top: 0;">
+                <thead>
+                    <tr>
+                        <th class="sort-header" data-sort="file_no" style="padding-left: 24px; width: 80px;">File No ⇅</th>
+                        <th class="sort-header" data-sort="insured" style="width: 110px;">Insured ⇅</th>
+                        <th class="sort-header" data-sort="policy" style="width: 120px;">Policy No ⇅</th>
+                        <th class="sort-header" data-sort="insurer" style="width: 140px; max-width: 140px;">Insurer ⇅</th>
+                        <th class="sort-header" data-sort="plan" style="width: 150px; max-width: 150px;">Plan Name ⇅</th>
+                        <th class="sort-header" data-sort="age" style="width: 80px;">Age ⇅</th>
+                        <th class="sort-header" data-sort="premium_term" style="width: 90px;">PPT ⇅</th>
+                        <th class="sort-header" data-sort="premium_paid" style="text-align: right; width: 110px;">Paid ⇅</th>
+                        <th class="sort-header" data-sort="sum_assured" style="text-align: right; width: 120px;">Sum Assured ⇅</th>
+                        <th class="sort-header" data-sort="fund_value" style="text-align: right; width: 120px;">Fund Value ⇅</th>
+                        <th class="sort-header" data-sort="withdrawable" style="text-align: right; width: 125px;">Withdrawable ⇅</th>
+                        <th class="sort-header" data-sort="xirr" style="text-align: right; width: 85px;">XIRR ⇅</th>
+                        <th class="sort-header" data-sort="lock" style="text-align: center; width: 95px;">Lock ⇅</th>
+                        <th class="sort-header" data-sort="status" style="text-align: center; width: 95px;">Status ⇅</th>
+                    </tr>
+                    <!-- Excel-like column filters -->
+                    <tr class="filter-row" style="background: rgba(15, 23, 42, 0.45); border-bottom: 2px solid var(--glass-border);">
+                        <th style="padding-left: 24px;"><input type="text" class="excel-filter" data-col="0" placeholder="Filter File..."></th>
+                        <th><input type="text" class="excel-filter" data-col="1" placeholder="Filter Insured..."></th>
+                        <th><input type="text" class="excel-filter" data-col="2" placeholder="Filter Policy..."></th>
+                        <th><input type="text" class="excel-filter" data-col="3" placeholder="Filter Insurer..."></th>
+                        <th><input type="text" class="excel-filter" data-col="4" placeholder="Filter Plan..."></th>
+                        <th><input type="text" class="excel-filter" data-col="5" placeholder="Filter Age..."></th>
+                        <th><input type="text" class="excel-filter" data-col="6" placeholder="Filter Term..."></th>
+                        <th><input type="text" class="excel-filter" data-col="7" placeholder="Filter Paid..."></th>
+                        <th></th> <!-- Sum Assured -->
+                        <th></th> <!-- Fund Value -->
+                        <th></th> <!-- Withdrawable -->
+                        <th></th> <!-- XIRR -->
+                        <th><input type="text" class="excel-filter" data-col="12" placeholder="Filter Lock..."></th>
+                        <th><input type="text" class="excel-filter" data-col="13" placeholder="Filter Status..."></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if policies %}
+                        {% for item in policies %}
+                        {% set policy = item.policy %}
+                        {% set short_name = item.short_name %}
+                        <tr class="policy-row" style="cursor: pointer;" onclick="if(event.ctrlKey||event.metaKey){window.open('/insurance/{{ policy.id }}','_blank')}else{window.location='/insurance/{{ policy.id }}'}" onmousedown="if(event.button===1){event.preventDefault();window.open('/insurance/{{ policy.id }}','_blank')}">
+                            <td style="padding-left: 24px; font-family: monospace; color: var(--text-secondary);">{{ policy.file_number or "—" }}</td>
+                            <td style="font-weight: 600; color: #a78bfa;">{{ policy.insured_person_name or short_name }}</td>
+                            <td style="font-family: monospace; font-weight: 500;">{{ policy.policy_number }}</td>
+                            <td style="font-weight: 500; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ policy.insurer_name }}">{{ item.clean_insurer }}</td>
+                            <td style="color: var(--text-secondary); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ policy.plan_name or '' }}">{{ policy.plan_name or "—" }}</td>
+                            <td style="color: var(--text-secondary);">{{ item.policy_age }}</td>
+                            <td style="color: var(--text-secondary);">{{ policy.premium_term or 0 }} Years</td>
+                            <td style="text-align: right; font-weight: 600; color: var(--text-primary);">
+                                {{ item.premium_paid|format_lakhs }}
+                            </td>
+                            <td style="text-align: right; font-weight: 600;">
+                                {{ policy.sum_assured|format_lakhs }}
+                            </td>
+                            <td style="text-align: right; font-weight: 600; color: var(--accent-green);">
+                                {{ item.fund_value|format_lakhs }}
+                            </td>
+                            <td style="text-align: right; font-weight: 600; color: #a78bfa;">
+                                {{ item.withdrawable|format_lakhs }}
+                            </td>
+                            <td style="text-align: right; font-weight: 700; font-size: 13px;">
+                                {% if item.xirr is not none %}
+                                    <span style="color: {% if item.xirr >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                        {{ '%.2f'|format(item.xirr) }}%
+                                    </span>
+                                {% else %}
+                                    <span style="color: var(--text-secondary);">—</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge" style="{% if item.lock_status == 'LOCKED' %}background: rgba(245, 158, 11, 0.15); color: #f59e0b;{% elif item.lock_status == 'UNLOCKED' %}background: rgba(16, 185, 129, 0.15); color: var(--accent-green);{% else %}background: rgba(148, 163, 184, 0.15); color: var(--text-secondary);{% endif %}">
+                                    {{ item.lock_status }}
+                                </span>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge {% if policy.status.value == 'ACTIVE' %}badge-positive{% else %}badge-negative{% endif %}">
+                                    {{ policy.status.value }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr class="placeholder-row">
+                            <td colspan="14" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                No insurance policies found. Click "+ Add Policy" to add one.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const table = document.querySelector("#policies-table");
+            if (!table) return;
+            const tbody = table.querySelector("tbody");
+            const originalRows = Array.from(tbody.querySelectorAll("tr.policy-row"));
+
+            if (originalRows.length === 0) return;
+
+            // --- 1. Multi-Column Excel-like Filtering ---
+            const filters = document.querySelectorAll(".excel-filter");
+            filters.forEach(filterInput => {
+                filterInput.addEventListener("input", filterTable);
+            });
+
+            function filterTable() {
+                const filterValues = {};
+                filters.forEach(input => {
+                    const colIndex = parseInt(input.getAttribute("data-col"));
+                    const val = input.value.toLowerCase().trim();
+                    if (val !== "") {
+                        filterValues[colIndex] = val;
+                    }
+                });
+
+                originalRows.forEach(row => {
+                    let matches = true;
+                    const cells = row.querySelectorAll("td");
+                    
+                    for (const colIndex in filterValues) {
+                        const cellText = cells[colIndex].textContent.toLowerCase().trim();
+                        const filterText = filterValues[colIndex];
+                        if (!cellText.includes(filterText)) {
+                            matches = false;
+                            break;
+                        }
+                    }
+
+                    row.style.display = matches ? "" : "none";
+                });
+            }
+
+            // --- 2. Dynamic Column-wise Sorting ---
+            let currentSortCol = null;
+            let currentSortOrder = "asc"; // "asc" or "desc"
+
+            const headers = document.querySelectorAll(".sort-header");
+            headers.forEach((header, index) => {
+                header.addEventListener("click", function() {
+                    const sortKey = this.getAttribute("data-sort");
+                    const colIndex = index; // Matches header index to td cell index
+
+                    if (currentSortCol === sortKey) {
+                        currentSortOrder = currentSortOrder === "asc" ? "desc" : "asc";
+                    } else {
+                        currentSortCol = sortKey;
+                        currentSortOrder = "asc";
+                    }
+
+                    // Update UI indicators
+                    headers.forEach(h => {
+                        const text = h.textContent.replace(/[▲▼⇅]/g, "").trim();
+                        if (h.getAttribute("data-sort") === sortKey) {
+                            h.innerHTML = text + (currentSortOrder === "asc" ? " ▲" : " ▼");
+                        } else {
+                            h.innerHTML = text + " ⇅";
+                        }
+                    });
+
+                    sortRows(colIndex, sortKey);
+                });
+            });
+
+            function parseNumericValue(text, sortKey) {
+                let clean = text.replace(/[₹,]/g, "").trim();
+                if (sortKey === "age") {
+                    let match = clean.match(/([\d.]+)\s*(Yr|Mo)/);
+                    if (match) {
+                        let num = parseFloat(match[1]);
+                        let unit = match[2];
+                        if (unit === "Mo") {
+                            return num / 12.0;
+                        }
+                        return num;
+                    }
+                    return -Infinity;
+                }
+                if (sortKey === "premium_term") {
+                    let val = parseFloat(clean.replace(/[^\d.]/g, ""));
+                    return isNaN(val) ? -Infinity : val;
+                }
+                let val = parseFloat(clean);
+                return isNaN(val) ? -Infinity : val;
+            }
+
+            function sortRows(colIndex, sortKey) {
+                const isNumeric = (sortKey === "sum_assured" || sortKey === "fund_value" || sortKey === "withdrawable" || sortKey === "xirr" || sortKey === "premium_paid" || sortKey === "premium_term" || sortKey === "age");
+                const isFileNo = sortKey === "file_no";
+
+                originalRows.sort((a, b) => {
+                    const valA = a.cells[colIndex].textContent.trim();
+                    const valB = b.cells[colIndex].textContent.trim();
+
+                    if (isNumeric) {
+                        const numA = parseNumericValue(valA, sortKey);
+                        const numB = parseNumericValue(valB, sortKey);
+                        return currentSortOrder === "asc" ? numA - numB : numB - numA;
+                    } else if (isFileNo) {
+                        // Sort File No (e.g. T-294) numerically by suffix number
+                        const numA = parseInt(valA.replace(/[^\d]/g, "")) || 0;
+                        const numB = parseInt(valB.replace(/[^\d]/g, "")) || 0;
+                        return currentSortOrder === "asc" ? numA - numB : numB - numA;
+                    } else {
+                        return currentSortOrder === "asc"
+                            ? valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' })
+                            : valB.localeCompare(valA, undefined, { numeric: true, sensitivity: 'base' });
+                    }
+                });
+
+                // Re-append sorted rows to tbody
+                originalRows.forEach(row => tbody.appendChild(row));
+            }
+        });
+    </script>
+</body>
+</html>

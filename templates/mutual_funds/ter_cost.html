@@ -1,0 +1,958 @@
+<!-- templates/mutual_funds/ter_cost.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TER & Broker Cost Analytics - Family Office</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <script src="/static/js/backup.js?v=2"></script>
+    <style>
+        .badge-advisor {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .badge-prime { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .badge-nexus { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+        .badge-direct { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-other { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); }
+        
+        .badge-status {
+            padding: 2px 7px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .badge-verified { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-unmatched { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+        .badge-redeemed { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); margin-left: 6px; }
+
+        .grid-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .summary-card {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .summary-title {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .summary-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .summary-subtext {
+            font-size: 12px;
+            margin-top: 4px;
+            color: var(--text-secondary);
+        }
+
+        .broker-card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .broker-card {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 18px;
+        }
+
+        .broker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+        }
+
+        .filter-container {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+            margin-bottom: 20px;
+        }
+
+        .form-select, .form-input {
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s ease;
+        }
+        .sortable-header:hover {
+            color: #60a5fa !important;
+        }
+        .sort-icon {
+            font-size: 11px;
+            margin-left: 4px;
+            opacity: 0.6;
+        }
+
+        .alert-banner {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            color: #f87171;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 28px;
+            margin-bottom: 14px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: 0.5px;
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .matrix-table th {
+            background: rgba(30, 41, 59, 0.9);
+            padding: 10px 14px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-align: right;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        .matrix-table th:first-child { text-align: left; }
+        .matrix-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            text-align: right;
+        }
+        .matrix-table td:first-child { text-align: left; font-weight: 600; }
+        .total-row td {
+            background: rgba(30, 41, 59, 0.95);
+            font-weight: 700;
+            border-top: 2px solid rgba(255, 255, 255, 0.2);
+            color: #60a5fa;
+        }
+
+        .grand-box {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-top: 16px;
+            display: flex;
+            justify-style: space-around;
+            align-items: center;
+        }
+
+        .saved-green {
+            color: #34d399 !important;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Real-Time TER & Broker Cost Drag Analytics</h1>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <button onclick="triggerSyncTerCache()" id="sync-ter-btn-top" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border: 1px solid rgba(59, 130, 246, 0.5); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"></path>
+                        </svg>
+                        <span class="sync-ter-text">Sync & Recalculate TER Files</span>
+                    </button>
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/portfolio/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;">Portfolio Overview</a>
+                        <a href="/mutual-funds/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue);">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <a href="/mutual-funds/" class="nav-link">Holdings AUM</a>
+                <a href="/mutual-funds/pnl" class="nav-link">Capital Gains (FIFO)</a>
+                <a href="/mutual-funds/performance" class="nav-link">XIRR & CAGR</a>
+                <a href="/mutual-funds/sips" class="nav-link">SIP Tracker</a>
+                <a href="/mutual-funds/transactions" class="nav-link">Transactions Ledger</a>
+                <a href="/mutual-funds/account-report" class="nav-link">Account Report</a>
+                <a href="/mutual-funds/monthly-profits" class="nav-link">Monthly Profits</a>
+                <a href="/mutual-funds/ter-cost" class="nav-link active">TER & Broker Costs</a>
+                <a href="/mutual-funds/unique-funds" class="nav-link">Unique Funds</a>
+                <a href="/mutual-funds/underperforming" class="nav-link">Underperformance Diagnostics</a>
+                <a href="/mutual-funds/compare-nav" class="nav-link">Compare NAVs</a>
+                <a href="/mutual-funds/upload" class="nav-link">Upload CAS PDF</a>
+            </div>
+        </header>
+
+        <!-- Unmatched Warning Alert Banner (Strict No Guessing Policy) -->
+        {% if ter_data.unmatched_count > 0 %}
+        <div class="alert-banner">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-weight: 700; font-size: 15px;">
+                    ⚠️ {{ ter_data.unmatched_count }} Unmatched Scheme(s) Detected in {{ ter_data.selected_period_label }}
+                </div>
+                <button onclick="filterUnmatchedOnly()" class="btn" style="padding: 4px 12px; font-size: 12px; background: rgba(239, 68, 68, 0.3); border: 1px solid #ef4444; color: white; cursor: pointer; border-radius: 6px;">
+                    Show Unmatched Schemes Only
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Top Metrics Cards Grid -->
+        <div class="grid-summary">
+            <div class="summary-card">
+                <div class="summary-title">Total Portfolio Valuation</div>
+                <div class="summary-value" style="color: #60a5fa;">₹{{ "{:,.2f}".format(ter_data.total_aum_cr) }} Cr</div>
+                <div class="summary-subtext">₹{{ "{:,.2f}".format(ter_data.total_aum) }} Total AUM</div>
+            </div>
+            <div class="summary-card" style="border-left: 4px solid {% if selected_advisor == 'Direct' %}#34d399{% else %}#ef4444{% endif %};">
+                <div class="summary-title">{% if selected_advisor == 'Direct' %}Brokerage Fee Saved{% else %}Annual Broker Drag (Advisor Fee){% endif %}</div>
+                <div class="summary-value" style="color: {% if selected_advisor == 'Direct' %}#34d399{% else %}#f87171{% endif %};">
+                    {% if selected_advisor == 'Direct' %}
+                    ₹{{ "{:,.2f}".format(ter_data.member_matrix_totals.broker_saved_lakhs) }} L/yr Saved
+                    {% else %}
+                    ₹{{ "{:,.2f}".format(ter_data.total_annual_drag / 100000) }} Lakhs/yr
+                    {% endif %}
+                </div>
+                <div class="summary-subtext" style="color: {% if selected_advisor == 'Direct' %}#34d399{% else %}#ef4444{% endif %}; font-weight: 600;">
+                    {% if selected_advisor == 'Direct' %}
+                    Direct Plan Cost Advantage
+                    {% else %}
+                    {{ "{:.2f}".format(ter_data.blended_drag_pct) }}% p.a. Blended Drag
+                    {% endif %}
+                </div>
+            </div>
+            <div class="summary-card" style="border-left: 4px solid #f59e0b;">
+                <div class="summary-title">Monthly Expense Drag</div>
+                <div class="summary-value" style="color: #fbbf24;">₹{{ "{:,.2f}".format(ter_data.total_monthly_drag / 100000) }} Lakhs/mo</div>
+                <div class="summary-subtext">₹{{ "{:,.2f}".format(ter_data.total_monthly_drag) }} / month</div>
+            </div>
+            <div class="summary-card" style="border-left: 4px solid #3b82f6;">
+                <div class="summary-title">Total Annual TER Cost</div>
+                <div class="summary-value">₹{{ "{:,.2f}".format(ter_data.total_annual_exp / 100000) }} Lakhs/yr</div>
+                <div class="summary-subtext">{{ "{:.2f}".format(ter_data.blended_ter_pct) }}% p.a. Total Regular TER</div>
+            </div>
+            <div class="summary-card" style="border-left: 4px solid #10b981;">
+                <div class="summary-title">5-Year Projected Cost Loss</div>
+                <div class="summary-value" style="color: #34d399;">₹{{ "{:,.2f}".format(ter_data.five_yr_loss_proj_cr) }} Cr</div>
+                <div class="summary-subtext">Compounding @ 12.0% p.a.</div>
+            </div>
+        </div>
+
+        <!-- Broker Breakdown Cards -->
+        <h2 style="font-size: 18px; margin-bottom: 14px; font-weight: 600; color: var(--text-primary);">Broker / Advisor Summary Breakdown ({{ ter_data.selected_period_label }})</h2>
+        <div class="broker-card-grid">
+            {% for b in ter_data.broker_summaries %}
+            <div class="broker-card">
+                <div class="broker-header">
+                    <div>
+                        <span class="badge-advisor {% if b.advisor == 'Prime Wealth' %}badge-prime{% elif b.advisor == 'Nexus Capital' %}badge-nexus{% elif b.advisor == 'Direct' %}badge-direct{% else %}badge-other{% endif %}" style="font-size: 13px; padding: 4px 10px;">
+                            {{ b.advisor }}
+                        </span>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">
+                        {{ b.scheme_count }} Active Schemes
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
+                    <div>
+                        <div style="color: var(--text-secondary); font-size: 11px;">AUM (Cr)</div>
+                        <div style="font-size: 16px; font-weight: 700;">₹{{ "{:,.2f}".format(b.aum_cr) }} Cr</div>
+                    </div>
+                    <div>
+                        <div style="color: var(--text-secondary); font-size: 11px;">Monthly Drag</div>
+                        <div style="font-size: 16px; font-weight: 700; color: {% if b.advisor == 'Direct' %}#34d399{% else %}#f87171{% endif %};">
+                            ₹{{ "{:,.2f}".format(b.monthly_drag / 100000) }} L/mo
+                        </div>
+                    </div>
+                    <div>
+                        <div style="color: var(--text-secondary); font-size: 11px;">Broker Fee Drag (%)</div>
+                        <div style="font-weight: 600; color: {% if b.advisor == 'Direct' %}#34d399{% else %}#f87171{% endif %};">
+                            {{ "{:.2f}".format(b.drag_pct) }}% p.a.
+                        </div>
+                    </div>
+                    <div>
+                        <div style="color: var(--text-secondary); font-size: 11px;">Total TER (%)</div>
+                        <div style="font-weight: 600;">
+                            {{ "{:.2f}".format(b.ter_pct) }}% p.a.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- 1. ACCOUNT-WISE BROKER COMMISSION MATRIX (MAIN ACCOUNTS: APEX, PATRIARCH, MR, VG) -->
+        <div class="section-header">
+            <div class="section-title">BROKER COMMISSION (ACCOUNT-WISE SUMMARY)</div>
+            <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <label style="font-size: 13px; font-weight: 700; color: #a78bfa;">Calculation Method:</label>
+                    <select id="filter-engine-mode" class="form-select" onchange="applyMatrixFilters()" style="background: rgba(167, 139, 250, 0.12); border: 1px solid rgba(167, 139, 250, 0.4); color: #c4b5fd; font-weight: 700; border-radius: 6px; padding: 5px 10px;">
+                        <option value="AMFI_NAV" {% if selected_engine_mode == 'AMFI_NAV' or not selected_engine_mode %}selected{% endif %}>⚡ AMFI Daily NAV Method (Automated)</option>
+                        <option value="NSDL" {% if selected_engine_mode == 'NSDL' %}selected{% endif %}>📄 NSDL Excel Master Files (Audit Baseline)</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <label style="font-size: 13px; font-weight: 700; color: #38bdf8;">Asset Class:</label>
+                    <select id="filter-asset-class" class="form-select" onchange="applyMatrixFilters()" style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.4); color: #7dd3fc; font-weight: 700; border-radius: 6px; padding: 5px 10px;">
+                        <option value="ALL" {% if selected_asset_class == 'ALL' or not selected_asset_class %}selected{% endif %}>All Asset Classes</option>
+                        <option value="EQUITY_ONLY" {% if selected_asset_class == 'EQUITY_ONLY' %}selected{% endif %}>📈 Equity Only (Excl Gold, Silver, Liquid & Arb)</option>
+                        <option value="BULLION" {% if selected_asset_class == 'BULLION' %}selected{% endif %}>🪙 Gold & Silver (Bullion)</option>
+                        <option value="LIQUID" {% if selected_asset_class == 'LIQUID' %}selected{% endif %}>💧 Liquid & Debt</option>
+                        <option value="ARBITRAGE" {% if selected_asset_class == 'ARBITRAGE' %}selected{% endif %}>⚖️ Arbitrage</option>
+                    </select>
+                </div>
+                <button onclick="triggerSyncTerCache()" id="sync-ter-btn-mid" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border: 1px solid rgba(59, 130, 246, 0.5); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"></path>
+                    </svg>
+                    <span class="sync-ter-text">Sync & Recalculate TER Files</span>
+                </button>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary);">Advisor / Broker:</label>
+                    <select id="matrix-filter-advisor" class="form-select" onchange="applyMatrixFilters()">
+                        <option value="ALL" {% if selected_advisor == 'ALL' or not selected_advisor %}selected{% endif %}>All Advisors (Prime + Nexus + Direct)</option>
+                        <option value="Prime Wealth" {% if selected_advisor == 'Prime Wealth' %}selected{% endif %}>Prime Wealth</option>
+                        <option value="Nexus Capital" {% if selected_advisor == 'Nexus Capital' %}selected{% endif %}>Nexus Capital</option>
+                        <option value="Direct" {% if selected_advisor == 'Direct' %}selected{% endif %}>Direct</option>
+                    </select>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary);">Period / Calendar Year:</label>
+                    <select id="filter-period" class="form-select" onchange="applyMatrixFilters()">
+                        {% for popt in ter_data.available_periods %}
+                        <option value="{{ popt.key }}" {% if popt.is_selected %}selected{% endif %}>{{ popt.label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <!-- 📅 Calendar Date Picker & Quick Presets -->
+                <div style="display: flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.08); padding: 4px 10px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                    <label style="font-size: 13px; font-weight: 700; color: #34d399; display: flex; align-items: center; gap: 4px;">
+                        📅 As Of Date:
+                    </label>
+                    <input type="date" id="filter-as-of-date" class="form-input" value="{{ selected_as_of_date }}" max="{{ max_date }}" onchange="applyMatrixFilters()" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-weight: 700; border-radius: 6px; padding: 4px 8px; font-size: 12px; color-scheme: dark;">
+                    <div style="display: flex; gap: 4px;">
+                        <button type="button" onclick="setAsOfDate('{{ max_date }}')" style="padding: 3px 7px; font-size: 11px; font-weight: 600; background: {% if selected_as_of_date == max_date %}rgba(16, 185, 129, 0.3){% else %}rgba(30, 41, 59, 0.8){% endif %}; border: 1px solid rgba(16, 185, 129, 0.4); color: #a7f3d0; border-radius: 4px; cursor: pointer;">
+                            Today (Latest)
+                        </button>
+                        <button type="button" onclick="setAsOfDate('2026-09-30')" style="padding: 3px 7px; font-size: 11px; font-weight: 600; background: {% if selected_as_of_date == '2026-09-30' %}rgba(59, 130, 246, 0.3){% else %}rgba(30, 41, 59, 0.8){% endif %}; border: 1px solid rgba(59, 130, 246, 0.4); color: #93c5fd; border-radius: 4px; cursor: pointer;">
+                            Q3 End (30-Sep)
+                        </button>
+                        <button type="button" onclick="setAsOfDate('2026-08-31')" style="padding: 3px 7px; font-size: 11px; font-weight: 600; background: {% if selected_as_of_date == '2026-08-31' %}rgba(251, 191, 36, 0.3){% else %}rgba(30, 41, 59, 0.8){% endif %}; border: 1px solid rgba(251, 191, 36, 0.4); color: #fde68a; border-radius: 4px; cursor: pointer;">
+                            Aug 31
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="padding: 0; overflow: hidden; border-radius: 12px; border: 1px solid var(--glass-border); margin-bottom: 24px;">
+            <table class="matrix-table">
+                <thead>
+                    <tr>
+                        <th>Account / Owner</th>
+                        <th>Avg AUM (Cr)</th>
+                        <th>Base Expense (₹ L)</th>
+                        <th>{% if selected_advisor == 'Direct' %}Brokerage Saved (₹ L){% else %}Broker Expense (₹ L){% endif %}</th>
+                        <th>Total Expense (₹ L)</th>
+                        <th>BER (% p.a.)</th>
+                        <th>Advisor (% p.a.)</th>
+                        <th>TER (% p.a.)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in ter_data.member_matrix %}
+                    <tr>
+                        <td>
+                            <span style="color: #60a5fa; font-weight: 700;">{{ m.owner_short }}</span> 
+                            <span style="font-size: 12px; color: var(--text-secondary); font-weight: normal;">({{ m.owner_name }})</span>
+                        </td>
+                        <td>₹{{ "{:,.2f}".format(m.aum_cr) }} Cr</td>
+                        <td>₹{{ "{:,.2f}".format(m.base_exp_lakhs) }} L</td>
+                        <td>
+                            {% if m.broker_exp_lakhs > 0 %}
+                            <span style="color: #f87171; font-weight: 600;">₹{{ "{:,.2f}".format(m.broker_exp_lakhs) }} L</span>
+                            {% else %}
+                            <span style="color: #34d399; font-weight: 700;">₹0.00 L</span>
+                            {% if m.broker_saved_lakhs > 0 %}
+                            <div style="font-size: 11px; color: #34d399; font-weight: 600; margin-top: 2px;">(₹{{ "{:,.2f}".format(m.broker_saved_lakhs) }} L Saved)</div>
+                            {% endif %}
+                            {% endif %}
+                        </td>
+                        <td style="font-weight: 600;">₹{{ "{:,.2f}".format(m.total_exp_lakhs) }} L</td>
+                        <td>{{ "{:.2f}".format(m.ber_pct) }}%</td>
+                        <td style="color: {% if selected_advisor == 'Direct' %}#34d399{% else %}#f87171{% endif %}; font-weight: 600;">
+                            {% if selected_advisor == 'Direct' %}0.00% (Saved){% else %}{{ "{:.2f}".format(m.advisor_pct) }}%{% endif %}
+                        </td>
+                        <td style="font-weight: 600;">{{ "{:.2f}".format(m.ter_pct) }}%</td>
+                    </tr>
+                    {% endfor %}
+                    <!-- TOTAL SUM ROW FOR ALL MAIN ACCOUNTS -->
+                    <tr class="total-row">
+                        <td>TOTAL (SUM ACROSS ACCOUNTS)</td>
+                        <td>₹{{ "{:,.2f}".format(ter_data.member_matrix_totals.aum_cr) }} Cr</td>
+                        <td>₹{{ "{:,.2f}".format(ter_data.member_matrix_totals.base_exp_lakhs) }} L</td>
+                        <td>
+                            {% if ter_data.member_matrix_totals.broker_exp_lakhs > 0 %}
+                            <span style="color: #f87171;">₹{{ "{:,.2f}".format(ter_data.member_matrix_totals.broker_exp_lakhs) }} L</span>
+                            {% else %}
+                            <span style="color: #34d399; font-weight: 700;">₹0.00 L</span>
+                            {% if ter_data.member_matrix_totals.broker_saved_lakhs > 0 %}
+                            <div style="font-size: 11px; color: #34d399; font-weight: 600; margin-top: 2px;">(₹{{ "{:,.2f}".format(ter_data.member_matrix_totals.broker_saved_lakhs) }} L Saved)</div>
+                            {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>₹{{ "{:,.2f}".format(ter_data.member_matrix_totals.total_exp_lakhs) }} L</td>
+                        <td>{{ "{:.2f}".format(ter_data.member_matrix_totals.ber_pct) }}%</td>
+                        <td style="color: {% if selected_advisor == 'Direct' %}#34d399{% else %}#f87171{% endif %};">
+                            {% if selected_advisor == 'Direct' %}0.00% (Saved){% else %}{{ "{:.2f}".format(ter_data.member_matrix_totals.advisor_pct) }}%{% endif %}
+                        </td>
+                        <td>{{ "{:.2f}".format(ter_data.member_matrix_totals.ter_pct) }}%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 2. CUMULATIVE MULTI-YEAR BROKER COMMISSION TABLE (AT BOTTOM) -->
+        <div class="section-header">
+            <div class="section-title">HISTORICAL BROKER COMMISSION BY YEAR (2020 - 2026)</div>
+        </div>
+
+        <div class="card" style="padding: 0; overflow: hidden; border-radius: 12px; border: 1px solid var(--glass-border); margin-bottom: 24px;">
+            <table class="matrix-table">
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Avg Portfolio AUM (Cr)</th>
+                        <th>Base Expense (₹ L)</th>
+                        <th>{% if selected_advisor == 'Direct' %}Brokerage Saved (₹ L){% else %}Broker Expense Paid (₹ L){% endif %}</th>
+                        <th>Total Expense (₹ L)</th>
+                        <th>BER (% p.a.)</th>
+                        <th>Advisor Drag (% p.a.)</th>
+                        <th>TER (% p.a.)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for y in ter_data.historical_summary.years %}
+                    <tr>
+                        <td style="font-weight: 700; color: #60a5fa;">{{ y.year }}</td>
+                        <td style="font-weight: 600;">₹{{ "{:,.2f}".format(y.avg_aum_cr) }} Cr</td>
+                        <td>₹{{ "{:,.2f}".format(y.base_exp_lakhs) }} L</td>
+                        <td>
+                            {% if y.broker_exp_lakhs > 0 %}
+                            <span style="color: #f87171; font-weight: 600;">₹{{ "{:,.2f}".format(y.broker_exp_lakhs) }} L</span>
+                            {% else %}
+                            <span style="color: #34d399; font-weight: 700;">₹0.00 L</span>
+                            {% if y.broker_saved_lakhs > 0 %}
+                            <div style="font-size: 11px; color: #34d399; font-weight: 600; margin-top: 2px;">(₹{{ "{:,.2f}".format(y.broker_saved_lakhs) }} L Saved)</div>
+                            {% endif %}
+                            {% endif %}
+                        </td>
+                        <td style="font-weight: 600;">₹{{ "{:,.2f}".format(y.total_exp_lakhs) }} L</td>
+                        <td>{{ "{:.2f}".format(y.ber_pct) }}%</td>
+                        <td style="color: {% if selected_advisor == 'Direct' %}#34d399{% else %}#f87171{% endif %}; font-weight: 600;">
+                            {% if selected_advisor == 'Direct' %}0.00% (Saved){% else %}{{ "{:.2f}".format(y.advisor_pct) }}%{% endif %}
+                        </td>
+                        <td style="font-weight: 600;">{{ "{:.2f}".format(y.ter_pct) }}%</td>
+                    </tr>
+                    {% endfor %}
+                    <!-- CUMULATIVE GRAND TOTAL ROW -->
+                    <tr class="total-row" style="background: rgba(15, 23, 42, 0.98);">
+                        <td>TOTAL CUMULATIVE (2020 - 2026)</td>
+                        <td>—</td>
+                        <td>₹{{ "{:,.2f}".format(ter_data.historical_summary.cumulative_base_lakhs) }} L (₹{{ "{:.3f}".format(ter_data.historical_summary.cumulative_base_cr) }} Cr)</td>
+                        <td>
+                            {% if selected_advisor == 'Direct' %}
+                            <span style="color: #34d399; font-weight: 700;">₹0.00 L</span>
+                            <div style="font-size: 12px; color: #34d399; font-weight: 600; margin-top: 2px;">(₹{{ "{:,.2f}".format(ter_data.historical_summary.cumulative_saved_lakhs) }} L / ₹{{ "{:.3f}".format(ter_data.historical_summary.cumulative_saved_cr) }} Cr Saved)</div>
+                            {% else %}
+                            <span style="color: #f87171;">₹{{ "{:,.2f}".format(ter_data.historical_summary.cumulative_broker_lakhs) }} L (₹{{ "{:.3f}".format(ter_data.historical_summary.cumulative_broker_cr) }} Cr)</span>
+                            {% endif %}
+                        </td>
+                        <td style="color: #38bdf8;">₹{{ "{:,.2f}".format(ter_data.historical_summary.cumulative_total_lakhs) }} L (₹{{ "{:.3f}".format(ter_data.historical_summary.cumulative_total_cr) }} Cr)</td>
+                        <td>—</td>
+                        <td>—</td>
+                        <td>—</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- CUMULATIVE SUMMARY BANNER BOX -->
+        <div class="grand-box">
+            <div style="text-align: center;">
+                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Cumulative Base Expense (2020 - 2026)</div>
+                <div style="font-size: 20px; font-weight: 700; color: #60a5fa; margin-top: 4px;">₹{{ "{:.3f}".format(ter_data.historical_summary.cumulative_base_cr) }} Cr</div>
+            </div>
+            <div style="text-align: center; border-left: 1px solid rgba(255, 255, 255, 0.1); border-right: 1px solid rgba(255, 255, 255, 0.1); padding: 0 24px;">
+                {% if selected_advisor == 'Direct' %}
+                <div style="font-size: 11px; color: #34d399; text-transform: uppercase; font-weight: 700;">CUMULATIVE BROKERAGE SAVED</div>
+                <div style="font-size: 20px; font-weight: 700; color: #34d399; margin-top: 4px;">₹{{ "{:.3f}".format(ter_data.historical_summary.cumulative_saved_cr) }} Cr Saved</div>
+                {% else %}
+                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Cumulative Broker Drag Paid</div>
+                <div style="font-size: 20px; font-weight: 700; color: #f87171; margin-top: 4px;">₹{{ "{:.3f}".format(ter_data.historical_summary.cumulative_broker_cr) }} Cr</div>
+                {% endif %}
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Total Cumulative TER Paid</div>
+                <div style="font-size: 20px; font-weight: 700; color: #38bdf8; margin-top: 4px;">₹{{ "{:.3f}".format(ter_data.historical_summary.cumulative_total_cr) }} Cr</div>
+            </div>
+        </div>
+
+        <!-- 3. QUARTER-WISE BROKER CALCULATION & RECONCILIATION DIFFERENCE (AS PER BROKER CALCULATION METHOD) -->
+        {% if quarterly_summary and quarterly_summary.quarters %}
+        <div class="section-header" style="margin-top: 32px;">
+            <div>
+                <div class="section-title">QUARTER-WISE BROKER COMMISSION RECONCILIATION & AUDIT DIFFERENCE</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+                    Comparison between Broker's Stated Model (<span style="color: #60a5fa; font-weight: 600;">{{ "{:.2f}".format(quarterly_summary.totals.broker_rate_pct) }}% p.a.</span> on Quarterly Avg AUM) vs Actual AMFI/NSDL Empirical Cost Drag
+                    • <span style="color: #34d399; font-weight: 600;">Audit Reconciled As Of: {{ selected_as_of_date }}</span>
+                    {% if selected_asset_class == 'EQUITY_ONLY' %}<span style="color: #38bdf8; font-weight: 600; margin-left: 6px;">[Filtered: Equity Only]</span>{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="padding: 0; overflow: hidden; border-radius: 12px; border: 1px solid var(--glass-border); margin-bottom: 24px;">
+            <table class="matrix-table">
+                <thead>
+                    <tr>
+                        <th>Quarter / Period</th>
+                        <th style="text-align: right;">Opening AUM (Cr)</th>
+                        <th style="text-align: right;">Net Inflows (Cr)</th>
+                        <th style="text-align: right;">Market Movement (Cr)</th>
+                        <th style="text-align: right;">Closing AUM (Cr)</th>
+                        <th style="text-align: right;">Avg AUM (Cr)</th>
+                        <th style="text-align: right; color: #93c5fd;">Broker Stated Drag (₹ L)</th>
+                        <th style="text-align: right; color: #fca5a5;">Equity Drag (₹ L)</th>
+                        <th style="text-align: right; color: #f59e0b;">Bullion Drag (₹ L)</th>
+                        <th style="text-align: right; color: #38bdf8;">Debt / Arbitrage Drag (₹ L)</th>
+                        <th style="text-align: right; color: #f87171;">Total Empirical Drag (₹ L)</th>
+                        <th style="text-align: right; color: #fde047;">Difference / Variance (₹ L)</th>
+                        <th style="text-align: right;">Effective Drag (% p.a.)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for q in quarterly_summary.quarters %}
+                    <tr>
+                        <td style="font-weight: 700; color: #60a5fa;">
+                            {{ q.quarter }}
+                            <div style="font-size: 11px; color: var(--text-secondary); font-weight: normal;">{{ q.period_label }}</div>
+                        </td>
+                        <td style="text-align: right;">₹{{ "{:,.2f}".format(q.opening_aum_cr) }} Cr</td>
+                        <td style="text-align: right; color: {% if q.net_inflow_cr >= 0 %}#34d399{% else %}#f87171{% endif %};">
+                            {% if q.net_inflow_cr >= 0 %}+{% endif %}₹{{ "{:,.2f}".format(q.net_inflow_cr) }} Cr
+                        </td>
+                        <td style="text-align: right; color: {% if q.market_gain_cr >= 0 %}#34d399{% else %}#f87171{% endif %};">
+                            {% if q.market_gain_cr >= 0 %}+{% endif %}₹{{ "{:,.2f}".format(q.market_gain_cr) }} Cr
+                        </td>
+                        <td style="text-align: right; font-weight: 600;">₹{{ "{:,.2f}".format(q.closing_aum_cr) }} Cr</td>
+                        <td style="text-align: right; font-weight: 600;">₹{{ "{:,.2f}".format(q.avg_aum_cr) }} Cr</td>
+                        <td style="text-align: right; font-weight: 600; color: #93c5fd;">₹{{ "{:,.2f}".format(q.broker_stated_drag_lakhs) }} L</td>
+                        <td style="text-align: right; font-weight: 600; color: #fca5a5;">₹{{ "{:,.2f}".format(q.equity_drag_lakhs) }} L</td>
+                        <td style="text-align: right; font-weight: 600; color: #f59e0b;">₹{{ "{:,.2f}".format(q.bullion_drag_lakhs) }} L</td>
+                        <td style="text-align: right; font-weight: 600; color: #38bdf8;">₹{{ "{:,.2f}".format(q.debt_drag_lakhs) }} L</td>
+                        <td style="text-align: right; font-weight: 700; color: #f87171;">₹{{ "{:,.2f}".format(q.actual_drag_lakhs) }} L</td>
+                        <td style="text-align: right; font-weight: 700; color: {% if q.diff_drag_lakhs > 0 %}#f87171{% elif q.diff_drag_lakhs < 0 %}#34d399{% else %}#94a3b8{% endif %};">
+                            {% if q.diff_drag_lakhs > 0 %}+{% endif %}₹{{ "{:,.2f}".format(q.diff_drag_lakhs) }} L
+                        </td>
+                        <td style="text-align: right; font-weight: 600;">{{ "{:.2f}".format(q.actual_drag_pct) }}% p.a.</td>
+                    </tr>
+                    {% endfor %}
+                    <!-- TOTAL CUMULATIVE QUARTERLY RECONCILIATION ROW -->
+                    <tr class="total-row" style="background: rgba(15, 23, 42, 0.98);">
+                        <td>TOTAL (FULL YEAR / CUMULATIVE)</td>
+                        <td style="text-align: right;">₹{{ "{:,.2f}".format(quarterly_summary.totals.opening_aum_cr) }} Cr</td>
+                        <td style="text-align: right; color: {% if quarterly_summary.totals.net_inflow_cr >= 0 %}#34d399{% else %}#f87171{% endif %};">
+                            {% if quarterly_summary.totals.net_inflow_cr >= 0 %}+{% endif %}₹{{ "{:,.2f}".format(quarterly_summary.totals.net_inflow_cr) }} Cr
+                        </td>
+                        <td style="text-align: right; color: {% if quarterly_summary.totals.market_gain_cr >= 0 %}#34d399{% else %}#f87171{% endif %};">
+                            {% if quarterly_summary.totals.market_gain_cr >= 0 %}+{% endif %}₹{{ "{:,.2f}".format(quarterly_summary.totals.market_gain_cr) }} Cr
+                        </td>
+                        <td style="text-align: right; font-weight: 700;">₹{{ "{:,.2f}".format(quarterly_summary.totals.closing_aum_cr) }} Cr</td>
+                        <td style="text-align: right; font-weight: 700;">₹{{ "{:,.2f}".format(quarterly_summary.totals.avg_aum_cr) }} Cr</td>
+                        <td style="text-align: right; font-weight: 700; color: #93c5fd;">₹{{ "{:,.2f}".format(quarterly_summary.totals.broker_stated_drag_lakhs) }} L</td>
+                        <td style="text-align: right; font-weight: 700; color: #fca5a5;">₹{{ "{:,.2f}".format(quarterly_summary.totals.equity_drag_lakhs) }} L</td>
+                        <td style="text-align: right; font-weight: 700; color: #f59e0b;">₹{{ "{:,.2f}".format(quarterly_summary.totals.bullion_drag_lakhs) }} L</td>
+                        <td style="text-align: right; font-weight: 700; color: #38bdf8;">₹{{ "{:,.2f}".format(quarterly_summary.totals.debt_drag_lakhs) }} L</td>
+                        <td style="text-align: right; font-weight: 800; color: #f87171;">₹{{ "{:,.2f}".format(quarterly_summary.totals.actual_drag_lakhs) }} L</td>
+                        <td style="text-align: right; font-weight: 800; color: {% if quarterly_summary.totals.diff_drag_lakhs > 0 %}#f87171{% elif quarterly_summary.totals.diff_drag_lakhs < 0 %}#34d399{% else %}#94a3b8{% endif %};">
+                            {% if quarterly_summary.totals.diff_drag_lakhs > 0 %}+{% endif %}₹{{ "{:,.2f}".format(quarterly_summary.totals.diff_drag_lakhs) }} L
+                        </td>
+                        <td style="text-align: right; font-weight: 700;">{{ "{:.2f}".format(quarterly_summary.totals.actual_drag_pct) }}% p.a.</td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+        <!-- RECONCILIATION SUMMARY COMPARISON CARD -->
+        <div class="grand-box" style="margin-bottom: 32px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%); border: 1px solid rgba(148, 163, 184, 0.2);">
+            <div style="text-align: center;">
+                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Broker Stated Commission</div>
+                <div style="font-size: 20px; font-weight: 700; color: #93c5fd; margin-top: 4px;">₹{{ "{:,.2f}".format(quarterly_summary.totals.broker_stated_drag_lakhs) }} L</div>
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Rate @ {{ "{:.2f}".format(quarterly_summary.totals.broker_rate_pct) }}% p.a.</div>
+            </div>
+            <div style="text-align: center; border-left: 1px solid rgba(255, 255, 255, 0.1); border-right: 1px solid rgba(255, 255, 255, 0.1); padding: 0 24px;">
+                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Actual Empirical Drag (Audit)</div>
+                <div style="font-size: 20px; font-weight: 700; color: #fca5a5; margin-top: 4px;">₹{{ "{:,.2f}".format(quarterly_summary.totals.actual_drag_lakhs) }} L</div>
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Effective @ {{ "{:.2f}".format(quarterly_summary.totals.actual_drag_pct) }}% p.a.</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Reconciliation Difference Gap</div>
+                <div style="font-size: 20px; font-weight: 800; color: {% if quarterly_summary.totals.diff_drag_lakhs > 0 %}#f87171{% elif quarterly_summary.totals.diff_drag_lakhs < 0 %}#34d399{% else %}#94a3b8{% endif %}; margin-top: 4px;">
+                    {% if quarterly_summary.totals.diff_drag_lakhs > 0 %}+{% endif %}₹{{ "{:,.2f}".format(quarterly_summary.totals.diff_drag_lakhs) }} L
+                </div>
+                <div style="font-size: 11px; color: {% if quarterly_summary.totals.diff_drag_lakhs > 0 %}#f87171{% elif quarterly_summary.totals.diff_drag_lakhs < 0 %}#34d399{% else %}#94a3b8{% endif %}; margin-top: 2px;">
+                    {% if quarterly_summary.totals.diff_drag_lakhs > 0 %}
+                    (Actual Drag Exceeds Broker Stated by ₹{{ "{:,.2f}".format(quarterly_summary.totals.diff_drag_lakhs) }} L)
+                    {% elif quarterly_summary.totals.diff_drag_lakhs < 0 %}
+                    (Actual Drag is Lower than Stated by ₹{{ "{:,.2f}".format(-quarterly_summary.totals.diff_drag_lakhs) }} L)
+                    {% else %}
+                    (Fully Reconciled)
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Filter & Sort Control Bar for Holdings Table -->
+        <div class="section-header">
+            <div class="section-title">SCHEME-WISE TER & BROKER DRAG DETAILS</div>
+        </div>
+
+        <div class="filter-container">
+            <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary);">Broker:</label>
+            <select id="filter-advisor" class="form-select" onchange="filterAndSortTable()">
+                <option value="ALL">All Brokers / Advisors</option>
+                <option value="Prime Wealth">Prime Wealth</option>
+                <option value="Nexus Capital">Nexus Capital</option>
+                <option value="Direct">Direct</option>
+            </select>
+
+            <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-left: 8px;">Member:</label>
+            <select id="filter-owner" class="form-select" onchange="filterAndSortTable()">
+                <option value="ALL">All Family Members</option>
+                {% for p in persons %}
+                <option value="{{ p.full_name }}">{{ p.full_name }} ({{ p.short_name }})</option>
+                {% endfor %}
+            </select>
+
+            <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-left: 8px;">Sort By:</label>
+            <select id="sort-control" class="form-select" onchange="filterAndSortTable()">
+                <option value="monthly-desc">Monthly Drag: High to Low</option>
+                <option value="monthly-asc">Monthly Drag: Low to High</option>
+                <option value="annual-desc">Annual Drag: High to Low</option>
+                <option value="val-desc">Valuation: High to Low</option>
+                <option value="val-asc">Valuation: Low to High</option>
+                <option value="drag-desc">Broker Fee Drag %: High to Low</option>
+                <option value="scheme-asc">Scheme Name: A to Z</option>
+            </select>
+
+            <input type="text" id="filter-search" class="form-input" placeholder="Search Scheme or Folio..." onkeyup="filterAndSortTable()" style="min-width: 200px;">
+        </div>
+
+        <!-- Scheme-wise Details Table -->
+        <div class="card" style="padding: 0; overflow: hidden; border-radius: 12px; border: 1px solid var(--glass-border); margin-bottom: 40px;">
+            <table class="data-table" id="schemes-table">
+                <thead>
+                    <tr>
+                        <th class="sortable-header" onclick="sortTableByCol(0)">Owner <span class="sort-icon">▲▼</span></th>
+                        <th class="sortable-header" onclick="sortTableByCol(1)">Folio <span class="sort-icon">▲▼</span></th>
+                        <th class="sortable-header" onclick="sortTableByCol(2)">Scheme Name <span class="sort-icon">▲▼</span></th>
+                        <th class="sortable-header" onclick="sortTableByCol(3)">Advisor <span class="sort-icon">▲▼</span></th>
+                        <th class="sortable-header" style="text-align: center;" onclick="sortTableByCol(4)">NSDL Status <span class="sort-icon">▲▼</span></th>
+                        <th class="sortable-header" style="text-align: right;" onclick="sortTableByCol(5, true)">Valuation (₹) <span class="sort-icon">▲▼</span></th>
+                        <th class="sortable-header" style="text-align: right;" onclick="sortTableByCol(6, true)">Reg TER (%) <span class="sort-icon">▲▼</span></th>
+                        <th class="sortable-header" style="text-align: right;" onclick="sortTableByCol(7, true)">Dir TER (%) <span class="sort-icon">▲▼</span></th>
+                        <th class="sortable-header" style="text-align: right;" onclick="sortTableByCol(8, true)">Broker Fee Drag (%) <span class="sort-icon">▲▼</span></th>
+                        <th class="sortable-header" style="text-align: right;" onclick="sortTableByCol(9, true)">Annual Drag / Saved (₹) <span class="sort-icon">▲▼</span></th>
+                        <th class="sortable-header" style="text-align: right;" onclick="sortTableByCol(10, true)">Monthly Drag (₹) <span class="sort-icon">▲▼</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in schemes %}
+                    <tr data-advisor="{{ s.advisor }}" data-owner="{{ s.owner_name }}" data-category="{{ s.category }}" data-val="{{ s.market_value }}" data-drag-pct="{{ s.ter_diff }}" data-annual-drag="{{ s.annual_drag }}" data-monthly-drag="{{ s.monthly_drag }}" data-scheme="{{ s.scheme_name }}" data-matched="{{ 'true' if s.is_matched else 'false' }}">
+                        <td>{{ s.owner_name }}</td>
+                        <td><code style="font-size: 12px;">{{ s.folio_number }}</code></td>
+                        <td style="font-weight: 500;">
+                            {{ s.scheme_name }}
+                            <span class="badge-status" style="background: rgba(147, 51, 234, 0.15); color: #c084fc; border: 1px solid rgba(147, 51, 234, 0.3); font-size: 11px; margin-left: 6px; padding: 2px 6px;">{{ s.category }}</span>
+                            {% if s.is_redeemed %}
+                            <span class="badge-status badge-redeemed">🔴 Sold / Redeemed</span>
+                            {% endif %}
+                            {% if s.is_matched and s.official_nsdl_name != s.scheme_name %}
+                            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Matched: {{ s.official_nsdl_name }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge-advisor {% if s.advisor == 'Prime Wealth' %}badge-prime{% elif s.advisor == 'Nexus Capital' %}badge-nexus{% elif s.advisor == 'Direct' %}badge-direct{% else %}badge-other{% endif %}">
+                                {{ s.advisor }}
+                            </span>
+                        </td>
+                        <td style="text-align: center;">
+                            {% if s.is_matched %}
+                            <span class="badge-status badge-verified">✅ Verified</span>
+                            {% else %}
+                            <span class="badge-status badge-unmatched">⚠️ Unmatched</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right; font-weight: 600;">₹{{ "{:,.2f}".format(s.market_value) }}</td>
+                        <td style="text-align: right;">{% if s.is_matched %}{{ "{:.2f}".format(s.regular_ter) }}%{% else %}<span style="color: #f87171;">N/A</span>{% endif %}</td>
+                        <td style="text-align: right; color: #34d399;">{% if s.is_matched %}{{ "{:.2f}".format(s.direct_ter) }}%{% else %}<span style="color: #f87171;">N/A</span>{% endif %}</td>
+                        <td style="text-align: right; font-weight: 600; color: {% if s.advisor == 'Direct' %}#34d399{% else %}#f87171{% endif %};">
+                            {% if s.is_matched %}
+                                {% if s.advisor == 'Direct' %}
+                                <span style="color: #34d399;">0.00% (Saved)</span>
+                                {% else %}
+                                {{ "{:.2f}".format(s.ter_diff) }}%
+                                {% endif %}
+                            {% else %}
+                            <span style="color: #f87171;">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right; font-weight: 600; color: {% if s.advisor == 'Direct' %}#34d399{% else %}#f87171{% endif %};">
+                            {% if s.is_matched %}
+                                {% if s.advisor == 'Direct' %}
+                                <span style="color: #34d399;">₹{{ "{:,.2f}".format(s.saved_annual) }} Saved</span>
+                                {% else %}
+                                ₹{{ "{:,.2f}".format(s.annual_drag) }}
+                                {% endif %}
+                            {% else %}
+                            <span style="color: #f87171;">₹0.00</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right; font-weight: 700; color: {% if s.advisor == 'Direct' %}#34d399{% else %}#fbbf24{% endif %};">
+                            {% if s.is_matched %}
+                                {% if s.advisor == 'Direct' %}
+                                <span style="color: #34d399;">₹0.00 (Saved)</span>
+                                {% else %}
+                                ₹{{ "{:,.2f}".format(s.monthly_drag) }}
+                                {% endif %}
+                            {% else %}
+                            <span style="color: #f87171;">₹0.00</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function triggerSyncTerCache() {
+            const btnTexts = document.querySelectorAll('.sync-ter-text');
+            btnTexts.forEach(t => t.innerText = 'Syncing & Recalculating...');
+            fetch('/mutual-funds/ter-cost/sync-cache', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    btnTexts.forEach(t => t.innerText = 'Sync Complete! Reloading...');
+                    setTimeout(() => { window.location.reload(); }, 800);
+                })
+                .catch(err => {
+                    alert('Error syncing TER cache: ' + err);
+                    btnTexts.forEach(t => t.innerText = 'Sync & Recalculate TER Files');
+                });
+        }
+
+        function setAsOfDate(val) {
+            const input = document.getElementById('filter-as-of-date');
+            if (input) {
+                input.value = val;
+                applyMatrixFilters();
+            }
+        }
+
+        function applyMatrixFilters() {
+            const selectedPeriod = document.getElementById('filter-period').value;
+            const selectedAdvisor = document.getElementById('matrix-filter-advisor').value;
+            const selectedEngine = document.getElementById('filter-engine-mode').value;
+            const selectedAssetClass = document.getElementById('filter-asset-class') ? document.getElementById('filter-asset-class').value : 'ALL';
+            const asOfDateInput = document.getElementById('filter-as-of-date');
+            const asOfDate = asOfDateInput ? asOfDateInput.value : '';
+
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('period', selectedPeriod);
+            if (asOfDate) {
+                currentUrl.searchParams.set('as_of_date', asOfDate);
+            } else {
+                currentUrl.searchParams.delete('as_of_date');
+            }
+            if (selectedAdvisor && selectedAdvisor !== 'ALL') {
+                currentUrl.searchParams.set('advisor', selectedAdvisor);
+            } else {
+                currentUrl.searchParams.delete('advisor');
+            }
+            if (selectedEngine) {
+                currentUrl.searchParams.set('engine_mode', selectedEngine);
+            }
+            if (selectedAssetClass && selectedAssetClass !== 'ALL') {
+                currentUrl.searchParams.set('asset_class', selectedAssetClass);
+            } else {
+                currentUrl.searchParams.delete('asset_class');
+            }
+            window.location.href = currentUrl.toString();
+        }
+
+        let onlyUnmatchedMode = false;
+
+        function filterUnmatchedOnly() {
+            onlyUnmatchedMode = !onlyUnmatchedMode;
+            filterAndSortTable();
+        }
+
+        let currentSortCol = 10;
+        let currentSortAsc = false;
+
+        function filterAndSortTable() {
+            const advisorFilter = document.getElementById('filter-advisor').value.toUpperCase();
+            const ownerFilter = document.getElementById('filter-owner').value.toUpperCase();
+            const searchFilter = document.getElementById('filter-search').value.toUpperCase();
+            const sortVal = document.getElementById('sort-control').value;
+
+            const tbody = document.querySelector('#schemes-table tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+
+            rows.forEach(row => {
+                const rowAdvisor = (row.getAttribute('data-advisor') || '').toUpperCase();
+                const rowOwner = (row.getAttribute('data-owner') || '').toUpperCase();
+                const textContent = row.textContent.toUpperCase();
+                const isMatched = row.getAttribute('data-matched') === 'true';
+
+                const matchesAdvisor = (advisorFilter === 'ALL') || (rowAdvisor.includes(advisorFilter));
+                const matchesOwner = (ownerFilter === 'ALL') || (rowOwner === ownerFilter);
+                const matchesSearch = (!searchFilter) || (textContent.includes(searchFilter));
+                const matchesUnmatchedMode = (!onlyUnmatchedMode) || (!isMatched);
+
+                if (matchesAdvisor && matchesOwner && matchesSearch && matchesUnmatchedMode) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            rows.sort((a, b) => {
+                let valA, valB;
+
+                if (sortVal === 'monthly-desc') {
+                    valA = parseFloat(a.getAttribute('data-monthly-drag') || 0);
+                    valB = parseFloat(b.getAttribute('data-monthly-drag') || 0);
+                    return valB - valA;
+                } else if (sortVal === 'monthly-asc') {
+                    valA = parseFloat(a.getAttribute('data-monthly-drag') || 0);
+                    valB = parseFloat(b.getAttribute('data-monthly-drag') || 0);
+                    return valA - valB;
+                } else if (sortVal === 'annual-desc') {
+                    valA = parseFloat(a.getAttribute('data-annual-drag') || 0);
+                    valB = parseFloat(b.getAttribute('data-annual-drag') || 0);
+                    return valB - valA;
+                } else if (sortVal === 'val-desc') {
+                    valA = parseFloat(a.getAttribute('data-val') || 0);
+                    valB = parseFloat(b.getAttribute('data-val') || 0);
+                    return valB - valA;
+                } else if (sortVal === 'val-asc') {
+                    valA = parseFloat(a.getAttribute('data-val') || 0);
+                    valB = parseFloat(b.getAttribute('data-val') || 0);
+                    return valA - valB;
+                } else if (sortVal === 'drag-desc') {
+                    valA = parseFloat(a.getAttribute('data-drag-pct') || 0);
+                    valB = parseFloat(b.getAttribute('data-drag-pct') || 0);
+                    return valB - valA;
+                } else if (sortVal === 'scheme-asc') {
+                    valA = (a.getAttribute('data-scheme') || '').toUpperCase();
+                    valB = (b.getAttribute('data-scheme') || '').toUpperCase();
+                    return valA.localeCompare(valB);
+                }
+                return 0;
+            });
+
+            rows.forEach(r => tbody.appendChild(r));
+        }
+
+        function sortTableByCol(colIdx, isNumeric = false) {
+            if (currentSortCol === colIdx) {
+                currentSortAsc = !currentSortAsc;
+            } else {
+                currentSortCol = colIdx;
+                currentSortAsc = isNumeric ? false : true;
+            }
+
+            const tbody = document.querySelector('#schemes-table tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+
+            rows.sort((a, b) => {
+                let cellA = a.children[colIdx].textContent.trim();
+                let cellB = b.children[colIdx].textContent.trim();
+
+                if (isNumeric) {
+                    let numA = parseFloat(cellA.replace(/[₹,%\s]/g, '')) || 0;
+                    let numB = parseFloat(cellB.replace(/[₹,%\s]/g, '')) || 0;
+                    return currentSortAsc ? numA - numB : numB - numA;
+                } else {
+                    return currentSortAsc ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+                }
+            });
+
+            rows.forEach(r => tbody.appendChild(r));
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            filterAndSortTable();
+        });
+    </script>
+</body>
+</html>

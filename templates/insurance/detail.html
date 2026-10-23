@@ -1,0 +1,1081 @@
+<!-- templates/insurance/detail.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy Detail — {{ policy.policy_number }}</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <script src="/static/js/backup.js?v=2"></script>
+    <style>
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        .module-selector {
+            display: flex;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+        }
+        .module-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .module-link:hover {
+            color: var(--text-primary);
+        }
+        .module-link.active {
+            color: var(--text-primary);
+            background: var(--accent-blue);
+            box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .detail-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .detail-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+        .detail-value {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--glass-border);
+            padding: 16px 24px;
+            border-radius: 8px;
+            color: white;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .toast.success {
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+        .toast.error {
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+        .editable-cell, .editable-policy-cell {
+            color: var(--accent-blue);
+            cursor: pointer;
+            border-bottom: 1px dashed rgba(59, 130, 246, 0.4);
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+            display: inline-block;
+        }
+        .editable-cell:hover, .editable-policy-cell:hover {
+            background: rgba(59, 130, 246, 0.15);
+        }
+        .inline-input, .inline-select {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--accent-blue);
+            color: white;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+            outline: none;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div class="header-top">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div class="module-selector">
+                        <a href="/mutual-funds/" class="module-link">Mutual Funds</a>
+                        <a href="/equities/" class="module-link">Equities</a>
+                        <a href="/insurance/" class="module-link active">Insurance</a>
+                        <a href="/alternatives/unlisted/" class="module-link">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" class="module-link">AIF / PMS</a>
+                        <a href="/gold/" class="module-link">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs" style="justify-content: space-between; align-items: center; width: 100%; padding-right: 12px; box-sizing: border-box;">
+                <div style="display: flex; gap: 8px;">
+                    <a href="/insurance/" class="nav-link">&larr; Back to Policies</a>
+                    <a href="#" class="nav-link active">Policy Details</a>
+                </div>
+                <div style="font-weight: 500; font-size: 14px; color: var(--text-secondary);">
+                    File: <strong style="color: var(--text-primary);">{{ policy.file_number or "—" }}</strong>
+                </div>
+            </div>
+        </header>
+
+        <!-- Premium Dashboard Summary Card -->
+        <div class="glass-card" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.7) 100%);">
+            <h2 style="font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 20px; background: linear-gradient(to right, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Premium Payment Dashboard
+            </h2>
+            <div class="metrics-grid" style="margin-bottom: 0;">
+                <div class="detail-field">
+                    <span class="detail-label">Total Premiums Target</span>
+                    <span style="font-size: 22px; font-weight: 700; color: var(--text-primary);">₹{{ total_premium_to_be_paid|format_inr }}</span>
+                </div>
+                <div class="detail-field">
+                    <span class="detail-label">Total Premium Paid</span>
+                    <span style="font-size: 22px; font-weight: 700; color: var(--accent-green);">₹{{ premium_paid_till_date|format_inr }}</span>
+                </div>
+                <div class="detail-field">
+                    <span class="detail-label">Premium Balance Left</span>
+                    <span style="font-size: 22px; font-weight: 700; color: {% if balance_to_be_paid > 0 %}var(--accent-red){% else %}var(--text-secondary){% endif %};">₹{{ balance_to_be_paid|format_inr }}</span>
+                </div>
+                <div class="detail-field">
+                    <span class="detail-label">Premium Term Remaining</span>
+                    <span style="font-size: 22px; font-weight: 700; color: #f59e0b;">{{ remaining_term }} Years</span>
+                </div>
+                <div class="detail-field">
+                    <span class="detail-label">Latest Valuation</span>
+                    <span style="font-size: 22px; font-weight: 700; color: #a78bfa;">₹{{ latest_surrender_value|format_inr if latest_surrender_value else "—" }}</span>
+                </div>
+                <div class="detail-field">
+                    <span class="detail-label">Available Withdrawal</span>
+                    <span style="font-size: 22px; font-weight: 700; color: #c084fc;">₹{{ withdrawable|format_inr if withdrawable is not none else "—" }}</span>
+                </div>
+                <div class="detail-field">
+                    <span class="detail-label">Policy XIRR</span>
+                    <span style="font-size: 22px; font-weight: 700; color: #60a5fa;">{{ "{:,.2f}%".format(policy_xirr) if policy_xirr is not none else "—" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Policy Metadata Card -->
+        <div class="glass-card" id="policy-metadata-card" data-id="{{ policy.id }}">
+            <h2 style="font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
+                {{ policy.insurer_name }} — <span class="editable-policy-cell editable-text" data-field="policy_number" data-val="{{ policy.policy_number }}">{{ policy.policy_number }}</span>
+            </h2>
+            <div class="detail-grid">
+                <div class="detail-field"><span class="detail-label">File Number</span><span class="detail-value"><span class="editable-policy-cell editable-text" data-field="file_number" data-val="{{ policy.file_number or '' }}">{{ policy.file_number or "—" }}</span></span></div>
+                <div class="detail-field"><span class="detail-label">Policy Number</span><span class="detail-value" style="font-family: monospace;"><span class="editable-policy-cell editable-text" data-field="policy_number" data-val="{{ policy.policy_number }}">{{ policy.policy_number }}</span></span></div>
+                <div class="detail-field"><span class="detail-label">Name of Insured</span><span class="detail-value" style="color: #a78bfa;">{{ insured_person.full_name if insured_person else "—" }}</span></div>
+                <div class="detail-field"><span class="detail-label">Name of Holder</span><span class="detail-value" style="color: #a78bfa;">{{ holder_person.full_name if holder_person else "—" }}</span></div>
+                
+                <div class="detail-field"><span class="detail-label">Plan Name</span><span class="detail-value"><span class="editable-policy-cell editable-text" data-field="plan_name" data-val="{{ policy.plan_name or '' }}">{{ policy.plan_name or "—" }}</span></span></div>
+                <div class="detail-field"><span class="detail-label">Fund Name (ULIP)</span><span class="detail-value"><span class="editable-policy-cell editable-text" data-field="fund_name" data-val="{{ policy.fund_name or '' }}">{{ policy.fund_name or "—" }}</span></span></div>
+                <div class="detail-field"><span class="detail-label">Fund Type</span><span class="detail-value"><span class="editable-policy-cell editable-text" data-field="fund_type" data-val="{{ policy.fund_type or '' }}">{{ policy.fund_type or "—" }}</span></span></div>
+                <div class="detail-field"><span class="detail-label">Insurance Type</span><span class="detail-value">{{ policy.insurance_type.value if policy.insurance_type else "—" }}</span></div>
+
+                <div class="detail-field"><span class="detail-label">Sum Assured</span><span class="detail-value" style="font-weight: 600;">₹<span class="editable-policy-cell editable-number" data-field="sum_assured" data-val="{{ policy.sum_assured or '' }}">{{ policy.sum_assured|format_inr if policy.sum_assured else "—" }}</span></span></div>
+                <div class="detail-field"><span class="detail-label">Premium Amount/Year</span><span class="detail-value">₹<span class="editable-policy-cell editable-number" data-field="premium_amount" data-val="{{ policy.premium_amount or '' }}">{{ policy.premium_amount|format_inr if policy.premium_amount else "—" }}</span></span></div>
+                <div class="detail-field">
+                    <span class="detail-label">Status</span>
+                    <span class="detail-value">
+                        <span class="editable-policy-cell editable-select-status" data-field="status" data-val="{{ policy.status.value }}">
+                            <span class="badge {% if policy.status.value == 'ACTIVE' %}badge-positive{% else %}badge-negative{% endif %}">{{ policy.status.value }}</span>
+                        </span>
+                    </span>
+                </div>
+                <div class="detail-field">
+                    <span class="detail-label">Lock Status</span>
+                    <span class="detail-value">
+                        <span class="badge" style="{% if lock_status == 'LOCKED' %}background: rgba(245, 158, 11, 0.15); color: #f59e0b;{% elif lock_status == 'UNLOCKED' %}background: rgba(16, 185, 129, 0.15); color: var(--accent-green);{% else %}background: rgba(148, 163, 184, 0.15); color: var(--text-secondary);{% endif %}">
+                            {{ lock_status }}
+                        </span>
+                    </span>
+                </div>
+                <div class="detail-field"><span class="detail-label">Premium Pay Term</span><span class="detail-value"><span class="editable-policy-cell editable-number-int" data-field="premium_term" data-val="{{ policy.premium_term or '' }}">{{ policy.premium_term or "—" }}</span> Years</span></div>
+                <div class="detail-field"><span class="detail-label">Frequency</span><span class="detail-value"><span class="editable-policy-cell editable-select-freq" data-field="premium_frequency" data-val="{{ policy.premium_frequency or '' }}">{{ policy.premium_frequency or "—" }}</span></span></div>
+
+                <div class="detail-field"><span class="detail-label">Payment Method</span><span class="detail-value"><span class="editable-policy-cell editable-select-method" data-field="payment_method" data-val="{{ policy.payment_method.value if policy.payment_method else '' }}">{{ policy.payment_method.value if policy.payment_method else "—" }}</span></span></div>
+                <div class="detail-field">
+                    <span class="detail-label">Lapse Status</span>
+                    <span class="detail-value" style="{% if missed_payments_count >= (policy.lapse_after_missed_payments or 2) %}color: var(--accent-red); font-weight: 600;{% endif %}">
+                        {{ missed_payments_count }} / {{ policy.lapse_after_missed_payments or "2" }} missed
+                    </span>
+                </div>
+                <div class="detail-field"><span class="detail-label">Policy Start Date</span><span class="detail-value"><span class="editable-policy-cell editable-date" data-field="policy_start_date" data-val="{{ policy.policy_start_date }}">{{ policy.policy_start_date }}</span></span></div>
+                <div class="detail-field"><span class="detail-label">Premium End Date</span><span class="detail-value"><span class="editable-policy-cell editable-date" data-field="premium_end_date" data-val="{{ policy.premium_end_date or '' }}">{{ policy.premium_end_date or "—" }}</span></span></div>
+                <div class="detail-field"><span class="detail-label">Maturity End Date</span><span class="detail-value"><span class="editable-policy-cell editable-date" data-field="policy_end_date" data-val="{{ policy.policy_end_date or '' }}">{{ policy.policy_end_date or "—" }}</span></span></div>
+                <div class="detail-field"><span class="detail-label">Broker/Agent Name</span><span class="detail-value"><span class="editable-policy-cell editable-text" data-field="agent_name" data-val="{{ policy.agent_name or '' }}">{{ policy.agent_name or "—" }}</span></span></div>
+                <div class="detail-field"><span class="detail-label">Maturity Amount</span><span class="detail-value">₹<span class="editable-policy-cell editable-number" data-field="maturity_amount" data-val="{{ policy.maturity_amount or '' }}">{{ policy.maturity_amount|format_inr if policy.maturity_amount else "—" }}</span></span></div>
+                <div class="detail-field"><span class="detail-label">Surrendered Amount</span><span class="detail-value">₹<span class="editable-policy-cell editable-number" data-field="surrendered_amount" data-val="{{ policy.surrendered_amount or '' }}">{{ policy.surrendered_amount|format_inr if policy.surrendered_amount else "—" }}</span></span></div>
+                <div class="detail-field"><span class="detail-label">Available Withdrawal</span><span class="detail-value" style="font-weight: 600; color: #c084fc;">₹{{ withdrawable|format_inr if withdrawable is not none else "—" }}</span></div>
+            </div>
+            
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--glass-border);">
+                <span class="detail-label">Policy Notes</span>
+                <div class="editable-policy-cell editable-text" data-field="notes" data-val="{{ policy.notes or '' }}" style="margin: 6px 0 0 0; font-size: 14px; color: var(--text-secondary); line-height: 1.5; min-height: 20px; cursor: pointer; border-bottom: 1px dashed rgba(59, 130, 246, 0.4); display: block;">
+                    {{ policy.notes or "Double click to add notes..." }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Grid (Payments, Nominees, Valuations) -->
+        <div style="display: grid; grid-template-columns: 1fr; gap: 32px;">
+            
+            <!-- 1. PREMIUM PAYMENTS LEDGER -->
+            <div class="glass-card" style="padding: 24px;">
+                <h2 style="font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Policy Transactions</span>
+                    {% if payments|length > 5 %}
+                    <button id="toggle-payments-btn" class="btn" style="padding: 6px 14px; font-size: 12px; border-radius: 6px; background: rgba(59, 130, 246, 0.15); border: 1px solid var(--accent-blue); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
+                        <span id="toggle-btn-text">Expand (Show All)</span>
+                        <span id="toggle-btn-badge" style="background: var(--accent-blue); color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: bold;">{{ payments|length }}</span>
+                    </button>
+                    {% endif %}
+                </h2>
+                <div class="table-container" style="margin-top: 0; margin-bottom: 12px;">
+                    <table id="payments-table" class="table-compact" style="margin-top: 0;">
+                        <thead>
+                            <tr>
+                                <th style="padding-left: 24px;">Type</th>
+                                <th>Date</th>
+                                <th style="text-align: right;">Amount</th>
+                                <th>Mode</th>
+                                <th style="text-align: center;">Status</th>
+                                <th>Receipt / Notes</th>
+                                <th style="text-align: center; padding-right: 24px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in payments %}
+                            <tr class="payment-row" data-id="{{ p.id }}">
+                                <td style="padding-left: 24px;">
+                                    <span class="editable-cell editable-select-txntype" data-field="transaction_type" data-val="{{ p.transaction_type or 'PREMIUM' }}">
+                                        {% set txn_type = p.transaction_type or 'PREMIUM' %}
+                                        <span class="badge {% if txn_type == 'PREMIUM' %}badge-positive{% elif txn_type == 'PARTIAL_WITHDRAWAL' %}badge-neutral{% else %}badge-negative{% endif %}" style="font-size: 10px; {% if txn_type == 'PARTIAL_WITHDRAWAL' %}background: rgba(245, 158, 11, 0.15); color: #f59e0b;{% elif txn_type in ('SURRENDER', 'MATURITY_PAYOUT') %}background: rgba(168, 85, 247, 0.15); color: #a855f7;{% endif %}">{{ txn_type.replace('_', ' ') }}</span>
+                                    </span>
+                                </td>
+                                <td style="font-family: monospace; color: var(--text-secondary);">
+                                    <span class="editable-cell editable-date" data-field="payment_date" data-val="{{ p.payment_date }}">{{ p.payment_date }}</span>
+                                </td>
+                                <td style="text-align: right; font-weight: 600;">
+                                    ₹<span class="editable-cell editable-number" data-field="amount" data-val="{{ p.amount }}">{{ p.amount|format_inr }}</span>
+                                </td>
+                                <td>
+                                    <span class="editable-cell editable-select-mode" data-field="payment_mode" data-val="{{ p.payment_mode or '' }}">{{ p.payment_mode or "—" }}</span>
+                                </td>
+                                <td style="text-align: center;">
+                                    <span class="badge {% if p.status and p.status.value == 'PAID' %}badge-positive{% elif p.status and p.status.value == 'UNPAID' %}badge-negative{% else %}badge-neutral{% endif %}" style="{% if p.status and p.status.value == 'SKIPPED' %}background: rgba(245, 158, 11, 0.15); color: #f59e0b;{% endif %}">
+                                        {{ p.status.value if p.status else "—" }}
+                                    </span>
+                                </td>
+                                <td style="color: var(--text-secondary); font-size: 13px;">
+                                    <div style="margin-bottom: 2px;">
+                                        <span style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary); opacity: 0.8; margin-right: 4px;">Receipt:</span>
+                                        <span class="editable-cell editable-text" data-field="receipt_number" data-val="{{ p.receipt_number or '' }}">{{ p.receipt_number or "—" }}</span>
+                                    </div>
+                                    <div>
+                                        <span style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary); opacity: 0.8; margin-right: 4px;">Notes:</span>
+                                        <span class="editable-cell editable-text" data-field="notes" data-val="{{ p.notes or '' }}">{{ p.notes or "—" }}</span>
+                                    </div>
+                                </td>
+                                <td style="text-align: center; padding-right: 24px;">
+                                    <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+                                        <select class="status-select" data-id="{{ p.id }}" style="width: 90px; font-size: 12px; padding: 4px 8px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border); color: white; border-radius: 4px;">
+                                            {% for s in payment_statuses %}
+                                            <option value="{{ s }}" {% if p.status and p.status.value == s %}selected{% endif %}>{{ s }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <form method="post" action="/insurance/payment/{{ p.id }}/delete" style="margin:0;">
+                                            <button type="submit" style="background: none; border: none; color: var(--accent-red); cursor: pointer; font-size: 12px; font-weight: 600;" onclick="return confirm('Are you sure you want to delete this payment record?')">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr class="placeholder-row">
+                                <td colspan="7" style="text-align: center; padding: 30px; color: var(--text-secondary);">No transactions recorded.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if payments|length > 5 %}
+                <div id="toggle-payments-bottom-container" style="display: flex; justify-content: center; margin-top: -4px; margin-bottom: 20px;">
+                    <button id="toggle-payments-bottom-btn" style="background: none; border: none; color: var(--accent-blue); cursor: pointer; font-size: 13px; font-weight: 600; display: none; align-items: center; gap: 4px; padding: 6px 12px;">
+                        <span>Collapse Table (Show Less)</span>
+                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"></path>
+                        </svg>
+                    </button>
+                </div>
+                {% endif %}
+
+                <!-- Add Payment Form -->
+                <div style="background: rgba(15, 23, 42, 0.3); border-top: 1px solid var(--glass-border); padding: 24px; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+                    <h3 style="margin-top: 0; font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px;">Log New Transaction</h3>
+                    <form method="post" action="/insurance/{{ policy.id }}/add_payment">
+                        <div class="form-row">
+                            <div class="detail-field">
+                                <label class="detail-label">Transaction Type</label>
+                                <select name="transaction_type" class="form-control">
+                                    <option value="PREMIUM" selected>Premium Payment</option>
+                                    <option value="PARTIAL_WITHDRAWAL">Partial Withdrawal</option>
+                                    <option value="SURRENDER">Surrender Payout</option>
+                                    <option value="MATURITY_PAYOUT">Maturity Payout</option>
+                                </select>
+                            </div>
+                            <div class="detail-field">
+                                <label class="detail-label">Date</label>
+                                <input name="payment_date" type="date" class="form-control" required>
+                            </div>
+                            <div class="detail-field">
+                                <label class="detail-label">Amount (₹)</label>
+                                <input name="amount" type="number" step="0.01" class="form-control" placeholder="0.00" required>
+                            </div>
+                            <div class="detail-field">
+                                <label class="detail-label">Mode</label>
+                                <select name="payment_mode" class="form-control">
+                                    <option value="">— Select Mode —</option>
+                                    <option>NEFT</option>
+                                    <option>CHEQUE</option>
+                                    <option>AUTO_DEBIT</option>
+                                    <option>UPI</option>
+                                    <option>CASH</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="detail-field">
+                                <label class="detail-label">Receipt / Reference No</label>
+                                <input name="receipt_number" class="form-control" placeholder="Receipt Number">
+                            </div>
+                            <div class="detail-field">
+                                <label class="detail-label">Notes</label>
+                                <input name="notes" class="form-control" placeholder="Transaction notes/details">
+                            </div>
+                        </div>
+                        <button class="btn-primary" type="submit" style="padding: 10px 20px; font-size: 13px;">Add Transaction</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 2. POLICY NOMINEES -->
+            <div class="glass-card" style="padding: 24px;">
+                <h2 style="font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 20px;">Nominees</h2>
+                <div class="table-container" style="margin-top: 0; margin-bottom: 24px;">
+                    <table style="margin-top: 0;">
+                        <thead>
+                            <tr>
+                                <th style="padding-left: 24px;">Name</th>
+                                <th>Relationship</th>
+                                <th style="text-align: right;">Share %</th>
+                                <th style="text-align: center;">Minor?</th>
+                                <th style="padding-right: 24px;">Appointee Name</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for n in nominees %}
+                            <tr>
+                                <td style="padding-left: 24px; font-weight: 600; color: #60a5fa;">{{ n.nominee_name }}</td>
+                                <td>{{ n.relationship or "—" }}</td>
+                                <td style="text-align: right; font-weight: 600;">{{ n.share_percentage }}%</td>
+                                <td style="text-align: center;">{{ "Yes" if n.is_minor else "No" }}</td>
+                                <td style="color: var(--text-secondary); padding-right: 24px;">{{ n.appointee_name or "—" }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 30px; color: var(--text-secondary);">No nominees recorded.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="background: rgba(15, 23, 42, 0.3); border-top: 1px solid var(--glass-border); padding: 24px; margin: 0 -24px -24px -24px; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+                    <h3 style="margin-top: 0; font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px;">Add Nominee Share</h3>
+                    <form method="post" action="/insurance/{{ policy.id }}/add_nominee">
+                        <div class="form-row">
+                            <div class="detail-field">
+                                <label class="detail-label">Nominee Name</label>
+                                <input name="nominee_name" class="form-control" required placeholder="Full Name">
+                            </div>
+                            <div class="detail-field">
+                                <label class="detail-label">Relationship</label>
+                                <input name="relationship" class="form-control" placeholder="e.g. Spouse, Son">
+                            </div>
+                            <div class="detail-field">
+                                <label class="detail-label">Share Percentage (%)</label>
+                                <input name="share_percentage" type="number" step="0.01" class="form-control" placeholder="100.00">
+                            </div>
+                            <div class="detail-field">
+                                <label class="detail-label">Is Minor?</label>
+                                <select name="is_minor" class="form-control">
+                                    <option value="false">No</option>
+                                    <option value="true">Yes</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="detail-field" style="margin-bottom: 16px;">
+                            <label class="detail-label">Appointee Name (Required if nominee is a minor)</label>
+                            <input name="appointee_name" class="form-control" placeholder="Appointee Guardian Name">
+                        </div>
+                        <button class="btn-primary" type="submit" style="padding: 10px 20px; font-size: 13px;">Save Nominee Share</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 3. POLICY VALUATIONS -->
+            <div class="glass-card" style="padding: 24px;">
+                <h2 style="font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 20px;">Valuation History</h2>
+                <div class="table-container" style="margin-top: 0; margin-bottom: 24px;">
+                    <table id="valuations-table" class="table-compact" style="margin-top: 0;">
+                        <thead>
+                            <tr>
+                                <th style="padding-left: 24px;">Valuation Date</th>
+                                <th style="text-align: right;">Surrender Value</th>
+                                <th style="text-align: right;">Fund Value</th>
+                                <th style="text-align: right;">Bonus Accrued</th>
+                                <th style="text-align: right;">Total Estimated Value</th>
+                                <th>Notes</th>
+                                <th style="text-align: center; padding-right: 24px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v in valuations %}
+                            <tr class="valuation-row" data-id="{{ v.id }}">
+                                <td style="padding-left: 24px; font-family: monospace; color: var(--text-secondary);">
+                                    <span class="editable-cell editable-date" data-field="valuation_date" data-val="{{ v.valuation_date }}">{{ v.valuation_date }}</span>
+                                </td>
+                                <td style="text-align: right;">
+                                    ₹<span class="editable-cell editable-number" data-field="surrender_value" data-val="{{ v.surrender_value or '' }}">{{ v.surrender_value|format_inr if v.surrender_value else "—" }}</span>
+                                </td>
+                                <td style="text-align: right;">
+                                    ₹<span class="editable-cell editable-number" data-field="fund_value" data-val="{{ v.fund_value or '' }}">{{ v.fund_value|format_inr if v.fund_value else "—" }}</span>
+                                </td>
+                                <td style="text-align: right;">
+                                    ₹<span class="editable-cell editable-number" data-field="bonus_accrued" data-val="{{ v.bonus_accrued or '' }}">{{ v.bonus_accrued|format_inr if v.bonus_accrued else "—" }}</span>
+                                </td>
+                                <td style="text-align: right; font-weight: 700; color: var(--accent-blue);">
+                                    ₹<span class="editable-cell editable-number" data-field="total_value" data-val="{{ v.total_value or '' }}">{{ v.total_value|format_inr if v.total_value else "—" }}</span>
+                                </td>
+                                <td style="color: var(--text-secondary); font-size: 13px;">
+                                    <span class="editable-cell editable-text" data-field="notes" data-val="{{ v.notes or '' }}">{{ v.notes or "—" }}</span>
+                                </td>
+                                <td style="text-align: center; padding-right: 24px;">
+                                    <form method="post" action="/insurance/valuation/{{ v.id }}/delete" style="margin:0;">
+                                        <button type="submit" style="background: none; border: none; color: var(--accent-red); cursor: pointer; font-size: 12px; font-weight: 600;" onclick="return confirm('Are you sure you want to delete this valuation point?')">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr class="placeholder-row">
+                                <td colspan="7" style="text-align: center; padding: 30px; color: var(--text-secondary);">No valuations recorded.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="background: rgba(15, 23, 42, 0.3); border-top: 1px solid var(--glass-border); padding: 24px; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; margin: 0 -24px -24px -24px;">
+                    <h3 style="margin-top: 0; font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px;">Log New Valuation Point</h3>
+                    <form method="post" action="/insurance/{{ policy.id }}/add_valuation">
+                        <div class="form-row">
+                            <div class="detail-field">
+                                <label class="detail-label">Valuation Date</label>
+                                <input name="valuation_date" type="date" class="form-control" required>
+                            </div>
+                            <div class="detail-field">
+                                <label class="detail-label">Surrender Value (₹)</label>
+                                <input name="surrender_value" type="number" step="0.01" class="form-control" placeholder="0.00">
+                            </div>
+                            <div class="detail-field">
+                                <label class="detail-label">Fund Value (₹)</label>
+                                <input name="fund_value" type="number" step="0.01" class="form-control" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="detail-field">
+                                <label class="detail-label">Bonus Accrued (₹)</label>
+                                <input name="bonus_accrued" type="number" step="0.01" class="form-control" placeholder="0.00">
+                            </div>
+                            <div class="detail-field">
+                                <label class="detail-label">Total Value (₹)</label>
+                                <input name="total_value" type="number" step="0.01" class="form-control" placeholder="0.00">
+                            </div>
+                            <div class="detail-field">
+                                <label class="detail-label">Notes / Transaction Details</label>
+                                <input name="notes" class="form-control" placeholder="e.g. Partial withdrawal, Annual valuation">
+                            </div>
+                        </div>
+                        <button class="btn-primary" type="submit" style="padding: 10px 20px; font-size: 13px;">Save Valuation Point</button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span id="toastIcon"></span>
+        <span id="toastMessage"></span>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // ==========================================
+            // PAYMENT ROWS EXPAND/COLLAPSE
+            // ==========================================
+            const paymentRows = document.querySelectorAll('#payments-table tbody .payment-row');
+            const togglePaymentsBtn = document.getElementById('toggle-payments-btn');
+            const togglePaymentsBottomBtn = document.getElementById('toggle-payments-bottom-btn');
+            const toggleBtnText = document.getElementById('toggle-btn-text');
+            
+            let paymentsCollapsed = true;
+            
+            function updatePaymentsVisibility() {
+                paymentRows.forEach((row, index) => {
+                    if (index >= 5) {
+                        row.style.display = paymentsCollapsed ? 'none' : '';
+                    }
+                });
+                
+                if (togglePaymentsBtn) {
+                    if (paymentsCollapsed) {
+                        toggleBtnText.textContent = 'Expand (Show All)';
+                        document.getElementById('toggle-btn-badge').style.display = '';
+                    } else {
+                        toggleBtnText.textContent = 'Collapse (Show Less)';
+                        document.getElementById('toggle-btn-badge').style.display = 'none';
+                    }
+                }
+                
+                if (togglePaymentsBottomBtn) {
+                    togglePaymentsBottomBtn.style.display = paymentsCollapsed ? 'none' : 'flex';
+                }
+            }
+            
+            if (paymentRows.length > 5) {
+                updatePaymentsVisibility();
+                
+                if (togglePaymentsBtn) {
+                    togglePaymentsBtn.addEventListener('click', function() {
+                        paymentsCollapsed = !paymentsCollapsed;
+                        updatePaymentsVisibility();
+                        if (paymentsCollapsed) {
+                            document.querySelector('#payments-table').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    });
+                }
+                
+                if (togglePaymentsBottomBtn) {
+                    togglePaymentsBottomBtn.addEventListener('click', function() {
+                        paymentsCollapsed = true;
+                        updatePaymentsVisibility();
+                        document.querySelector('#payments-table').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    });
+                }
+            }
+
+            // Toast helper
+            function showToast(message, type) {
+                const toast = document.getElementById('toast');
+                const toastIcon = document.getElementById('toastIcon');
+                const toastMessage = document.getElementById('toastMessage');
+                if (!toast) return;
+
+                toast.className = `toast show ${type}`;
+                toastMessage.textContent = message;
+                
+                if (type === 'success') {
+                    toastIcon.innerHTML = '✔';
+                    toastIcon.style.color = '#10b981';
+                } else {
+                    toastIcon.innerHTML = '❌';
+                    toastIcon.style.color = '#ef4444';
+                }
+
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 4000);
+            }
+
+            // ==========================================
+            // 1. PREMIUM PAYMENTS INLINE EDITING
+            // ==========================================
+            async function saveRowData(paymentId, updatedField, updatedValue) {
+                const row = document.querySelector(`.payment-row[data-id="${paymentId}"]`);
+                if (!row) return;
+
+                const getVal = (field) => {
+                    if (field === updatedField) return updatedValue;
+                    const cell = row.querySelector(`[data-field="${field}"]`);
+                    return cell ? cell.getAttribute('data-val') : '';
+                };
+
+                const transactionType = getVal('transaction_type');
+                const paymentDate = getVal('payment_date');
+                const amount = getVal('amount');
+                const paymentMode = getVal('payment_mode');
+                const receiptNumber = getVal('receipt_number');
+                const notes = getVal('notes');
+                
+                const statusSelect = row.querySelector('.status-select');
+                const status = statusSelect ? statusSelect.value : '';
+
+                const formData = new FormData();
+                formData.append('transaction_type', transactionType || 'PREMIUM');
+                formData.append('payment_date', paymentDate);
+                formData.append('amount', amount);
+                formData.append('payment_mode', paymentMode);
+                formData.append('status', status);
+                formData.append('receipt_number', receiptNumber);
+                formData.append('notes', notes);
+
+                try {
+                    const response = await fetch(`/insurance/payment/${paymentId}/update`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const res = await response.json();
+                    
+                    if (res.success) {
+                        showToast(res.message, 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 800);
+                    } else {
+                        showToast(`Failed to update payment: ${res.error}`, 'error');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    }
+                } catch (err) {
+                    showToast(`Server connection error: ${err}`, 'error');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                }
+            }
+
+            document.querySelectorAll('#payments-table .editable-cell').forEach(span => {
+                span.addEventListener('dblclick', function() {
+                    if (this.querySelector('input') || this.querySelector('select')) return;
+
+                    const field = this.getAttribute('data-field');
+                    const currentVal = this.getAttribute('data-val');
+                    const row = this.closest('.payment-row');
+                    const paymentId = row.getAttribute('data-id');
+
+                    let input;
+
+                    if (this.classList.contains('editable-date')) {
+                        input = document.createElement('input');
+                        input.type = 'date';
+                        input.value = currentVal;
+                        input.className = 'inline-input';
+                    } else if (this.classList.contains('editable-number')) {
+                        input = document.createElement('input');
+                        input.type = 'number';
+                        input.step = '0.01';
+                        input.value = currentVal;
+                        input.className = 'inline-input';
+                        input.style.width = '100px';
+                    } else if (this.classList.contains('editable-select-txntype')) {
+                        input = document.createElement('select');
+                        input.className = 'inline-select';
+                        const types = [
+                            {val: 'PREMIUM', label: 'Premium Payment'},
+                            {val: 'PARTIAL_WITHDRAWAL', label: 'Partial Withdrawal'},
+                            {val: 'SURRENDER', label: 'Surrender Payout'},
+                            {val: 'MATURITY_PAYOUT', label: 'Maturity Payout'}
+                        ];
+                        types.forEach(t => {
+                            const opt = document.createElement('option');
+                            opt.value = t.val;
+                            opt.textContent = t.label;
+                            if (t.val === currentVal) opt.selected = true;
+                            input.appendChild(opt);
+                        });
+                    } else if (this.classList.contains('editable-select-mode')) {
+                        input = document.createElement('select');
+                        input.className = 'inline-select';
+                        const modes = ['NEFT', 'CHEQUE', 'AUTO_DEBIT', 'UPI', 'CASH', 'AUTO_GENERATED'];
+                        modes.forEach(mode => {
+                            const opt = document.createElement('option');
+                            opt.value = mode;
+                            opt.textContent = mode;
+                            if (mode === currentVal) opt.selected = true;
+                            input.appendChild(opt);
+                        });
+                    } else {
+                        input = document.createElement('input');
+                        input.type = 'text';
+                        input.value = currentVal;
+                        input.className = 'inline-input';
+                        input.style.width = '100%';
+                    }
+
+                    const originalText = this.textContent;
+                    this.textContent = '';
+                    this.appendChild(input);
+                    input.focus();
+
+                    const save = () => {
+                        const newVal = input.value.trim();
+                        if (newVal === currentVal) {
+                            this.removeChild(input);
+                            this.textContent = originalText;
+                            return;
+                        }
+                        saveRowData(paymentId, field, newVal);
+                    };
+
+                    input.addEventListener('blur', save);
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            save();
+                        } else if (e.key === 'Escape') {
+                            span.removeChild(input);
+                            span.textContent = originalText;
+                        }
+                    });
+                });
+            });
+
+            document.querySelectorAll('.status-select').forEach(select => {
+                select.addEventListener('change', function() {
+                    const paymentId = this.getAttribute('data-id');
+                    saveRowData(paymentId, 'status', this.value);
+                });
+            });
+
+            // ==========================================
+            // 2. VALUATIONS INLINE EDITING
+            // ==========================================
+            async function saveValuationRowData(valuationId, updatedField, updatedValue) {
+                const row = document.querySelector(`.valuation-row[data-id="${valuationId}"]`);
+                if (!row) return;
+
+                const getVal = (field) => {
+                    if (field === updatedField) return updatedValue;
+                    const cell = row.querySelector(`[data-field="${field}"]`);
+                    return cell ? cell.getAttribute('data-val') : '';
+                };
+
+                const valuationDate = getVal('valuation_date');
+                const surrenderValue = getVal('surrender_value');
+                const fundValue = getVal('fund_value');
+                const bonusAccrued = getVal('bonus_accrued');
+                const totalValue = getVal('total_value');
+                const notes = getVal('notes');
+
+                const formData = new FormData();
+                formData.append('valuation_date', valuationDate);
+                formData.append('surrender_value', surrenderValue);
+                formData.append('fund_value', fundValue);
+                formData.append('bonus_accrued', bonusAccrued);
+                formData.append('total_value', totalValue);
+                formData.append('notes', notes);
+
+                try {
+                    const response = await fetch(`/insurance/valuation/${valuationId}/update`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const res = await response.json();
+                    
+                    if (res.success) {
+                        showToast(res.message, 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 800);
+                    } else {
+                        showToast(`Failed to update valuation: ${res.error}`, 'error');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    }
+                } catch (err) {
+                    showToast(`Server connection error: ${err}`, 'error');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                }
+            }
+
+            document.querySelectorAll('#valuations-table .editable-cell').forEach(span => {
+                span.addEventListener('dblclick', function() {
+                    if (this.querySelector('input') || this.querySelector('select')) return;
+
+                    const field = this.getAttribute('data-field');
+                    const currentVal = this.getAttribute('data-val');
+                    const row = this.closest('.valuation-row');
+                    const valuationId = row.getAttribute('data-id');
+
+                    let input;
+
+                    if (this.classList.contains('editable-date')) {
+                        input = document.createElement('input');
+                        input.type = 'date';
+                        input.value = currentVal;
+                        input.className = 'inline-input';
+                    } else if (this.classList.contains('editable-number')) {
+                        input = document.createElement('input');
+                        input.type = 'number';
+                        input.step = '0.01';
+                        input.value = currentVal;
+                        input.className = 'inline-input';
+                        input.style.width = '120px';
+                    } else {
+                        input = document.createElement('input');
+                        input.type = 'text';
+                        input.value = currentVal;
+                        input.className = 'inline-input';
+                        input.style.width = '100%';
+                    }
+
+                    const originalText = this.textContent;
+                    this.textContent = '';
+                    this.appendChild(input);
+                    input.focus();
+
+                    const save = () => {
+                        const newVal = input.value.trim();
+                        if (newVal === currentVal) {
+                            this.removeChild(input);
+                            this.textContent = originalText;
+                            return;
+                        }
+                        saveValuationRowData(valuationId, field, newVal);
+                    };
+
+                    input.addEventListener('blur', save);
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            save();
+                        } else if (e.key === 'Escape') {
+                            span.removeChild(input);
+                            span.textContent = originalText;
+                        }
+                    });
+                });
+            });
+
+            // ==========================================
+            // 3. POLICY METADATA INLINE EDITING
+            // ==========================================
+            async function savePolicyData(policyId, updatedField, updatedValue) {
+                const card = document.getElementById('policy-metadata-card');
+                if (!card) return;
+
+                const getVal = (field) => {
+                    if (field === updatedField) return updatedValue;
+                    const cell = card.querySelector(`[data-field="${field}"]`);
+                    return cell ? cell.getAttribute('data-val') : '';
+                };
+
+                const fileNumber = getVal('file_number');
+                const policyNumber = getVal('policy_number');
+                const planName = getVal('plan_name');
+                const fundName = getVal('fund_name');
+                const fundType = getVal('fund_type');
+                const sumAssured = getVal('sum_assured');
+                const premiumAmount = getVal('premium_amount');
+                const status = getVal('status');
+                const premiumTerm = getVal('premium_term');
+                const premiumFrequency = getVal('premium_frequency');
+                const paymentMethod = getVal('payment_method');
+                const policyStartDate = getVal('policy_start_date');
+                const policyEndDate = getVal('policy_end_date');
+                const premiumEndDate = getVal('premium_end_date');
+                const agentName = getVal('agent_name');
+                const notes = getVal('notes');
+                const maturityAmount = getVal('maturity_amount');
+                const surrenderedAmount = getVal('surrendered_amount');
+
+                const formData = new FormData();
+                formData.append('file_number', fileNumber);
+                formData.append('policy_number', policyNumber);
+                formData.append('plan_name', planName);
+                formData.append('fund_name', fundName);
+                formData.append('fund_type', fundType);
+                formData.append('sum_assured', sumAssured);
+                formData.append('premium_amount', premiumAmount);
+                formData.append('status', status);
+                formData.append('premium_term', premiumTerm);
+                formData.append('premium_frequency', premiumFrequency);
+                formData.append('payment_method', paymentMethod);
+                formData.append('policy_start_date', policyStartDate);
+                formData.append('policy_end_date', policyEndDate);
+                formData.append('premium_end_date', premiumEndDate);
+                formData.append('agent_name', agentName);
+                formData.append('notes', notes);
+                formData.append('maturity_amount', maturityAmount);
+                formData.append('surrendered_amount', surrenderedAmount);
+
+                try {
+                    const response = await fetch(`/insurance/${policyId}/update`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const res = await response.json();
+                    
+                    if (res.success) {
+                        showToast(res.message, 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 800);
+                    } else {
+                        showToast(`Failed to update policy: ${res.error}`, 'error');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    }
+                } catch (err) {
+                    showToast(`Server connection error: ${err}`, 'error');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                }
+            }
+
+            document.querySelectorAll('.editable-policy-cell').forEach(span => {
+                span.addEventListener('dblclick', function() {
+                    if (this.querySelector('input') || this.querySelector('select')) return;
+
+                    const field = this.getAttribute('data-field');
+                    const currentVal = this.getAttribute('data-val');
+                    const card = this.closest('#policy-metadata-card');
+                    const policyId = card.getAttribute('data-id');
+
+                    let input;
+
+                    if (this.classList.contains('editable-date')) {
+                        input = document.createElement('input');
+                        input.type = 'date';
+                        input.value = currentVal;
+                        input.className = 'inline-input';
+                    } else if (this.classList.contains('editable-number')) {
+                        input = document.createElement('input');
+                        input.type = 'number';
+                        input.step = '0.01';
+                        input.value = currentVal;
+                        input.className = 'inline-input';
+                    } else if (this.classList.contains('editable-number-int')) {
+                        input = document.createElement('input');
+                        input.type = 'number';
+                        input.step = '1';
+                        input.value = currentVal;
+                        input.className = 'inline-input';
+                    } else if (this.classList.contains('editable-select-status')) {
+                        input = document.createElement('select');
+                        input.className = 'inline-select';
+                        const statuses = ['ACTIVE', 'LAPSED', 'SURRENDERED', 'MATURED', 'CLAIMED'];
+                        statuses.forEach(s => {
+                            const opt = document.createElement('option');
+                            opt.value = s;
+                            opt.textContent = s;
+                            if (s === currentVal) opt.selected = true;
+                            input.appendChild(opt);
+                        });
+                    } else if (this.classList.contains('editable-select-freq')) {
+                        input = document.createElement('select');
+                        input.className = 'inline-select';
+                        const freqs = ['MONTHLY', 'QUARTERLY', 'HALF_YEARLY', 'YEARLY', 'ANNUAL', 'SINGLE'];
+                        freqs.forEach(f => {
+                            const opt = document.createElement('option');
+                            opt.value = f;
+                            opt.textContent = f;
+                            if (f === currentVal) opt.selected = true;
+                            input.appendChild(opt);
+                        });
+                    } else if (this.classList.contains('editable-select-method')) {
+                        input = document.createElement('select');
+                        input.className = 'inline-select';
+                        const methods = ['MANUAL', 'ECS'];
+                        methods.forEach(m => {
+                            const opt = document.createElement('option');
+                            opt.value = m;
+                            opt.textContent = m;
+                            if (m === currentVal) opt.selected = true;
+                            input.appendChild(opt);
+                        });
+                    } else {
+                        input = document.createElement('input');
+                        input.type = 'text';
+                        input.value = currentVal;
+                        input.className = 'inline-input';
+                        input.style.width = '100%';
+                    }
+
+                    const originalText = this.innerHTML;
+                    this.textContent = '';
+                    this.appendChild(input);
+                    input.focus();
+
+                    const save = () => {
+                        const newVal = input.value.trim();
+                        if (newVal === currentVal) {
+                            this.removeChild(input);
+                            this.innerHTML = originalText;
+                            return;
+                        }
+                        savePolicyData(policyId, field, newVal);
+                    };
+
+                    input.addEventListener('blur', save);
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            save();
+                        } else if (e.key === 'Escape') {
+                            span.removeChild(input);
+                            span.innerHTML = originalText;
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

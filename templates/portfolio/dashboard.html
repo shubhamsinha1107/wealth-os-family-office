@@ -1,0 +1,967 @@
+<!-- templates/portfolio/dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consolidated Portfolio Overview</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <script src="/static/js/backup.js?v=2"></script>
+    <style>
+        .badge-pct {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .pct-positive {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .pct-negative {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .tr-total {
+            background: rgba(15, 23, 42, 0.7) !important;
+            border-top: 2px solid var(--glass-border);
+            border-bottom: 2px solid var(--glass-border);
+            font-weight: 700;
+        }
+        .tr-total td {
+            color: #f8fafc !important;
+        }
+
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+            }
+            .container {
+                max-width: 100% !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .glass-card {
+                background: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 0 20px 0 !important;
+            }
+            table {
+                width: 100% !important;
+                max-width: 100% !important;
+                border-collapse: collapse !important;
+                color: black !important;
+                background: transparent !important;
+                table-layout: auto !important;
+            }
+            .table-container {
+                width: 100% !important;
+                overflow: visible !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            th, td {
+                border: 1px solid #cbd5e1 !important;
+                padding: 5px 6px !important;
+                color: black !important;
+                font-size: 10px !important;
+                background: transparent !important;
+                line-height: 1.2 !important;
+            }
+            th {
+                background-color: #f1f5f9 !important;
+                font-weight: bold !important;
+                color: #0f172a !important;
+            }
+            .badge-pct {
+                border: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+                color: black !important;
+                font-weight: bold !important;
+            }
+            .pct-positive {
+                color: #15803d !important;
+            }
+            .pct-negative {
+                color: #b91c1c !important;
+            }
+            .tr-total td {
+                color: #0f172a !important;
+                font-weight: bold !important;
+                background-color: #f8fafc !important;
+                border-top: 2px solid #94a3b8 !important;
+                border-bottom: 2px solid #94a3b8 !important;
+            }
+            h1 {
+                font-size: 24px !important;
+                color: #0f172a !important;
+                margin-bottom: 10px !important;
+                margin-top: 10px !important;
+            }
+            h3 {
+                font-size: 18px !important;
+                color: #0f172a !important;
+                margin-bottom: 8px !important;
+            }
+            @page {
+                size: landscape;
+                margin: 12mm 15mm;
+            }
+            .page-break {
+                page-break-before: always !important;
+                margin-top: 0 !important;
+                padding-top: 10px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div class="no-print" style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <!-- Top-Level Navigation Bar -->
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/portfolio/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%); box-shadow: 0 2px 8px 0 rgba(139, 92, 246, 0.3);">Portfolio Overview</a>
+                        <a href="/mutual-funds/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        {% if success_message %}
+        <div class="alert alert-success no-print" style="margin-bottom: 24px; padding: 12px 20px; border-radius: 8px; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">
+            {{ success_message }}
+        </div>
+        {% endif %}
+
+        {% if error_message %}
+        <div class="alert alert-danger no-print" style="margin-bottom: 24px; padding: 12px 20px; border-radius: 8px; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+            {{ error_message }}
+        </div>
+        {% endif %}
+
+        <!-- Operations Panel -->
+        <div class="glass-card no-print" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; margin-bottom: 24px;">
+            <div style="font-weight: 500; font-size: 14px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" fill="none" stroke="#60a5fa" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path>
+                </svg>
+                <span>Latest Positions Report: <strong style="color: var(--text-primary);">{{ latest_report_file or "None Found" }}</strong></span>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <button onclick="window.print()" class="btn" style="padding: 10px 18px; border-radius: 8px; font-weight: 600; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border: 1px solid rgba(59, 130, 246, 0.4); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6.72 13.821V21h10.56v-7.179m-12 0h13.44m-14.88 0A2.25 2.25 0 014.5 11.25V6.75A2.25 2.25 0 016.75 4.5h10.5a2.25 2.25 0 012.25 2.25v4.5a2.25 2.25 0 01-2.25 2.25M6.72 13.821h10.56M12 11.25v.008h.008v-.008H12z"></path>
+                    </svg>
+                    <span>Print Landscape PDF</span>
+                </button>
+                <a href="/portfolio/export" class="btn" style="text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.4); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                    </svg>
+                    <span>Export Excel</span>
+                </a>
+                <form action="/portfolio/sync" method="POST" style="margin: 0;">
+                    <button type="submit" class="btn-primary" style="display: flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"></path>
+                        </svg>
+                        Sync NAVs & Refreshed Excel
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Portfolio Metrics Summary -->
+        <div class="metrics-grid no-print">
+            <div class="glass-card metric-card">
+                <div class="metric-title">Invested Amount</div>
+                <div class="metric-value">₹{{ summary.total_cost|format_inr }}</div>
+                <div class="metric-change" style="color: var(--text-secondary);">Principal Invested</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Current Valuation</div>
+                <div class="metric-value">₹{{ summary.total_value|format_inr }}</div>
+                <div class="metric-change" style="color: var(--text-secondary);">Market Value</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Unrealized Profit/Loss</div>
+                <div class="metric-value" style="color: {% if summary.total_gain >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                    ₹{{ summary.total_gain|format_inr }}
+                </div>
+                <div class="metric-change {% if summary.total_gain >= 0 %}positive{% else %}negative{% endif %}">
+                    {{ "{:+.2%}".format(summary.total_returns_pct / 100.0) }} Total Return
+                </div>
+            </div>
+        </div>
+
+        <!-- Consolidated Table -->
+        <div class="glass-card" style="padding: 24px;">
+            <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #a78bfa;">Asset Allocation & Performance Overview</h3>
+                <span style="font-size: 12px; color: var(--text-secondary);">All figures in <strong>Invested / Current</strong> Format</span>
+            </div>
+            <div class="table-container" style="margin-top: 0;">
+                <table style="margin-top: 0;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">Category</th>
+                            <th style="text-align: right;">PATRIARCH</th>
+                            <th style="text-align: right;">MR</th>
+                            <th style="text-align: right;">APEX</th>
+                            <th style="text-align: right;">SR</th>
+                            <th style="text-align: right;">VG</th>
+                            <th style="text-align: right; color: #f8fafc; font-weight: 700;">TOTAL</th>
+                            <th style="text-align: center;">% Return</th>
+                            <th style="text-align: center;">Exposure</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in rows %}
+                        <tr>
+                            <td style="font-weight: 600; color: #60a5fa;">{{ r.category }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ r.PATRIARCH }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ r.MR }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ r.APEX }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ r.SR }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ r.VG }}</td>
+                            <td style="text-align: right; font-weight: 700; color: #f8fafc; font-family: monospace;">{{ r.TOTAL }}</td>
+                            <td style="text-align: center;">
+                                <span class="badge-pct {% if r.pct_change >= 0 %}pct-positive{% else %}pct-negative{% endif %}">
+                                    {{ "{:+.2f}%".format(r.pct_change) }}
+                                </span>
+                            </td>
+                            <td style="text-align: center; color: var(--text-secondary); font-weight: 500;">
+                                {{ "{:.2f}%".format(r.exposure) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        <!-- Grand Total Row -->
+                        <tr class="tr-total">
+                            <td style="color: #a78bfa !important; font-weight: 700;">{{ grand_total.category }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ grand_total.PATRIARCH }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ grand_total.MR }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ grand_total.APEX }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ grand_total.SR }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ grand_total.VG }}</td>
+                            <td style="text-align: right; font-weight: 800; font-family: monospace; color: #a78bfa !important;">{{ grand_total.TOTAL }}</td>
+                            <td style="text-align: center;">
+                                <span class="badge-pct {% if grand_total.pct_change >= 0 %}pct-positive{% else %}pct-negative{% endif %}" style="border-width: 2px;">
+                                    {{ "{:+.2f}%".format(grand_total.pct_change) }}
+                                </span>
+                            </td>
+                            <td style="text-align: center; font-weight: 700;">100.00%</td>
+                        </tr>
+                        <tr class="tr-total" style="border-top: 1px dashed rgba(255, 255, 255, 0.15);">
+                            <td style="color: #c084fc !important; font-weight: 700;">{{ grand_total_ex_sgb.category }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ grand_total_ex_sgb.PATRIARCH }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ grand_total_ex_sgb.MR }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ grand_total_ex_sgb.APEX }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ grand_total_ex_sgb.SR }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ grand_total_ex_sgb.VG }}</td>
+                            <td style="text-align: right; font-weight: 800; font-family: monospace; color: #c084fc !important;">{{ grand_total_ex_sgb.TOTAL }}</td>
+                            <td style="text-align: center;">
+                                <span class="badge-pct {% if grand_total_ex_sgb.pct_change >= 0 %}pct-positive{% else %}pct-negative{% endif %}" style="border-width: 2px;">
+                                    {{ "{:+.2f}%".format(grand_total_ex_sgb.pct_change) }}
+                                </span>
+                            </td>
+                            <td style="text-align: center; font-weight: 700;">100.00%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Broker / Advisor Allocation Overview Table -->
+        <div class="glass-card page-break" style="padding: 24px; margin-top: 24px;">
+            <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #a78bfa;">Broker & Advisor Consolidated Overview</h3>
+                <span style="font-size: 12px; color: var(--text-secondary);">All figures in <strong>Invested / Current</strong> Format</span>
+            </div>
+            <div class="table-container" style="margin-top: 0;">
+                <table style="margin-top: 0;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">Category</th>
+                            <th style="text-align: right;">EQUITY</th>
+                            <th style="text-align: right;">UNLISTED</th>
+                            <th style="text-align: right;">GOLD</th>
+                            <th style="text-align: right;">SILVER</th>
+                            <th style="text-align: right;">DEBT</th>
+                            <th style="text-align: right;">SGB</th>
+                            <th style="text-align: right; color: #f8fafc; font-weight: 700;">TOTAL</th>
+                            <th style="text-align: center;">% Return</th>
+                            <th style="text-align: center;">Exposure</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in broker_rows %}
+                        <tr>
+                            <td style="font-weight: 600; padding: 12px 16px;">
+                                {% if r.category == "PRIME - MF" %}
+                                    <a href="/mutual-funds/unique-funds?q=Prime" style="color: #60a5fa; text-decoration: none;">PRIME - MF</a>
+                                {% elif r.category == "NEXUS - MF" %}
+                                    <a href="/mutual-funds/unique-funds?q=Nexus" style="color: #60a5fa; text-decoration: none;">NEXUS - MF</a>
+                                {% elif r.category == "DIRECT - MF" %}
+                                    <a href="/mutual-funds/unique-funds?q=DIRECT" style="color: #60a5fa; text-decoration: none;">DIRECT - MF</a>
+                                {% elif r.category in ["APEX CUSTODY", "CBL"] %}
+                                    <a href="/equities/?broker=Apex" style="color: #60a5fa; text-decoration: none;">APEX CUSTODY</a>
+                                {% elif r.category in ["GLOBAL INVEST", "JMFL"] %}
+                                    <a href="/equities/?broker=Global" style="color: #60a5fa; text-decoration: none;">GLOBAL INVEST</a>
+                                {% elif r.category in ["SUMMIT SECURITIES", "NUVAMA"] %}
+                                    <a href="/equities/?broker=Summit" style="color: #60a5fa; text-decoration: none;">SUMMIT SECURITIES</a>
+                                {% else %}
+                                    <span style="color: #60a5fa;">{{ r.category }}</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right; font-family: monospace;">{{ r.EQUITY }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ r.UNLISTED }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ r.GOLD }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ r.SILVER }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ r.DEBT }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ r.SGB }}</td>
+                            <td style="text-align: right; font-weight: 700; color: #f8fafc; font-family: monospace;">{{ r.TOTAL }}</td>
+                            <td style="text-align: center;">
+                                <span class="badge-pct {% if r.pct_change >= 0 %}pct-positive{% else %}pct-negative{% endif %}">
+                                    {{ "{:+.2f}%".format(r.pct_change) }}
+                                </span>
+                            </td>
+                            <td style="text-align: center; color: var(--text-secondary); font-weight: 500;">
+                                {{ "{:.2f}%".format(r.exposure) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        <!-- Grand Total Row -->
+                        <tr class="tr-total">
+                            <td style="color: #a78bfa !important; font-weight: 700;">{{ broker_grand_total.category }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ broker_grand_total.EQUITY }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ broker_grand_total.UNLISTED }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ broker_grand_total.GOLD }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ broker_grand_total.SILVER }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ broker_grand_total.DEBT }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ broker_grand_total.SGB }}</td>
+                            <td style="text-align: right; font-weight: 800; font-family: monospace; color: #a78bfa !important;">{{ broker_grand_total.TOTAL }}</td>
+                            <td style="text-align: center;">
+                                <span class="badge-pct {% if broker_grand_total.pct_change >= 0 %}pct-positive{% else %}pct-negative{% endif %}" style="border-width: 2px;">
+                                    {{ "{:+.2f}%".format(broker_grand_total.pct_change) }}
+                                </span>
+                            </td>
+                            <td style="text-align: center; font-weight: 700;">100.00%</td>
+                        </tr>
+                        <tr class="tr-total" style="border-top: 1px dashed rgba(255, 255, 255, 0.15);">
+                            <td style="color: #c084fc !important; font-weight: 700;">{{ broker_grand_total_ex_sgb.category }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ broker_grand_total_ex_sgb.EQUITY }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ broker_grand_total_ex_sgb.UNLISTED }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ broker_grand_total_ex_sgb.GOLD }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ broker_grand_total_ex_sgb.SILVER }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ broker_grand_total_ex_sgb.DEBT }}</td>
+                            <td style="text-align: right; font-family: monospace;">0.00 L / 0.00 L</td>
+                            <td style="text-align: right; font-weight: 800; font-family: monospace; color: #c084fc !important;">{{ broker_grand_total_ex_sgb.TOTAL }}</td>
+                            <td style="text-align: center;">
+                                <span class="badge-pct {% if broker_grand_total_ex_sgb.pct_change >= 0 %}pct-positive{% else %}pct-negative{% endif %}" style="border-width: 2px;">
+                                    {{ "{:+.2f}%".format(broker_grand_total_ex_sgb.pct_change) }}
+                                </span>
+                            </td>
+                            <td style="text-align: center; font-weight: 700;">100.00%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ─── Booked Profits Matrix (Realized Capital Gains) ─── -->
+        {% if booked_profits %}
+        <div class="glass-card" style="padding: 24px; margin-top: 24px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 16px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(16, 185, 129, 0.3);">
+                        <svg width="24" height="24" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-primary);">
+                                Booked Profits & Portfolio Performance Matrix
+                            </h3>
+                            <span style="font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(16, 185, 129, 0.2); color: #34d399; font-weight: 600; border: 1px solid rgba(16, 185, 129, 0.4);">
+                                Command Center
+                            </span>
+                        </div>
+                        <span style="font-size: 12px; color: var(--text-secondary);">
+                            Left-to-Right narrative flow: Invested Capital ➔ Current AUM ➔ Annual Booked Gains ➔ Cumulative ROI & XIRR
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Export and Format Action Buttons -->
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <button type="button" onclick="toggleBookedProfitUnits()" id="unitToggleBtn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; background: rgba(148, 163, 184, 0.15); border: 1px solid var(--glass-border); color: #cbd5e1; cursor: pointer;">
+                        🔄 Unit: Cr / L
+                    </button>
+                    <button type="button" onclick="exportBookedProfitsToCSV()" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; cursor: pointer;">
+                        📥 Export CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- ─── 5-Card Executive KPI Ribbon ─── -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                <!-- Card 1: TOTAL PORTFOLIO (AUM) -->
+                <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid var(--glass-border); border-left: 4px solid #38bdf8; border-radius: 10px; padding: 14px 16px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">TOTAL PORTFOLIO (AUM)</div>
+                    <div class="profit-val-cell" data-cr="{{ booked_profits.grand_snapshot.current_fmt }}" data-full="₹{{ booked_profits.grand_snapshot.current|format_inr }}" style="font-size: 22px; font-weight: 800; color: #38bdf8; font-family: monospace; margin: 4px 0;">
+                        {{ booked_profits.grand_snapshot.current_fmt }}
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-secondary);">
+                        Cost: <span class="profit-val-cell" data-cr="{{ booked_profits.grand_snapshot.invested_fmt }}" data-full="₹{{ booked_profits.grand_snapshot.invested|format_inr }}">{{ booked_profits.grand_snapshot.invested_fmt }}</span> • Diff: <span style="color: #38bdf8; font-weight: 600;">+{{ booked_profits.grand_snapshot.aum_diff_fmt }}</span>
+                    </div>
+                    <div style="font-size: 9.5px; color: #7dd3fc; opacity: 0.85; margin-top: 4px; font-weight: 500;">
+                        SB: {{ booked_profits.grand_snapshot.sb_equity_curr_fmt }} • SGB: {{ booked_profits.grand_snapshot.sgb_curr_fmt }} • MF: {{ booked_profits.grand_snapshot.mf_curr_fmt }}
+                    </div>
+                </div>
+
+                <!-- Card 2: BOOKED GAINS (REALIZED) -->
+                <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid var(--glass-border); border-left: 4px solid #34d399; border-radius: 10px; padding: 14px 16px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">BOOKED GAINS (REALIZED)</div>
+                    <div class="profit-val-cell" data-cr="+{{ booked_profits.grand_cum.total_fmt }}" data-full="+₹{{ booked_profits.grand_cum.total|format_inr }}" style="font-size: 22px; font-weight: 800; color: #34d399; font-family: monospace; margin: 4px 0;">
+                        +{{ booked_profits.grand_cum.total_fmt }}
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-secondary);">
+                        Stocks: {{ booked_profits.grand_cum.stock_fmt }} | MF: {{ booked_profits.grand_cum.mf_fmt }}
+                    </div>
+                    <div style="font-size: 9.5px; color: #6ee7b7; margin-top: 4px; font-weight: 500;">
+                        Active Reinvested: +{{ booked_profits.grand_snapshot.reinvested_profit_fmt }}
+                    </div>
+                </div>
+
+                <!-- Card 3: OPEN BOOK (UNREALIZED) -->
+                <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid var(--glass-border); border-left: 4px solid #10b981; border-radius: 10px; padding: 14px 16px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">OPEN BOOK (UNREALIZED)</div>
+                    <div class="profit-val-cell" data-cr="+{{ booked_profits.grand_snapshot.open_unrealized_fmt }}" data-full="+₹{{ booked_profits.grand_snapshot.open_unrealized|format_inr }}" style="font-size: 22px; font-weight: 800; color: #10b981; font-family: monospace; margin: 4px 0;">
+                        +{{ booked_profits.grand_snapshot.open_unrealized_fmt }}
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-secondary);">
+                        Paper Gains on active holdings
+                    </div>
+                    <div style="font-size: 9.5px; color: #a7f3d0; margin-top: 4px; font-weight: 500;">
+                        SGB: {{ booked_profits.sgb_unrealized_fmt }} • MF: {{ booked_profits.mf_unrealized_fmt }} • SB: {{ booked_profits.sb_unrealized_fmt }}
+                    </div>
+                </div>
+
+                <!-- Card 4: TOTAL WEALTH CREATED -->
+                <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid var(--glass-border); border-left: 4px solid #c084fc; border-radius: 10px; padding: 14px 16px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">TOTAL WEALTH CREATED</div>
+                    <div class="profit-val-cell" data-cr="+{{ booked_profits.grand_snapshot.total_wealth_fmt }}" data-full="+₹{{ booked_profits.grand_snapshot.total_wealth|format_inr }}" style="font-size: 22px; font-weight: 800; color: #c084fc; font-family: monospace; margin: 4px 0;">
+                        +{{ booked_profits.grand_snapshot.total_wealth_fmt }}
+                    </div>
+                    <div style="font-size: 11px; color: #d8b4fe; font-weight: 500;">
+                        CAGR: +{{ "{:.1f}%".format(booked_profits.grand_total_xirr) }} • Booked: +{{ "{:.1f}%".format(booked_profits.grand_realized_xirr) }}
+                    </div>
+                    <div style="font-size: 9.5px; color: #e9d5ff; margin-top: 4px; font-weight: 500;">
+                        Realized + Unrealized Combined
+                    </div>
+                </div>
+
+                <!-- Card 5: AVAILABLE CASH (DRY POWDER) -->
+                <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid var(--glass-border); border-left: 4px solid #fbbf24; border-radius: 10px; padding: 14px 16px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">AVAILABLE CASH (DRY POWDER)</div>
+                    <div class="profit-val-cell" data-cr="{{ booked_profits.dry_powder_fmt }}" data-full="₹{{ booked_profits.dry_powder|format_inr }}" style="font-size: 22px; font-weight: 800; color: #fbbf24; font-family: monospace; margin: 4px 0;">
+                        {{ booked_profits.dry_powder_fmt }}
+                    </div>
+                    <div style="font-size: 11px; color: #f59e0b;">
+                        Liquid / Arbitrage Funds ready for dips
+                    </div>
+                    <div style="font-size: 9.5px; color: #fde68a; margin-top: 4px; font-weight: 500;">
+                        Instant deployable liquidity
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeframe Analysis Filter Bar -->
+            <div style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--glass-border); border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                <form method="get" action="/portfolio/" id="timeframeForm" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label for="fromDateInput" style="font-size: 13px; font-weight: 600; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
+                            <svg width="15" height="15" fill="none" stroke="#60a5fa" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            From:
+                        </label>
+                        <input type="date" name="from_date" id="fromDateInput" value="{{ selected_from_date }}" 
+                               style="background: rgba(30, 41, 59, 0.9); border: 1px solid var(--glass-border); border-radius: 6px; padding: 6px 10px; color: white; font-size: 13px; font-family: monospace; outline: none;">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label for="tillDateInput" style="font-size: 13px; font-weight: 600; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
+                            To / Upto:
+                        </label>
+                        <input type="date" name="till_date" id="tillDateInput" value="{{ selected_till_date }}" 
+                               style="background: rgba(30, 41, 59, 0.9); border: 1px solid var(--glass-border); border-radius: 6px; padding: 6px 10px; color: white; font-size: 13px; font-family: monospace; outline: none;">
+                        <button type="submit" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; background: var(--accent-blue); color: white; border: none; cursor: pointer;">
+                            Apply
+                        </button>
+                        {% if selected_from_date or selected_till_date %}
+                        <a href="/portfolio/" style="padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; text-decoration: none;">
+                            ✕ Reset Filter
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+
+                <!-- Quick Presets & Month Dropdown -->
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span style="font-size: 12px; color: var(--text-secondary); font-weight: 500;">Quick Timeframe:</span>
+                    <a href="/portfolio/" class="preset-pill" style="padding: 4px 10px; border-radius: 6px; font-size: 12px; text-decoration: none; border: 1px solid {% if not selected_from_date and not selected_till_date %}rgba(59, 130, 246, 0.6); background: rgba(59, 130, 246, 0.25); color: #93c5fd; font-weight: 600;{% else %}var(--glass-border); background: rgba(30, 41, 59, 0.6); color: #94a3b8;{% endif %}">
+                        All Time
+                    </a>
+                    <a href="/portfolio/?from_date=2024-04-01&till_date=2025-03-31" class="preset-pill" style="padding: 4px 10px; border-radius: 6px; font-size: 12px; text-decoration: none; border: 1px solid {% if selected_from_date == '2024-04-01' and selected_till_date == '2025-03-31' %}rgba(59, 130, 246, 0.6); background: rgba(59, 130, 246, 0.25); color: #93c5fd; font-weight: 600;{% else %}var(--glass-border); background: rgba(30, 41, 59, 0.6); color: #94a3b8;{% endif %}">
+                        FY25 Full
+                    </a>
+                    <a href="/portfolio/?from_date=2025-04-01&till_date=2026-03-31" class="preset-pill" style="padding: 4px 10px; border-radius: 6px; font-size: 12px; text-decoration: none; border: 1px solid {% if selected_from_date == '2025-04-01' and selected_till_date == '2026-03-31' %}rgba(59, 130, 246, 0.6); background: rgba(59, 130, 246, 0.25); color: #93c5fd; font-weight: 600;{% else %}var(--glass-border); background: rgba(30, 41, 59, 0.6); color: #94a3b8;{% endif %}">
+                        FY26 Full
+                    </a>
+                    <a href="/portfolio/?from_date=2026-04-01&till_date=2026-09-30" class="preset-pill" style="padding: 4px 10px; border-radius: 6px; font-size: 12px; text-decoration: none; border: 1px solid {% if selected_from_date == '2026-04-01' and selected_till_date == '2026-09-30' %}rgba(59, 130, 246, 0.6); background: rgba(59, 130, 246, 0.25); color: #93c5fd; font-weight: 600;{% else %}var(--glass-border); background: rgba(30, 41, 59, 0.6); color: #94a3b8;{% endif %}">
+                        FY27 Q2 (30-Sep-26)
+                    </a>
+                    <a href="/portfolio/?from_date=2025-04-01&till_date=2026-09-30" class="preset-pill" style="padding: 4px 10px; border-radius: 6px; font-size: 12px; text-decoration: none; border: 1px solid {% if selected_from_date == '2025-04-01' and selected_till_date == '2026-09-30' %}rgba(59, 130, 246, 0.6); background: rgba(59, 130, 246, 0.25); color: #93c5fd; font-weight: 600;{% else %}var(--glass-border); background: rgba(30, 41, 59, 0.6); color: #94a3b8;{% endif %}">
+                        FY26 to Q2 FY27
+                    </a>
+
+                    <!-- Month Analysis Dropdown -->
+                    <select onchange="if(this.value) window.location.href=this.value;" style="background: rgba(30, 41, 59, 0.9); border: 1px solid var(--glass-border); border-radius: 6px; padding: 4px 10px; color: #93c5fd; font-size: 12px; font-weight: 500; outline: none; cursor: pointer;">
+                        <option value="">📅 Pick Specific Month...</option>
+                        <option value="/portfolio/?from_date=2026-09-01&till_date=2026-09-30" {% if selected_from_date == '2026-09-01' and selected_till_date == '2026-09-30' %}selected{% endif %}>September 2026</option>
+                        <option value="/portfolio/?from_date=2026-08-01&till_date=2026-08-31" {% if selected_from_date == '2026-08-01' and selected_till_date == '2026-08-31' %}selected{% endif %}>August 2026</option>
+                        <option value="/portfolio/?from_date=2026-07-01&till_date=2026-07-31" {% if selected_from_date == '2026-07-01' and selected_till_date == '2026-07-31' %}selected{% endif %}>July 2026</option>
+                        <option value="/portfolio/?from_date=2026-06-01&till_date=2026-06-30" {% if selected_from_date == '2026-06-01' and selected_till_date == '2026-06-30' %}selected{% endif %}>June 2026</option>
+                        <option value="/portfolio/?from_date=2026-05-01&till_date=2026-05-31" {% if selected_from_date == '2026-05-01' and selected_till_date == '2026-05-31' %}selected{% endif %}>May 2026</option>
+                        <option value="/portfolio/?from_date=2026-04-01&till_date=2026-04-30" {% if selected_from_date == '2026-04-01' and selected_till_date == '2026-04-30' %}selected{% endif %}>April 2026</option>
+                        <option value="/portfolio/?from_date=2026-03-01&till_date=2026-03-31" {% if selected_from_date == '2026-03-01' and selected_till_date == '2026-03-31' %}selected{% endif %}>March 2026</option>
+                        <option value="/portfolio/?from_date=2026-02-01&till_date=2026-02-28" {% if selected_from_date == '2026-02-01' and selected_till_date == '2026-02-28' %}selected{% endif %}>February 2026</option>
+                        <option value="/portfolio/?from_date=2026-01-01&till_date=2026-01-31" {% if selected_from_date == '2026-01-01' and selected_till_date == '2026-01-31' %}selected{% endif %}>January 2026</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Active Filter Status Banner -->
+            {% if booked_profits.is_filtered %}
+            <div style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 10px 16px; border-radius: 6px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <span style="font-size: 13px; color: #93c5fd;">
+                    📅 <strong>Active Timeframe:</strong> Showing realized trades executed between <strong>{{ booked_profits.from_date_display }}</strong> and <strong>{{ booked_profits.till_date_display }}</strong>.
+                </span>
+                <span style="font-size: 12px; color: var(--text-secondary);">
+                    Table dynamically adjusted to: <strong>{% for y in booked_profits.years %}{{ y.short_label }}{% if not loop.last %}, {% endif %}{% endfor %}</strong>.
+                </span>
+            </div>
+            {% endif %}
+
+            <!-- ─── Booked Profits Multi-Year Table ─── -->
+            <div class="table-container" style="margin-top: 0; overflow-x: auto;">
+                <table id="bookedProfitsTable" style="width: 100%; min-width: 1600px; border-collapse: collapse; text-align: left; font-size: 13px;">
+                    <thead>
+                        <!-- Tier 1 Header -->
+                        <tr style="background: rgba(30, 41, 59, 0.95); border-bottom: 1px solid var(--glass-border);">
+                            <th rowspan="2" style="vertical-align: middle; text-align: left; padding: 14px 16px; font-weight: 700; color: white; min-width: 140px;">
+                                A/C
+                            </th>
+                            <!-- 5 Differentiated Columns: PORTFOLIO SNAPSHOT & CAPITAL RECONCILIATION -->
+                            <th colspan="5" style="text-align: center; border-left: 2px solid rgba(14, 165, 233, 0.5); padding: 12px 16px; color: #38bdf8; font-weight: 700; background: rgba(14, 165, 233, 0.15);">
+                                PORTFOLIO SNAPSHOT & CAPITAL RECONCILIATION
+                            </th>
+                            {% for y in booked_profits.years %}
+                            <th colspan="3" style="text-align: center; border-left: 2px solid var(--glass-border); padding: 12px 10px; color: white; font-weight: 700; background: rgba(30, 41, 59, 0.85);">
+                                {{ y.short_label }} REALIZED
+                            </th>
+                            {% endfor %}
+                            <th colspan="4" style="text-align: center; border-left: 2px solid rgba(168, 85, 247, 0.6); padding: 12px 10px; color: #e9d5ff; font-weight: 700; background: rgba(88, 28, 135, 0.35);">
+                                TOTAL CUMULATIVE & WEALTH
+                            </th>
+                            <!-- Addition 1: OVERALL RETURN (%) -->
+                            <th rowspan="2" style="vertical-align: middle; text-align: center; border-left: 2px solid rgba(168, 85, 247, 0.6); padding: 12px 10px; color: #f3e8ff; font-weight: 800; background: rgba(88, 28, 135, 0.45); min-width: 115px;">
+                                OVERALL<br>RETURN (%)
+                            </th>
+                        </tr>
+                        <!-- Tier 2 Header -->
+                        <tr style="background: rgba(15, 23, 42, 0.95); border-bottom: 2px solid var(--glass-border);">
+                            <!-- Portfolio Snapshot Sub-headers with generous width & clear differentiation -->
+                            <th style="padding: 10px 12px; text-align: right; font-size: 11px; font-weight: 700; color: #7dd3fc; border-left: 2px solid rgba(14, 165, 233, 0.5); background: rgba(14, 165, 233, 0.08); min-width: 200px;">INVESTED CAPITAL</th>
+                            <th style="padding: 10px 12px; text-align: right; font-size: 11px; font-weight: 700; color: #7dd3fc; background: rgba(14, 165, 233, 0.08); min-width: 200px;">CURRENT AUM</th>
+                            <th style="padding: 10px 12px; text-align: right; font-size: 11px; font-weight: 700; color: #34d399; background: rgba(16, 185, 129, 0.08); min-width: 180px;">OPEN BOOK (UNREALIZED)</th>
+                            <th style="padding: 10px 12px; text-align: right; font-size: 11px; font-weight: 700; color: #fbbf24; background: rgba(251, 191, 36, 0.08); min-width: 145px;">REINVESTED PROFIT</th>
+                            <th style="padding: 10px 12px; text-align: right; font-size: 11px; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.08); min-width: 145px;">TOTAL DIFF (AUM-INV)</th>
+
+                            {% for y in booked_profits.years %}
+                            <th style="padding: 10px; text-align: right; font-size: 11px; font-weight: 600; color: #94a3b8; border-left: 2px solid var(--glass-border); min-width: 85px;">STOCK BROKER</th>
+                            <th style="padding: 10px; text-align: right; font-size: 11px; font-weight: 600; color: #94a3b8; min-width: 85px;">MUTUAL FUND</th>
+                            <th style="padding: 10px; text-align: right; font-size: 11px; font-weight: 700; color: #60a5fa; background: rgba(59, 130, 246, 0.1); min-width: 90px;">TOTAL</th>
+                            {% endfor %}
+                            <th style="padding: 10px; text-align: right; font-size: 11px; font-weight: 600; color: #d8b4fe; border-left: 2px solid rgba(168, 85, 247, 0.6); min-width: 95px;">STOCK BROKER</th>
+                            <th style="padding: 10px; text-align: right; font-size: 11px; font-weight: 600; color: #d8b4fe; min-width: 95px;">MUTUAL FUND</th>
+                            <th style="padding: 10px; text-align: right; font-size: 11px; font-weight: 700; color: #f3e8ff; background: rgba(168, 85, 247, 0.2); min-width: 95px;">BOOKED TOTAL</th>
+                            <th style="padding: 10px; text-align: right; font-size: 11px; font-weight: 800; color: #c084fc; background: rgba(192, 132, 252, 0.25); min-width: 110px;">TOTAL WEALTH</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in booked_profits.rows %}
+                        <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); transition: background 0.15s ease;">
+                            <td style="padding: 14px 16px; font-weight: 700; color: #60a5fa; white-space: nowrap;">
+                                {{ r.code }}
+                                <span style="font-weight: 400; font-size: 11px; color: var(--text-secondary); display: block;">{{ r.name }}</span>
+                            </td>
+
+                            <!-- 1. Invested Capital -->
+                            <td class="profit-val-cell" data-cr="{{ r.snapshot.invested_fmt }}" data-full="₹{{ r.snapshot.invested|format_inr }}" style="padding: 12px 12px; text-align: right; font-family: monospace; font-weight: 700; border-left: 2px solid rgba(14, 165, 233, 0.3); background: rgba(14, 165, 233, 0.04); min-width: 200px;">
+                                <div class="val-primary" style="font-size: 14.5px; font-weight: 800; color: #f1f5f9; letter-spacing: 0.3px;">{{ r.snapshot.invested_fmt }}</div>
+                                <div style="display: flex; gap: 4px; justify-content: flex-end; align-items: center; margin-top: 5px; flex-wrap: nowrap;">
+                                    <span style="font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(56, 189, 248, 0.12); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.25); font-weight: 600; white-space: nowrap;">SB {{ r.snapshot.sb_equity_inv_fmt }}</span>
+                                    {% if r.snapshot.has_sgb %}
+                                    <span style="font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(251, 191, 36, 0.12); color: #fcd34d; border: 1px solid rgba(251, 191, 36, 0.25); font-weight: 600; white-space: nowrap;">SGB {{ r.snapshot.sgb_inv_fmt }}</span>
+                                    {% endif %}
+                                    {% if r.snapshot.mf_inv > 0.001 %}
+                                    <span style="font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(192, 132, 252, 0.12); color: #d8b4fe; border: 1px solid rgba(192, 132, 252, 0.25); font-weight: 600; white-space: nowrap;">MF {{ r.snapshot.mf_inv_fmt }}</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+
+                            <!-- 2. Current AUM -->
+                            <td class="profit-val-cell" data-cr="{{ r.snapshot.current_fmt }}" data-full="₹{{ r.snapshot.current|format_inr }}" style="padding: 12px 12px; text-align: right; font-family: monospace; font-weight: 800; background: rgba(14, 165, 233, 0.04); min-width: 200px;">
+                                <div class="val-primary" style="font-size: 14.5px; font-weight: 800; color: #38bdf8; letter-spacing: 0.3px;">{{ r.snapshot.current_fmt }}</div>
+                                <div style="display: flex; gap: 4px; justify-content: flex-end; align-items: center; margin-top: 5px; flex-wrap: nowrap;">
+                                    <span style="font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(56, 189, 248, 0.12); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.25); font-weight: 600; white-space: nowrap;">SB {{ r.snapshot.sb_equity_curr_fmt }}</span>
+                                    {% if r.snapshot.has_sgb %}
+                                    <span style="font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(251, 191, 36, 0.12); color: #fcd34d; border: 1px solid rgba(251, 191, 36, 0.25); font-weight: 600; white-space: nowrap;">SGB {{ r.snapshot.sgb_curr_fmt }}</span>
+                                    {% endif %}
+                                    {% if r.snapshot.mf_curr > 0.001 %}
+                                    <span style="font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(192, 132, 252, 0.12); color: #d8b4fe; border: 1px solid rgba(192, 132, 252, 0.25); font-weight: 600; white-space: nowrap;">MF {{ r.snapshot.mf_curr_fmt }}</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+
+                            <!-- 3. Open Book (Unrealized Paper Gain) -->
+                            <td class="profit-val-cell" data-cr="{{ r.snapshot.open_unrealized_fmt }}" data-full="₹{{ r.snapshot.open_unrealized|format_inr }}" style="padding: 12px 12px; text-align: right; font-family: monospace; font-weight: 800; background: rgba(16, 185, 129, 0.04); min-width: 180px;">
+                                <div class="val-primary" style="font-size: 14.5px; font-weight: 800; color: {% if r.snapshot.open_unrealized >= 0 %}#34d399{% else %}#f87171{% endif %}; letter-spacing: 0.3px;">
+                                    {% if r.snapshot.open_unrealized > 0 %}+{% endif %}{{ r.snapshot.open_unrealized_fmt }}
+                                </div>
+                                <div style="display: flex; gap: 4px; justify-content: flex-end; align-items: center; margin-top: 5px; flex-wrap: nowrap;">
+                                    <span style="font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(56, 189, 248, 0.12); color: {% if r.snapshot.sb_unrealized >= 0 %}#7dd3fc{% else %}#f87171{% endif %}; border: 1px solid rgba(56, 189, 248, 0.25); font-weight: 600; white-space: nowrap;">SB {{ r.snapshot.sb_unrealized_fmt }}</span>
+                                    {% if r.snapshot.has_sgb %}
+                                    <span style="font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(251, 191, 36, 0.12); color: #fcd34d; border: 1px solid rgba(251, 191, 36, 0.25); font-weight: 600; white-space: nowrap;">SGB {{ r.snapshot.sgb_unrealized_fmt }}</span>
+                                    {% endif %}
+                                    {% if r.snapshot.mf_inv > 0.001 %}
+                                    <span style="font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(192, 132, 252, 0.12); color: #d8b4fe; border: 1px solid rgba(192, 132, 252, 0.25); font-weight: 600; white-space: nowrap;">MF {{ r.snapshot.mf_unrealized_fmt }}</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+
+                            <!-- 4. Reinvested Profit -->
+                            <td class="profit-val-cell" data-cr="{{ r.snapshot.reinvested_profit_fmt }}" data-full="₹{{ r.snapshot.reinvested_profit|format_inr }}" style="padding: 12px 10px; text-align: right; font-family: monospace; font-weight: 700; background: rgba(251, 191, 36, 0.04); min-width: 145px; color: #fbbf24;">
+                                <div class="val-primary" style="font-size: 14.5px; font-weight: 800; color: #fbbf24;">
+                                    +{{ r.snapshot.reinvested_profit_fmt }}
+                                </div>
+                                <div style="font-size: 9.5px; color: #94a3b8; margin-top: 3px;">Reinvested Gain</div>
+                            </td>
+
+                            <!-- 5. Total Diff (AUM - Invested) -->
+                            <td class="profit-val-cell" data-cr="{{ r.snapshot.aum_diff_fmt }}" data-full="₹{{ r.snapshot.aum_diff|format_inr }}" style="padding: 12px 10px; text-align: right; font-family: monospace; font-weight: 800; background: rgba(56, 189, 248, 0.04); min-width: 145px; color: #38bdf8;">
+                                <div class="val-primary" style="font-size: 14.5px; font-weight: 800; color: #38bdf8;">
+                                    +{{ r.snapshot.aum_diff_fmt }}
+                                </div>
+                                <div style="font-size: 9.5px; color: #94a3b8; margin-top: 3px;">Open + Reinv</div>
+                            </td>
+
+                            {% for y in booked_profits.years %}
+                            {% set cell = r.fys[y.key] %}
+                            <!-- Stock Broker -->
+                            <td class="profit-val-cell" data-cr="{{ cell.stock_fmt }}" data-full="₹{{ cell.stock|format_inr }}" style="padding: 12px 10px; text-align: right; font-family: monospace; border-left: 2px solid var(--glass-border); color: {% if cell.stock > 0 %}#34d399{% elif cell.stock < 0 %}#f87171{% else %}var(--text-secondary){% endif %};">
+                                {{ cell.stock_fmt }}
+                            </td>
+                            <!-- Mutual Fund -->
+                            <td class="profit-val-cell" data-cr="{{ cell.mf_fmt }}" data-full="₹{{ cell.mf|format_inr }}" style="padding: 12px 10px; text-align: right; font-family: monospace; color: {% if cell.mf > 0 %}#34d399{% elif cell.mf < 0 %}#f87171{% else %}var(--text-secondary){% endif %};">
+                                {{ cell.mf_fmt }}
+                            </td>
+                            <!-- Total FY -->
+                            <td class="profit-val-cell" data-cr="{{ cell.total_fmt }}" data-full="₹{{ cell.total|format_inr }}" style="padding: 12px 10px; text-align: right; font-family: monospace; font-weight: 700; background: rgba(59, 130, 246, 0.05); color: {% if cell.total > 0 %}#34d399{% elif cell.total < 0 %}#f87171{% else %}var(--text-secondary){% endif %};">
+                                {{ cell.total_fmt }}
+                            </td>
+                            {% endfor %}
+                            
+                            <!-- Cumulative Columns -->
+                            <td class="profit-val-cell" data-cr="{{ r.total_stock_fmt }}" data-full="₹{{ r.total_stock|format_inr }}" style="padding: 12px 10px; text-align: right; font-family: monospace; font-weight: 600; border-left: 2px solid rgba(168, 85, 247, 0.6); color: {% if r.total_stock > 0 %}#34d399{% elif r.total_stock < 0 %}#f87171{% else %}var(--text-secondary){% endif %};">
+                                {{ r.total_stock_fmt }}
+                            </td>
+                            <td class="profit-val-cell" data-cr="{{ r.total_mf_fmt }}" data-full="₹{{ r.total_mf|format_inr }}" style="padding: 12px 10px; text-align: right; font-family: monospace; font-weight: 600; color: {% if r.total_mf > 0 %}#34d399{% elif r.total_mf < 0 %}#f87171{% else %}var(--text-secondary){% endif %};">
+                                {{ r.total_mf_fmt }}
+                            </td>
+                            <td class="profit-val-cell" data-cr="{{ r.total_gain_fmt }}" data-full="₹{{ r.total_gain|format_inr }}" style="padding: 12px 10px; text-align: right; font-family: monospace; font-weight: 800; background: rgba(168, 85, 247, 0.15); color: {% if r.total_gain > 0 %}#34d399{% elif r.total_gain < 0 %}#f87171{% else %}var(--text-secondary){% endif %}; font-size: 13.5px;">
+                                {{ r.total_gain_fmt }}
+                            </td>
+                            <!-- Total Wealth Created -->
+                            <td class="profit-val-cell" data-cr="{{ r.snapshot.total_wealth_fmt }}" data-full="₹{{ r.snapshot.total_wealth|format_inr }}" style="padding: 12px 10px; text-align: right; font-family: monospace; font-weight: 800; background: rgba(192, 132, 252, 0.2); color: #e9d5ff; font-size: 14px;">
+                                +{{ r.snapshot.total_wealth_fmt }}
+                            </td>
+
+                            <!-- Addition 1: Return % Cell -->
+                            <td style="padding: 10px; text-align: center; font-family: monospace; font-weight: 800; border-left: 2px solid rgba(168, 85, 247, 0.6); background: rgba(88, 28, 135, 0.15);">
+                                <span style="display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 12.5px; font-weight: 800; background: {% if r.total_xirr >= 0 %}rgba(16, 185, 129, 0.2){% else %}rgba(239, 68, 68, 0.2){% endif %}; color: {% if r.total_xirr >= 0 %}#34d399{% else %}#f87171{% endif %}; border: 1px solid {% if r.total_xirr >= 0 %}rgba(16, 185, 129, 0.4){% else %}rgba(239, 68, 68, 0.4){% endif %};">
+                                    {{ "{:+.1f}%".format(r.total_xirr) }}
+                                </span>
+                                <div style="font-size: 9.5px; color: #94a3b8; margin-top: 3px; font-weight: 500;">
+                                    Booked: {{ "{:+.1f}%".format(r.realized_xirr) }}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        <!-- Grand Total Row -->
+                        <tr class="tr-total" style="border-top: 2px solid var(--glass-border); border-bottom: 2px solid var(--glass-border); background: rgba(15, 23, 42, 0.95) !important;">
+                            <td style="padding: 14px 16px; font-weight: 800; color: white !important;">
+                                TOTAL
+                            </td>
+
+                            <!-- Grand Invested Capital -->
+                            <td class="profit-val-cell" data-cr="{{ booked_profits.grand_snapshot.invested_fmt }}" data-full="₹{{ booked_profits.grand_snapshot.invested|format_inr }}" style="padding: 14px 12px; text-align: right; font-family: monospace; font-weight: 800; border-left: 2px solid rgba(14, 165, 233, 0.5); background: rgba(14, 165, 233, 0.12); color: #f1f5f9 !important; min-width: 200px;">
+                                <div class="val-primary" style="font-size: 15.5px; font-weight: 900; color: #f1f5f9 !important;">{{ booked_profits.grand_snapshot.invested_fmt }}</div>
+                                <div style="display: flex; gap: 4px; justify-content: flex-end; align-items: center; margin-top: 5px; flex-wrap: nowrap;">
+                                    <span style="font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(56, 189, 248, 0.18); color: #93c5fd; border: 1px solid rgba(56, 189, 248, 0.35); font-weight: 700; white-space: nowrap;">SB {{ booked_profits.grand_snapshot.sb_equity_inv_fmt }}</span>
+                                    <span style="font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(251, 191, 36, 0.18); color: #fde68a; border: 1px solid rgba(251, 191, 36, 0.35); font-weight: 700; white-space: nowrap;">SGB {{ booked_profits.grand_snapshot.sgb_inv_fmt }}</span>
+                                    <span style="font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(192, 132, 252, 0.18); color: #e9d5ff; border: 1px solid rgba(192, 132, 252, 0.35); font-weight: 700; white-space: nowrap;">MF {{ booked_profits.grand_snapshot.mf_inv_fmt }}</span>
+                                </div>
+                            </td>
+
+                            <!-- Grand Current AUM -->
+                            <td class="profit-val-cell" data-cr="{{ booked_profits.grand_snapshot.current_fmt }}" data-full="₹{{ booked_profits.grand_snapshot.current|format_inr }}" style="padding: 14px 12px; text-align: right; font-family: monospace; font-weight: 900; background: rgba(14, 165, 233, 0.12); color: #38bdf8 !important; min-width: 200px;">
+                                <div class="val-primary" style="font-size: 15.5px; font-weight: 900; color: #38bdf8 !important;">{{ booked_profits.grand_snapshot.current_fmt }}</div>
+                                <div style="display: flex; gap: 4px; justify-content: flex-end; align-items: center; margin-top: 5px; flex-wrap: nowrap;">
+                                    <span style="font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(56, 189, 248, 0.18); color: #93c5fd; border: 1px solid rgba(56, 189, 248, 0.35); font-weight: 700; white-space: nowrap;">SB {{ booked_profits.grand_snapshot.sb_equity_curr_fmt }}</span>
+                                    <span style="font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(251, 191, 36, 0.18); color: #fde68a; border: 1px solid rgba(251, 191, 36, 0.35); font-weight: 700; white-space: nowrap;">SGB {{ booked_profits.grand_snapshot.sgb_curr_fmt }}</span>
+                                    <span style="font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(192, 132, 252, 0.18); color: #e9d5ff; border: 1px solid rgba(192, 132, 252, 0.35); font-weight: 700; white-space: nowrap;">MF {{ booked_profits.grand_snapshot.mf_curr_fmt }}</span>
+                                </div>
+                            </td>
+
+                            <!-- Grand Open Book (Unrealized) -->
+                            <td class="profit-val-cell" data-cr="{{ booked_profits.grand_snapshot.open_unrealized_fmt }}" data-full="₹{{ booked_profits.grand_snapshot.open_unrealized|format_inr }}" style="padding: 14px 12px; text-align: right; font-family: monospace; font-weight: 900; background: rgba(16, 185, 129, 0.12); color: #34d399 !important; min-width: 180px;">
+                                <div class="val-primary" style="font-size: 15.5px; font-weight: 900; color: #34d399 !important;">+{{ booked_profits.grand_snapshot.open_unrealized_fmt }}</div>
+                                <div style="display: flex; gap: 4px; justify-content: flex-end; align-items: center; margin-top: 5px; flex-wrap: nowrap;">
+                                    <span style="font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(56, 189, 248, 0.18); color: #93c5fd; border: 1px solid rgba(56, 189, 248, 0.35); font-weight: 700; white-space: nowrap;">SB {{ booked_profits.sb_unrealized_fmt }}</span>
+                                    <span style="font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(251, 191, 36, 0.18); color: #fde68a; border: 1px solid rgba(251, 191, 36, 0.35); font-weight: 700; white-space: nowrap;">SGB {{ booked_profits.sgb_unrealized_fmt }}</span>
+                                    <span style="font-size: 9px; padding: 2px 5px; border-radius: 4px; background: rgba(192, 132, 252, 0.18); color: #e9d5ff; border: 1px solid rgba(192, 132, 252, 0.35); font-weight: 700; white-space: nowrap;">MF {{ booked_profits.mf_unrealized_fmt }}</span>
+                                </div>
+                            </td>
+
+                            <!-- Grand Reinvested Profit -->
+                            <td class="profit-val-cell" data-cr="{{ booked_profits.grand_snapshot.reinvested_profit_fmt }}" data-full="₹{{ booked_profits.grand_snapshot.reinvested_profit|format_inr }}" style="padding: 14px 10px; text-align: right; font-family: monospace; font-weight: 900; background: rgba(251, 191, 36, 0.12); color: #fbbf24 !important; min-width: 145px;">
+                                <div class="val-primary" style="font-size: 15.5px; font-weight: 900; color: #fbbf24 !important;">+{{ booked_profits.grand_snapshot.reinvested_profit_fmt }}</div>
+                                <div style="font-size: 9.5px; color: #94a3b8; margin-top: 3px;">Active Capital</div>
+                            </td>
+
+                            <!-- Grand Total Diff (AUM - Invested) -->
+                            <td class="profit-val-cell" data-cr="{{ booked_profits.grand_snapshot.aum_diff_fmt }}" data-full="₹{{ booked_profits.grand_snapshot.aum_diff|format_inr }}" style="padding: 14px 10px; text-align: right; font-family: monospace; font-weight: 900; background: rgba(56, 189, 248, 0.12); color: #38bdf8 !important; min-width: 145px;">
+                                <div class="val-primary" style="font-size: 15.5px; font-weight: 900; color: #38bdf8 !important;">+{{ booked_profits.grand_snapshot.aum_diff_fmt }}</div>
+                                <div style="font-size: 9.5px; color: #94a3b8; margin-top: 3px;">Open + Reinv</div>
+                            </td>
+
+                            {% for y in booked_profits.years %}
+                            {% set gt = booked_profits.grand_totals[y.key] %}
+                            <td class="profit-val-cell" data-cr="{{ gt.stock_fmt }}" data-full="₹{{ gt.stock|format_inr }}" style="padding: 12px 10px; text-align: right; font-family: monospace; font-weight: 800; border-left: 2px solid var(--glass-border); color: {% if gt.stock >= 0 %}#34d399{% else %}#f87171{% endif %} !important;">
+                                {{ gt.stock_fmt }}
+                            </td>
+                            <td class="profit-val-cell" data-cr="{{ gt.mf_fmt }}" data-full="₹{{ gt.mf|format_inr }}" style="padding: 12px 10px; text-align: right; font-family: monospace; font-weight: 800; color: {% if gt.mf >= 0 %}#34d399{% else %}#f87171{% endif %} !important;">
+                                {{ gt.mf_fmt }}
+                            </td>
+                            <td class="profit-val-cell" data-cr="{{ gt.total_fmt }}" data-full="₹{{ gt.total|format_inr }}" style="padding: 12px 10px; text-align: right; font-family: monospace; font-weight: 800; background: rgba(59, 130, 246, 0.15); color: {% if gt.total >= 0 %}#34d399{% else %}#f87171{% endif %} !important;">
+                                {{ gt.total_fmt }}
+                            </td>
+                            {% endfor %}
+
+                            <!-- Grand Cumulative -->
+                            <td class="profit-val-cell" data-cr="{{ booked_profits.grand_cum.stock_fmt }}" data-full="₹{{ booked_profits.grand_cum.stock|format_inr }}" style="padding: 12px 10px; text-align: right; font-family: monospace; font-weight: 800; border-left: 2px solid rgba(168, 85, 247, 0.6); color: {% if booked_profits.grand_cum.stock >= 0 %}#34d399{% else %}#f87171{% endif %} !important;">
+                                {{ booked_profits.grand_cum.stock_fmt }}
+                            </td>
+                            <td class="profit-val-cell" data-cr="{{ booked_profits.grand_cum.mf_fmt }}" data-full="₹{{ booked_profits.grand_cum.mf|format_inr }}" style="padding: 12px 10px; text-align: right; font-family: monospace; font-weight: 800; color: {% if booked_profits.grand_cum.mf >= 0 %}#34d399{% else %}#f87171{% endif %} !important;">
+                                {{ booked_profits.grand_cum.mf_fmt }}
+                            </td>
+                            <td class="profit-val-cell" data-cr="{{ booked_profits.grand_cum.total_fmt }}" data-full="₹{{ booked_profits.grand_cum.total|format_inr }}" style="padding: 12px 10px; text-align: right; font-family: monospace; font-weight: 900; background: rgba(168, 85, 247, 0.25); color: #f3e8ff !important; font-size: 14.5px;">
+                                {{ booked_profits.grand_cum.total_fmt }}
+                            </td>
+                            <!-- Grand Total Wealth Created -->
+                            <td class="profit-val-cell" data-cr="{{ booked_profits.grand_snapshot.total_wealth_fmt }}" data-full="₹{{ booked_profits.grand_snapshot.total_wealth|format_inr }}" style="padding: 12px 10px; text-align: right; font-family: monospace; font-weight: 900; background: rgba(192, 132, 252, 0.3); color: #f3e8ff !important; font-size: 15px;">
+                                +{{ booked_profits.grand_snapshot.total_wealth_fmt }}
+                            </td>
+
+                            <!-- Grand Return % -->
+                            <td style="padding: 10px; text-align: center; font-family: monospace; font-weight: 900; border-left: 2px solid rgba(168, 85, 247, 0.6); background: rgba(88, 28, 135, 0.35);">
+                                <span style="display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 800; background: rgba(16, 185, 129, 0.25); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.5);">
+                                    +{{ "{:.1f}%".format(booked_profits.grand_total_xirr) }}
+                                </span>
+                                <div style="font-size: 9.5px; color: #d8b4fe; margin-top: 3px; font-weight: 600;">
+                                    Booked: +{{ "{:.1f}%".format(booked_profits.grand_realized_xirr) }}
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ─── Addition 3: The "Realized vs. Unrealized" Tax Planner Box ─── -->
+            <div style="margin-top: 22px; padding: 18px 24px; border-radius: 10px; background: rgba(15, 23, 42, 0.75); border: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <span style="font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);">
+                            🏛️ PROFIT BREAKDOWN & TAX PLANNING (SCHEDULE CG)
+                        </span>
+                        <span style="font-size: 12px; color: var(--text-secondary);">Advance Tax & Capital Allocation</span>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-secondary); max-width: 580px; line-height: 1.5;">
+                        Helps the finance and accounts team plan <strong>Section 234B/234C Advance Tax</strong> payments well ahead of quarterly deadlines, distinguishing locked gains from open market paper equity.
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 28px; flex-wrap: wrap;">
+                    <div style="text-align: right;">
+                        <div style="font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase;">• Realized Profit (Booked & Taxable)</div>
+                        <div class="profit-val-cell" data-cr="{{ booked_profits.realized_profit_fmt }}" data-full="₹{{ booked_profits.realized_profit|format_inr }}" style="font-size: 18px; font-weight: 800; color: #34d399; font-family: monospace;">
+                            {{ booked_profits.realized_profit_fmt }}
+                        </div>
+                        <div style="font-size: 10px; color: #64748b;">Locked gains in bank / ledger</div>
+                    </div>
+                    <div style="height: 36px; width: 1px; background: var(--glass-border);"></div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase;">• Unrealized Profit (Open Paper Gains)</div>
+                        <div class="profit-val-cell" data-cr="{{ booked_profits.unrealized_profit_fmt }}" data-full="₹{{ booked_profits.unrealized_profit|format_inr }}" style="font-size: 18px; font-weight: 800; color: #38bdf8; font-family: monospace;">
+                            {{ booked_profits.unrealized_profit_fmt }}
+                        </div>
+                        <div style="font-size: 10px; color: #94a3b8; margin-top: 3px;">
+                            SB: <span style="color: {% if booked_profits.sb_unrealized >= 0 %}#34d399{% else %}#f87171{% endif %}; font-family: monospace;">{{ booked_profits.sb_unrealized_fmt }}</span> • 
+                            SGB: <span style="color: #fcd34d; font-family: monospace;">{{ booked_profits.sgb_unrealized_fmt }}</span> • 
+                            MF: <span style="color: #34d399; font-family: monospace;">{{ booked_profits.mf_unrealized_fmt }}</span>
+                        </div>
+                    </div>
+                    <div style="height: 36px; width: 1px; background: var(--glass-border);"></div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase;">• Total Net Wealth Created</div>
+                        <div class="profit-val-cell" data-cr="{{ booked_profits.total_wealth_fmt }}" data-full="₹{{ booked_profits.total_wealth|format_inr }}" style="font-size: 18px; font-weight: 800; color: #c084fc; font-family: monospace;">
+                            {{ booked_profits.total_wealth_fmt }}
+                        </div>
+                        <div style="font-size: 10px; color: #64748b;">Realized + Unrealized Total</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Explanatory Asset Cards Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 8px;">
+            <div class="glass-card" style="padding: 20px;">
+                <h4 style="margin: 0 0 10px 0; color: #60a5fa; font-weight: 600;">Bullion Holdings</h4>
+                <p style="margin: 0; font-size: 13px; line-height: 1.6; color: var(--text-secondary);">
+                    Gold SGB comprises Sovereign Gold Bonds issued by the RBI, tracked directly using purchase issue prices and latest market valuations. Gold (MF & ETF) and Silver track mutual funds and exchange-traded index assets.
+                </p>
+                <div style="margin-top: 14px;">
+                    <a href="/gold/" style="font-size: 13px; font-weight: 500; color: #a78bfa; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                        Manage Gold & SGB →
+                    </a>
+                </div>
+            </div>
+            <div class="glass-card" style="padding: 20px;">
+                <h4 style="margin: 0 0 10px 0; color: #60a5fa; font-weight: 600;">Alternative Investments</h4>
+                <p style="margin: 0; font-size: 13px; line-height: 1.6; color: var(--text-secondary);">
+                    PMS (Portfolio Management Services), AIF (Alternative Investment Funds), and private unlisted shares are populated directly from transaction ledgers and periodic valuation statements.
+                </p>
+                <div style="margin-top: 14px; display: flex; gap: 16px;">
+                    <a href="/alternatives/unlisted/" style="font-size: 13px; font-weight: 500; color: #a78bfa; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                        Unlisted Shares →
+                    </a>
+                    <a href="/alternatives/aif/" style="font-size: 13px; font-weight: 500; color: #a78bfa; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                        AIF / PMS →
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isProfitCrMode = true;
+
+        function toggleBookedProfitUnits() {
+            isProfitCrMode = !isProfitCrMode;
+            const btn = document.getElementById('unitToggleBtn');
+            if (btn) {
+                btn.innerText = isProfitCrMode ? '🔄 Unit: Cr / L' : '🔄 Unit: Full ₹';
+            }
+            const cells = document.querySelectorAll('.profit-val-cell');
+            cells.forEach(c => {
+                const primary = c.querySelector('.val-primary');
+                if (primary) {
+                    primary.innerText = isProfitCrMode ? c.getAttribute('data-cr') : c.getAttribute('data-full');
+                } else {
+                    c.innerText = isProfitCrMode ? c.getAttribute('data-cr') : c.getAttribute('data-full');
+                }
+            });
+        }
+
+        function exportBookedProfitsToCSV() {
+            const table = document.getElementById('bookedProfitsTable');
+            if (!table) return;
+            let csv = [];
+            
+            // Header
+            let h1 = ['"A/C"', '"INVESTED CAPITAL"', '"CURRENT AUM"', '"OPEN BOOK (UNREALIZED)"', '"REINVESTED PROFIT"', '"TOTAL DIFF (AUM-INV)"'];
+            {% if booked_profits %}
+            {% for y in booked_profits.years %}
+            h1.push('"{{ y.short_label }} STOCK BROKER"', '"{{ y.short_label }} MUTUAL FUND"', '"{{ y.short_label }} TOTAL"');
+            {% endfor %}
+            {% endif %}
+            h1.push('"CUMULATIVE STOCK BROKER"', '"CUMULATIVE MUTUAL FUND"', '"TOTAL BOOKED"', '"TOTAL WEALTH CREATED"', '"OVERALL XIRR %"');
+            csv.push(h1.join(','));
+
+            // Data Rows & Total
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(r => {
+                let rData = [];
+                for (let c of r.cells) {
+                    let text = c.innerText.replace(/"/g, '""').replace(/\n/g, ' ').trim();
+                    rData.push('"' + text + '"');
+                }
+                csv.push(rData.join(','));
+            });
+
+            let csvFile = new Blob([csv.join('\n')], {type: "text/csv;charset=utf-8;"});
+            let link = document.createElement("a");
+            link.href = URL.createObjectURL(csvFile);
+            let dateSuffix = "{{ selected_till_date }}" ? "_{{ selected_till_date }}" : "_AllTime";
+            link.download = `Booked_Profits_Matrix${dateSuffix}.csv`;
+            link.click();
+        }
+    </script>
+</body>
+</html>

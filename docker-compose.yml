@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: wealth_os_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: family_office
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      TZ: Asia/Kolkata
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_wealth_os:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d family_office"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  wealth-os:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: wealth-os-family-office:latest
+    container_name: wealth_os_app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - TZ=Asia/Kolkata
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql://postgres:postgrespassword@postgres:5432/family_office
+    volumes:
+      - .:/app
+
+volumes:
+  pgdata_wealth_os:

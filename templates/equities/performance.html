@@ -1,0 +1,204 @@
+<!-- templates/equities/performance.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equities Performance (Modified Dietz)</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <script src="/static/js/backup.js?v=2"></script>
+    <style>
+        .performance-card {
+            margin-top: 24px;
+            padding: 24px;
+        }
+        .period-header {
+            font-size: 16px;
+            font-weight: 600;
+            color: #a78bfa;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .perf-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+        .perf-table th {
+            text-align: center;
+            padding: 10px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--glass-border);
+            text-transform: uppercase;
+        }
+        .perf-table td {
+            padding: 12px 14px;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+        }
+        .perf-table tr.total-row {
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .perf-table tr.total-row td {
+            border-top: 1px solid var(--glass-border);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .positive-val {
+            color: var(--accent-green) !important;
+        }
+        .negative-val {
+            color: var(--accent-red) !important;
+        }
+        .neutral-val {
+            color: var(--text-secondary) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/portfolio/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Portfolio Overview</a>
+                        <a href="/mutual-funds/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue); box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <a href="/equities/" class="nav-link">Holdings AUM</a>
+                <a href="/equities/pnl" class="nav-link">Capital Gains (FIFO)</a>
+                <a href="/equities/summary" class="nav-link">Summary by A/C</a>
+                <a href="/equities/transactions" class="nav-link">Transactions Ledger</a>
+                <a href="/equities/unmatched" class="nav-link">Fix Unmatched Buys</a>
+                <a href="/equities/performance" class="nav-link active">Performance (Dietz)</a>
+            </div>
+        </header>
+
+        {% if history %}
+            <!-- Latest Period Metrics Summary -->
+            {% set latest = history[0] %}
+            <div style="margin-top: 24px; margin-bottom: 8px; font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+                Latest Period Summary: {{ latest.period }}
+            </div>
+            <div class="metrics-grid" style="margin-top: 8px;">
+                <div class="glass-card metric-card">
+                    <div class="metric-title">Opening AUM (Stocks)</div>
+                    <div class="metric-value">₹{{ latest.data.TOTAL.opening_aum|format_la_cr }}</div>
+                    <div class="metric-change" style="color: var(--text-secondary);">Start of Period</div>
+                </div>
+                <div class="glass-card metric-card">
+                    <div class="metric-title">Net Cash Flow (In/Out)</div>
+                    <div class="metric-value" style="color: {% if latest.data.TOTAL.net_cash_flow > 0 %}#34d399{% elif latest.data.TOTAL.net_cash_flow < 0 %}#f87171{% else %}var(--text-secondary){% endif %};">
+                        {% if latest.data.TOTAL.net_cash_flow > 0 %}+{% elif latest.data.TOTAL.net_cash_flow < 0 %}-{% endif %}₹{{ latest.data.TOTAL.net_cash_flow|abs|format_la_cr }}
+                    </div>
+                    <div class="metric-change" style="color: var(--text-secondary);">Total Flows</div>
+                </div>
+                <div class="glass-card metric-card">
+                    <div class="metric-title">Organic Growth (Market Effect)</div>
+                    <div class="metric-value" style="color: {% if latest.data.TOTAL.organic_growth >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                        {% if latest.data.TOTAL.organic_growth > 0 %}+{% elif latest.data.TOTAL.organic_growth < 0 %}-{% endif %}₹{{ latest.data.TOTAL.organic_growth|abs|format_la_cr }}
+                    </div>
+                    <div class="metric-change {% if latest.data.TOTAL.organic_growth >= 0 %}positive{% else %}negative{% endif %}">
+                        {{ "{:+.2f}%".format(latest.data.TOTAL.dietz_return) }} Modified Dietz Return
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Performance Ledger -->
+            <div class="glass-card performance-card">
+                <h3 style="margin-top: 0; margin-bottom: 16px; font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" fill="none" stroke="var(--accent-blue)" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                    </svg>
+                    Monthly Stock Broker Performance Ledger (Modified Dietz)
+                </h3>
+
+                {% for period in history %}
+                    <div class="period-header">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        {{ period.period }} <span style="font-size: 12px; font-weight: normal; color: var(--text-secondary);">({{ period.start_date }} to {{ period.end_date }})</span>
+                    </div>
+                    
+                    <div class="table-container" style="margin-top: 0; margin-bottom: 32px;">
+                        <table class="perf-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: left;">Broker</th>
+                                    <th>Opening AUM</th>
+                                    <th>Net Cash Flow</th>
+                                    <th style="color: var(--accent-blue);">Organic Growth</th>
+                                    <th style="color: var(--accent-blue);">Organic Return (Dietz %)</th>
+                                    <th>Ending AUM</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for broker in ["CBL / Centrum", "Nuvama", "JM Financial"] %}
+                                    {% set data = period.data[broker] %}
+                                    <tr>
+                                        <td style="text-align: left; font-weight: 600; color: #f3f4f6;">{{ broker }}</td>
+                                        <td style="font-family: monospace;">₹{{ data.opening_aum|format_la_cr }}</td>
+                                        <td style="font-family: monospace; color: {% if data.net_cash_flow > 0 %}#34d399{% elif data.net_cash_flow < 0 %}#f87171{% else %}var(--text-secondary){% endif %};">
+                                            {% if data.net_cash_flow > 0 %}+{% elif data.net_cash_flow < 0 %}-{% endif %}₹{{ data.net_cash_flow|abs|format_la_cr }}
+                                        </td>
+                                        <td style="font-family: monospace; font-weight: bold; color: {% if data.organic_growth > 0 %}var(--accent-green){% elif data.organic_growth < 0 %}var(--accent-red){% else %}var(--text-secondary){% endif %};">
+                                            {% if data.organic_growth > 0 %}+{% elif data.organic_growth < 0 %}-{% endif %}₹{{ data.organic_growth|abs|format_la_cr }}
+                                        </td>
+                                        <td style="font-weight: bold;" class="{% if data.dietz_return > 0 %}positive-val{% elif data.dietz_return < 0 %}negative-val{% else %}neutral-val{% endif %}">
+                                            {{ "{:+.2f}%".format(data.dietz_return) }}
+                                        </td>
+                                        <td style="font-family: monospace; font-weight: 500;">₹{{ data.ending_aum|format_la_cr }}</td>
+                                    </tr>
+                                {% endfor %}
+                                
+                                <!-- Total Row -->
+                                {% set tot = period.data.TOTAL %}
+                                <tr class="total-row">
+                                    <td style="text-align: left; color: var(--text-primary);">TOTAL</td>
+                                    <td style="font-family: monospace;">₹{{ tot.opening_aum|format_la_cr }}</td>
+                                    <td style="font-family: monospace; color: {% if tot.net_cash_flow > 0 %}#34d399{% elif tot.net_cash_flow < 0 %}#f87171{% else %}var(--text-secondary){% endif %};">
+                                        {% if tot.net_cash_flow > 0 %}+{% elif tot.net_cash_flow < 0 %}-{% endif %}₹{{ tot.net_cash_flow|abs|format_la_cr }}
+                                    </td>
+                                    <td style="font-family: monospace; color: {% if tot.organic_growth > 0 %}var(--accent-green){% elif tot.organic_growth < 0 %}var(--accent-red){% else %}var(--text-secondary){% endif %};">
+                                        {% if tot.organic_growth > 0 %}+{% elif tot.organic_growth < 0 %}-{% endif %}₹{{ tot.organic_growth|abs|format_la_cr }}
+                                    </td>
+                                    <td class="{% if tot.dietz_return > 0 %}positive-val{% elif tot.dietz_return < 0 %}negative-val{% else %}neutral-val{% endif %}">
+                                        {{ "{:+.2f}%".format(tot.dietz_return) }}
+                                    </td>
+                                    <td style="font-family: monospace;">₹{{ tot.ending_aum|format_la_cr }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="glass-card" style="padding: 40px; text-align: center; margin-top: 24px; color: var(--text-secondary);">
+                Not enough historical monthly holding workbooks found in global holding directory to generate performance trends. (Need at least 2 workbooks).
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,766 @@
+<!-- templates/alternatives/unlisted_dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unlisted Shares Portfolio</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="/static/js/backup.js?v=2"></script>
+    <style>
+        .sub-nav-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            background: rgba(15, 23, 42, 0.4);
+            padding: 6px;
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+            width: fit-content;
+        }
+        
+        .sub-tab-btn {
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .sub-tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.03);
+        }
+        
+        .sub-tab-btn.active {
+            color: var(--text-primary);
+            background: var(--accent-blue);
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+        
+        .asset-block {
+            margin-bottom: 32px;
+        }
+        
+        .asset-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.7) 100%);
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        
+        .asset-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .asset-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .asset-meta span strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        
+        .ledger-drawer {
+            border-top: 1px solid var(--glass-border);
+            background: rgba(15, 23, 42, 0.25);
+            border-bottom-left-radius: 16px;
+            border-bottom-right-radius: 16px;
+        }
+        
+        .ledger-toggle-btn {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 12px 24px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        
+        .ledger-toggle-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        .ledger-content {
+            display: none;
+            padding: 0 24px 24px 24px;
+        }
+        
+        .badge-buy {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        
+        .badge-sell {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .badge-corporate {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-purple);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .editable-cell {
+            cursor: pointer;
+            border-bottom: 1px dashed rgba(59, 130, 246, 0.4);
+            color: var(--accent-blue);
+            transition: all 0.2s ease;
+        }
+        
+        .editable-cell:hover {
+            color: #60a5fa;
+            border-bottom-color: #60a5fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ========== HEADER ========== -->
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/portfolio/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Portfolio Overview</a>
+                        <a href="/mutual-funds/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue); box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <a href="/alternatives/unlisted/" class="nav-link active">Unlisted Shares</a>
+                <a href="/alternatives/aif/" class="nav-link">AIF / PMS</a>
+            </div>
+        </header>
+
+        <!-- ========== PORTFOLIO METRICS SUMMARY ========== -->
+        <div class="metrics-grid">
+            <div class="glass-card metric-card">
+                <div class="metric-title">Total Invested</div>
+                <div class="metric-value">₹{{ summary.total_invested|format_inr }}</div>
+                <div class="metric-change" style="color: var(--text-secondary);">Across {{ summary.count }} trade lots</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Current Value</div>
+                <div class="metric-value">₹{{ summary.total_current_value|format_inr }}</div>
+                <div class="metric-change" style="color: var(--text-secondary);">Market Value</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Unrealized P&L</div>
+                <div class="metric-value" style="color: {% if summary.total_pnl >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                    {% if summary.total_pnl >= 0 %}+{% endif %}₹{{ summary.total_pnl|format_inr }}
+                </div>
+                <div class="metric-change {% if summary.total_pnl >= 0 %}positive{% else %}negative{% endif %}">
+                    {{ "{:+.2f}".format(summary.total_return_pct * 100) }}% Total Return
+                </div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Overall Return</div>
+                <div class="metric-value">
+                    <span class="badge {% if summary.total_return_pct >= 0 %}badge-positive{% else %}badge-negative{% endif %}" style="font-size: 18px; padding: 6px 16px;">
+                        {{ "{:+.2f}".format(summary.total_return_pct * 100) }}%
+                    </span>
+                </div>
+                <div class="metric-change" style="color: var(--text-secondary);">{{ summary.assets_count }} Unique Stocks</div>
+            </div>
+        </div>
+
+        <!-- ========== SUB-NAVIGATION & OPERATIONS ========== -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 16px;">
+            <div class="sub-nav-tabs" style="margin-bottom: 0;">
+                <button onclick="switchTab('summary')" id="sub-tab-summary" class="sub-tab-btn active">Consolidated Summary</button>
+                <button onclick="switchTab('trades')" id="sub-tab-trades" class="sub-tab-btn">Individual Trades &amp; Lots</button>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="position: relative;">
+                    <input type="text" id="search-input" placeholder="Search by stock name..." style="
+                        background: rgba(15, 23, 42, 0.6);
+                        border: 1px solid var(--glass-border);
+                        border-radius: 8px;
+                        padding: 8px 14px 8px 36px;
+                        color: var(--text-primary);
+                        font-size: 13px;
+                        font-family: 'Inter', sans-serif;
+                        width: 250px;
+                        outline: none;
+                        transition: border-color 0.2s ease;
+                    " onfocus="this.style.borderColor='var(--accent-blue)'" onblur="this.style.borderColor='var(--glass-border)'">
+                    <svg style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;" width="16" height="16" fill="none" stroke="#94a3b8" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
+                    </svg>
+                </div>
+                <a href="/alternatives/unlisted/export-xlsx" class="btn-primary" style="text-decoration: none; display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path>
+                    </svg>
+                    Export Excel
+                </a>
+            </div>
+        </div>
+
+        <!-- ======================================================= -->
+        <!-- SUBSECTION 1: CONSOLIDATED SUMMARY                      -->
+        <!-- ======================================================= -->
+        <div id="summary-section">
+            <div class="glass-card" style="padding: 24px;">
+                <div class="table-container" style="margin-top: 0;">
+                    <table style="margin-top: 0;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: center; width: 60px;">S NO</th>
+                                <th>Stock</th>
+                                <th style="text-align: right;">QTY</th>
+                                <th style="text-align: right; width: 130px;">CMP</th>
+                                <th style="text-align: right;">AVG Price</th>
+                                <th style="text-align: right;">Invested Value</th>
+                                <th style="text-align: right;">CURRENT Value</th>
+                                <th style="text-align: right;">PROFIT/ LOSS</th>
+                                <th style="text-align: right; width: 100px;">% Return</th>
+                                <th style="text-align: right; width: 100px;">% Exposure</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summary-tbody">
+                            {% if summary_list %}
+                                {% for s in summary_list %}
+                                <tr data-company="{{ s.company_name|lower }}" class="company-row">
+                                    <td style="text-align: center; color: var(--text-secondary); font-size: 13px;">{{ loop.index }}</td>
+                                    <td style="font-weight: 700; color: #f8fafc; font-size: 14px;">{{ s.company_name }}</td>
+                                    <td style="text-align: right; font-weight: 500;">{{ "{:,.0f}".format(s.quantity) }}</td>
+                                    <td style="text-align: right;" class="company-cmp-cell" data-company="{{ s.company_name }}" data-price="{{ s.current_price }}">
+                                        <span class="company-cmp-display editable-cell" title="Double-click to edit CMP">
+                                            ₹{{ "{:,.2f}".format(s.current_price) }}
+                                        </span>
+                                        <input type="number" class="company-cmp-input" step="0.01" value="{{ s.current_price }}" style="
+                                            display: none;
+                                            width: 100px;
+                                            background: rgba(15, 23, 42, 0.9);
+                                            border: 1px solid var(--accent-blue);
+                                            border-radius: 6px;
+                                            padding: 4px 8px;
+                                            color: var(--accent-blue);
+                                            font-size: 13px;
+                                            font-family: inherit;
+                                            text-align: right;
+                                            outline: none;
+                                        ">
+                                    </td>
+                                    <td style="text-align: right; color: var(--text-secondary);">₹{{ "{:,.2f}".format(s.avg_price) }}</td>
+                                    <td style="text-align: right; font-weight: 500;">₹{{ s.total_cost|format_inr }}</td>
+                                    <td style="text-align: right; font-weight: 600;">₹{{ s.current_value|format_inr }}</td>
+                                    <td style="text-align: right; font-weight: 600; color: {% if s.pnl >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                        {% if s.pnl >= 0 %}+{% endif %}₹{{ s.pnl|format_inr }}
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <span class="badge {% if s.return_pct >= 0 %}badge-positive{% else %}badge-negative{% endif %}">
+                                            {{ "{:+.2f}".format(s.return_pct * 100) }}%
+                                        </span>
+                                    </td>
+                                    <td style="text-align: right; font-weight: 500; color: var(--text-secondary);">
+                                        {{ "{:.1f}".format(s.exposure_pct * 100) }}%
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                <!-- Total Row -->
+                                <tr style="border-top: 2px double var(--glass-border); background: rgba(15, 23, 42, 0.45); font-weight: 700;">
+                                    <td></td>
+                                    <td style="color: var(--text-primary);">Total</td>
+                                    <td colspan="3"></td>
+                                    <td style="text-align: right; color: var(--text-primary);">₹{{ summary.total_invested|format_inr }}</td>
+                                    <td style="text-align: right; color: var(--text-primary);">₹{{ summary.total_current_value|format_inr }}</td>
+                                    <td style="text-align: right; color: {% if summary.total_pnl >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                        {% if summary.total_pnl >= 0 %}+{% endif %}₹{{ summary.total_pnl|format_inr }}
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <span class="badge {% if summary.total_return_pct >= 0 %}badge-positive{% else %}badge-negative{% endif %}" style="font-weight: 700;">
+                                            {{ "{:+.2f}".format(summary.total_return_pct * 100) }}%
+                                        </span>
+                                    </td>
+                                    <td style="text-align: right; color: var(--text-primary);">100.0%</td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="10" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                        No unlisted assets found.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======================================================= -->
+        <!-- SUBSECTION 2: TRADES BIFURCATED BY ASSET                -->
+        <!-- ======================================================= -->
+        <div id="trades-section" style="display: none;">
+            {% if bifurcated_trades %}
+                {% for asset in bifurcated_trades %}
+                <div class="glass-card asset-block" data-company="{{ asset.company_name|lower }}" style="padding: 0; overflow: hidden; backdrop-filter: blur(12px);">
+                    <!-- Asset Header Bar -->
+                    <div class="asset-header">
+                        <div class="asset-title">
+                            <span>💼</span>
+                            <span>{{ asset.company_name }}</span>
+                        </div>
+                        <div class="asset-meta">
+                            <span>Lots: <strong>{{ asset.lots|length }}</strong></span>
+                            <span>CMP: <strong style="color: var(--accent-blue);">₹{{ "{:,.2f}".format(asset.current_price) }}</strong></span>
+                            <span>Total Qty: <strong>
+                                {% set qty_sum = asset.lots | map(attribute='quantity') | sum %}
+                                {{ "{:,.0f}".format(qty_sum) }}
+                            </strong></span>
+                            <span>Total Cost: <strong>
+                                {% set cost_sum = asset.lots | map(attribute='total_cost') | sum %}
+                                ₹{{ cost_sum|format_inr }}
+                            </strong></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Lots Table -->
+                    <div style="padding: 20px 24px 8px 24px;">
+                        <h4 style="margin: 0 0 12px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">Active Trade Lots</h4>
+                        <div class="table-container" style="margin-top: 0; border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 8px;">
+                            <table style="margin: 0; width: 100%;">
+                                <thead>
+                                    <tr style="background: rgba(15, 23, 42, 0.4);">
+                                        <th>Owner</th>
+                                        <th>Broker</th>
+                                        <th style="text-align: right; width: 120px;">Qty</th>
+                                        <th style="text-align: right; width: 130px;">Purchase Price</th>
+                                        <th style="text-align: right;">Total Cost</th>
+                                        <th style="text-align: right; width: 120px;">CMP</th>
+                                        <th style="text-align: right;">Current Value</th>
+                                        <th style="text-align: right;">P&amp;L</th>
+                                        <th style="text-align: right; width: 100px;">Return %</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for lot in asset.lots %}
+                                    <tr style="background: transparent;">
+                                        <td style="font-weight: 600; color: #a78bfa;">{{ lot.owner }}</td>
+                                        <td style="color: var(--text-secondary); font-size: 13px;">{{ lot.broker }}</td>
+                                        
+                                        <!-- Editable Lot Qty -->
+                                        <td style="text-align: right;" class="lot-qty-cell" data-id="{{ lot.id }}" data-qty="{{ lot.quantity }}">
+                                            <span class="lot-qty-display editable-cell" title="Double-click to edit Qty">
+                                                {{ "{:,.0f}".format(lot.quantity) }}
+                                            </span>
+                                            <input type="number" class="lot-qty-input" value="{{ lot.quantity }}" style="
+                                                display: none;
+                                                width: 90px;
+                                                background: rgba(15, 23, 42, 0.9);
+                                                border: 1px solid var(--accent-blue);
+                                                border-radius: 6px;
+                                                padding: 2px 6px;
+                                                color: var(--accent-blue);
+                                                font-size: 13px;
+                                                text-align: right;
+                                                outline: none;
+                                            ">
+                                        </td>
+                                        
+                                        <!-- Editable Lot Purchase Price -->
+                                        <td style="text-align: right;" class="lot-price-cell" data-id="{{ lot.id }}" data-price="{{ lot.purchase_price }}">
+                                            <span class="lot-price-display editable-cell" title="Double-click to edit Purchase Price">
+                                                ₹{{ "{:,.2f}".format(lot.purchase_price) }}
+                                            </span>
+                                            <input type="number" class="lot-price-input" step="0.01" value="{{ lot.purchase_price }}" style="
+                                                display: none;
+                                                width: 100px;
+                                                background: rgba(15, 23, 42, 0.9);
+                                                border: 1px solid var(--accent-blue);
+                                                border-radius: 6px;
+                                                padding: 2px 6px;
+                                                color: var(--accent-blue);
+                                                font-size: 13px;
+                                                text-align: right;
+                                                outline: none;
+                                            ">
+                                        </td>
+                                        
+                                        <td style="text-align: right; font-weight: 500;">₹{{ lot.total_cost|format_inr }}</td>
+                                        
+                                        <!-- Editable Lot CMP -->
+                                        <td style="text-align: right;" class="company-cmp-cell" data-company="{{ asset.company_name }}" data-price="{{ lot.current_price }}">
+                                            <span class="company-cmp-display editable-cell" title="Double-click to edit CMP">
+                                                ₹{{ "{:,.2f}".format(lot.current_price) }}
+                                            </span>
+                                            <input type="number" class="company-cmp-input" step="0.01" value="{{ lot.current_price }}" style="
+                                                display: none;
+                                                width: 90px;
+                                                background: rgba(15, 23, 42, 0.9);
+                                                border: 1px solid var(--accent-blue);
+                                                border-radius: 6px;
+                                                padding: 2px 6px;
+                                                color: var(--accent-blue);
+                                                font-size: 13px;
+                                                text-align: right;
+                                                outline: none;
+                                            ">
+                                        </td>
+                                        
+                                        <td style="text-align: right; font-weight: 600;">₹{{ lot.current_value|format_inr }}</td>
+                                        <td style="text-align: right; font-weight: 600; color: {% if lot.pnl >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                            {% if lot.pnl >= 0 %}+{% endif %}₹{{ lot.pnl|format_inr }}
+                                        </td>
+                                        <td style="text-align: right;">
+                                            <span class="badge {% if lot.return_pct >= 0 %}badge-positive{% else %}badge-negative{% endif %}">
+                                                {{ "{:+.2f}".format(lot.return_pct * 100) }}%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Collapsible Transaction Ledger -->
+                    <div class="ledger-drawer">
+                        <button onclick="toggleLedger('ledger-{{ loop.index }}', this)" class="ledger-toggle-btn">
+                            <span class="toggle-icon">▼</span>
+                            Show Transaction Ledger ({{ asset.transactions|length }} record{{ 's' if asset.transactions|length != 1 }})
+                        </button>
+                        <div id="ledger-{{ loop.index }}" class="ledger-content">
+                            {% if asset.transactions %}
+                            <div class="table-container" style="margin-top: 8px; border: 1px solid rgba(255, 255, 255, 0.02); border-radius: 8px;">
+                                <table style="margin: 0; width: 100%; font-size: 13px;">
+                                    <thead>
+                                        <tr style="background: rgba(15, 23, 42, 0.6);">
+                                            <th>Date</th>
+                                            <th style="width: 100px; text-align: center;">Type</th>
+                                            <th style="text-align: right;">Quantity</th>
+                                            <th style="text-align: right;">Price</th>
+                                            <th style="text-align: right;">Total Amount</th>
+                                            <th>Broker</th>
+                                            <th>Source / Notes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for t in asset.transactions %}
+                                        <tr>
+                                            <td style="font-family: monospace; color: var(--text-secondary);">{{ t.date }}</td>
+                                            <td style="text-align: center;">
+                                                {% if t.type == 'BUY' %}
+                                                    <span class="badge-buy">BUY</span>
+                                                {% elif t.type == 'SELL' %}
+                                                    <span class="badge-sell">SELL</span>
+                                                {% else %}
+                                                    <span class="badge-corporate">{{ t.type }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td style="text-align: right; font-weight: 500;">{{ "{:,.0f}".format(t.quantity) }}</td>
+                                            <td style="text-align: right; color: var(--text-secondary);">₹{{ "{:,.2f}".format(t.price) }}</td>
+                                            <td style="text-align: right; font-weight: 600;">₹{{ t.amount|format_inr }}</td>
+                                            <td style="color: var(--text-secondary);">{{ t.broker }}</td>
+                                            <td style="color: var(--text-secondary); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ t.notes }}">{{ t.notes }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div style="text-align: center; padding: 20px; color: var(--text-secondary); font-size: 13px;">
+                                No transaction ledger parsed for this asset.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="glass-card" style="padding: 40px; text-align: center; color: var(--text-secondary);">
+                    No unlisted assets found.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ========== JAVASCRIPT CONTROLLERS ========== -->
+    <script>
+        /* ── Tab Switcher ───────────────────────────────── */
+        let currentTab = 'summary';
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            const summaryBtn = document.getElementById('sub-tab-summary');
+            const tradesBtn = document.getElementById('sub-tab-trades');
+            const summarySec = document.getElementById('summary-section');
+            const tradesSec = document.getElementById('trades-section');
+            
+            if (tab === 'summary') {
+                summaryBtn.classList.add('active');
+                tradesBtn.classList.remove('active');
+                summarySec.style.display = 'block';
+                tradesSec.style.display = 'none';
+            } else {
+                tradesBtn.classList.add('active');
+                summaryBtn.classList.remove('active');
+                summarySec.style.display = 'none';
+                tradesSec.style.display = 'block';
+            }
+            // Run filter to align search input
+            filterSearch();
+        }
+
+        /* ── Collapsible Ledger Drawer ───────────────────── */
+        function toggleLedger(drawerId, btn) {
+            const drawer = document.getElementById(drawerId);
+            const icon = btn.querySelector('.toggle-icon');
+            if (drawer.style.display === 'block') {
+                drawer.style.display = 'none';
+                icon.textContent = '▼';
+                btn.style.color = 'var(--text-secondary)';
+            } else {
+                drawer.style.display = 'block';
+                icon.textContent = '▲';
+                btn.style.color = 'var(--text-primary)';
+            }
+        }
+
+        /* ── Search / Filter ─────────────────────────────── */
+        const searchInput = document.getElementById('search-input');
+        searchInput.addEventListener('input', filterSearch);
+
+        function filterSearch() {
+            const query = searchInput.value.toLowerCase().trim();
+            if (currentTab === 'summary') {
+                const rows = document.querySelectorAll('#summary-tbody .company-row');
+                rows.forEach(row => {
+                    const comp = row.getAttribute('data-company');
+                    row.style.display = comp.includes(query) ? '' : 'none';
+                });
+            } else {
+                const blocks = document.querySelectorAll('#trades-section .asset-block');
+                blocks.forEach(block => {
+                    const comp = block.getAttribute('data-company');
+                    block.style.display = comp.includes(query) ? '' : 'none';
+                });
+            }
+        }
+
+        /* ── Company CMP Inline Edit ────────────────────── */
+        document.querySelectorAll('.company-cmp-cell').forEach(cell => {
+            const display = cell.querySelector('.company-cmp-display');
+            const input = cell.querySelector('.company-cmp-input');
+            const companyName = cell.dataset.company;
+
+            display.addEventListener('dblclick', () => {
+                display.style.display = 'none';
+                input.style.display = 'inline-block';
+                input.focus();
+                input.select();
+            });
+
+            input.addEventListener('blur', () => {
+                submitCompanyCmpUpdate(companyName, input, display, cell);
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    input.blur();
+                } else if (e.key === 'Escape') {
+                    input.value = cell.dataset.price;
+                    input.style.display = 'none';
+                    display.style.display = 'inline';
+                }
+            });
+        });
+
+        function submitCompanyCmpUpdate(companyName, input, display, cell) {
+            const newPrice = parseFloat(input.value);
+            if (isNaN(newPrice) || newPrice < 0) {
+                input.value = cell.dataset.price;
+                input.style.display = 'none';
+                display.style.display = 'inline';
+                return;
+            }
+
+            input.style.borderColor = '#f59e0b';
+            input.disabled = true;
+
+            const formData = new FormData();
+            formData.append('company_name', companyName);
+            formData.append('current_price', newPrice);
+
+            fetch('/alternatives/unlisted/update-cmp', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok || response.redirected) {
+                    window.location.reload();
+                } else {
+                    throw new Error('Update failed');
+                }
+            })
+            .catch(err => {
+                console.error('CMP update error:', err);
+                input.value = cell.dataset.price;
+                input.style.display = 'none';
+                input.disabled = false;
+                display.style.display = 'inline';
+                cell.style.background = 'rgba(239, 68, 68, 0.15)';
+                setTimeout(() => { cell.style.background = ''; }, 1500);
+            });
+        }
+
+        /* ── Lot Qty & Purchase Price Inline Edit ───────── */
+        document.querySelectorAll('.lot-qty-cell').forEach(cell => {
+            const display = cell.querySelector('.lot-qty-display');
+            const input = cell.querySelector('.lot-qty-input');
+            const lotId = cell.dataset.id;
+
+            display.addEventListener('dblclick', () => {
+                display.style.display = 'none';
+                input.style.display = 'inline-block';
+                input.focus();
+                input.select();
+            });
+
+            input.addEventListener('blur', () => {
+                submitLotUpdate(lotId, { quantity: input.value }, input, display, cell, cell.dataset.qty);
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    input.blur();
+                } else if (e.key === 'Escape') {
+                    input.value = cell.dataset.qty;
+                    input.style.display = 'none';
+                    display.style.display = 'inline';
+                }
+            });
+        });
+
+        document.querySelectorAll('.lot-price-cell').forEach(cell => {
+            const display = cell.querySelector('.lot-price-display');
+            const input = cell.querySelector('.lot-price-input');
+            const lotId = cell.dataset.id;
+
+            display.addEventListener('dblclick', () => {
+                display.style.display = 'none';
+                input.style.display = 'inline-block';
+                input.focus();
+                input.select();
+            });
+
+            input.addEventListener('blur', () => {
+                submitLotUpdate(lotId, { purchase_price: input.value }, input, display, cell, cell.dataset.price);
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    input.blur();
+                } else if (e.key === 'Escape') {
+                    input.value = cell.dataset.price;
+                    input.style.display = 'none';
+                    display.style.display = 'inline';
+                }
+            });
+        });
+
+        function submitLotUpdate(lotId, fields, input, display, cell, originalValue) {
+            const val = parseFloat(input.value);
+            if (isNaN(val) || val <= 0) {
+                input.value = originalValue;
+                input.style.display = 'none';
+                display.style.display = 'inline';
+                return;
+            }
+
+            input.style.borderColor = '#f59e0b';
+            input.disabled = true;
+
+            const formData = new FormData();
+            for (const [k, v] of Object.entries(fields)) {
+                formData.append(k, v);
+            }
+
+            fetch(`/alternatives/unlisted/${lotId}/update`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok || response.redirected) {
+                    window.location.reload();
+                } else {
+                    throw new Error('Lot update failed');
+                }
+            })
+            .catch(err => {
+                console.error('Lot update error:', err);
+                input.value = originalValue;
+                input.style.display = 'none';
+                input.disabled = false;
+                display.style.display = 'inline';
+                cell.style.background = 'rgba(239, 68, 68, 0.15)';
+                setTimeout(() => { cell.style.background = ''; }, 1500);
+            });
+        }
+    </script>
+</body>
+</html>

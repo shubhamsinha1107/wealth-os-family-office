@@ -1,0 +1,426 @@
+<!-- templates/equities/dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equities Portfolio</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <script src="/static/js/backup.js?v=2"></script>
+    <style>
+        .sort-header {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s ease;
+            position: relative;
+            padding-right: 18px !important;
+        }
+        .sort-header:hover {
+            color: var(--text-primary);
+        }
+        .excel-filter {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            outline: none;
+            font-family: inherit;
+            transition: border-color 0.2s ease;
+            margin-top: 6px;
+        }
+        .excel-filter:focus {
+            border-color: var(--accent-blue);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/portfolio/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Portfolio Overview</a>
+                        <a href="/mutual-funds/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue); box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <a href="/equities/" class="nav-link active">Holdings AUM</a>
+                <a href="/equities/pnl" class="nav-link">Capital Gains (FIFO)</a>
+                <a href="/equities/summary" class="nav-link">Summary by A/C</a>
+                <a href="/equities/transactions" class="nav-link">Transactions Ledger</a>
+                <a href="/equities/unmatched" class="nav-link">Fix Unmatched Buys</a>
+                <a href="/equities/diagnostics" class="nav-link">File Health Check {% if file_validation and file_validation.has_errors %}<span style="background: #ef4444; color: white; border-radius: 10px; padding: 1px 6px; font-size: 10px; margin-left: 4px;">{{ file_validation.invalid_count }}</span>{% endif %}</a>
+                <a href="/equities/performance" class="nav-link">Performance (Dietz)</a>
+            </div>
+        </header>
+
+        {% if file_validation and file_validation.has_errors %}
+        <div style="background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.3); color: #c7d2fe; padding: 12px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>
+                    <strong>File Status:</strong> {{ file_validation.invalid_count }} file(s) in <code>DATA/DATA/</code> are summary reports or pending transaction ledgers.
+                    <a href="/equities/diagnostics" style="color: #60a5fa; text-decoration: underline; margin-left: 8px;">View File Status &rarr;</a>
+                </span>
+            </div>
+            <button onclick="this.parentElement.remove()" style="background: none; border: none; color: #c7d2fe; cursor: pointer; font-size: 18px; line-height: 1;">&times;</button>
+        </div>
+        {% endif %}
+
+        {% if success_message %}
+        <div class="alert alert-success">
+            {{ success_message }}
+        </div>
+        {% endif %}
+
+        <!-- Portfolio Metrics Summary -->
+        <div class="metrics-grid">
+            <div class="glass-card metric-card">
+                <div class="metric-title">Invested Amount</div>
+                <div class="metric-value">₹{{ summary.total_cost|format_inr }}</div>
+                <div class="metric-change" style="color: var(--text-secondary);">Principal Invested</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Current Valuation</div>
+                <div class="metric-value">₹{{ summary.total_value|format_inr }}</div>
+                <div class="metric-change" style="color: var(--text-secondary);">Market Value</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Unrealized profit/loss</div>
+                <div class="metric-value" style="color: {% if summary.total_gain >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                    ₹{{ summary.total_gain|format_inr }}
+                </div>
+                <div class="metric-change {% if summary.total_gain >= 0 %}positive{% else %}negative{% endif %}">
+                    {{ "{:+.2%}".format(summary.total_returns_pct) }} Total Return
+                </div>
+            </div>
+        </div>
+
+        <!-- Operations Panel -->
+        <div class="glass-card" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; gap: 16px; flex-wrap: wrap;">
+            <div style="font-weight: 500; font-size: 15px; color: var(--text-secondary);">
+                Active holdings: <strong>{{ holdings|length }} stocks</strong>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <a href="/equities/unmatched" class="btn-primary" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); text-decoration: none; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; padding: 10px 16px; border-radius: 8px; border: none; color: white;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Fix Unmatched Buys
+                </a>
+                <form action="/equities/recalculate" method="POST" style="margin: 0;">
+                    <input type="hidden" name="redirect_to" value="holdings">
+                    <button type="submit" class="btn-primary" onclick="this.innerHTML='⏳ Ingesting & Recalculating...'; this.style.opacity='0.7';" style="background: linear-gradient(135deg, #10b981 0%, #047857 100%); font-weight: 600; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"></path>
+                        </svg>
+                        Recalculate & Ingest Data
+                    </button>
+                </form>
+                <form action="/equities/fetch-live-prices" method="POST" style="margin: 0;">
+                    <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        Fetch Fyers Prices
+                    </button>
+                </form>
+                <form action="/equities/sync-prices" method="POST" style="margin: 0;">
+                    <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12a7.5 7.5 0 0 0 15 0m-15 0a7.5 7.5 0 1 1 15 0m-15 0H3m16.5 0H21m-1.5 0H12m-8.25 0h8.25"></path>
+                        </svg>
+                        Sync Feather Prices
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Holdings Table -->
+        <div class="glass-card" style="padding: 24px;">
+            <div class="table-container" style="margin-top: 0; overflow-x: auto;">
+                <table id="holdings-table" style="margin-top: 0; width: 100%;">
+                    <thead>
+                        <tr id="header-row">
+                            <th class="sort-header" data-sort="owner" style="text-align: left; padding: 12px 16px;">Owner ⇅</th>
+                            <th class="sort-header" data-sort="broker" style="text-align: left; padding: 12px 16px;">Broker ⇅</th>
+                            <th class="sort-header" data-sort="symbol" style="text-align: left; padding: 12px 16px;">Symbol ⇅</th>
+                            <th class="sort-header" data-sort="qty" style="text-align: right; padding: 12px 16px;">Quantity ⇅</th>
+                            <th class="sort-header" data-sort="avg_cost" style="text-align: right; padding: 12px 16px;">Avg Cost Price ⇅</th>
+                            <th class="sort-header" data-sort="cost" style="text-align: right; padding: 12px 16px;">Cost Value ⇅</th>
+                            <th class="sort-header" data-sort="cmp" style="text-align: right; padding: 12px 16px;">Current Price (CMP) ⇅</th>
+                            <th class="sort-header" data-sort="value" style="text-align: right; padding: 12px 16px;">Market Value ⇅</th>
+                            <th class="sort-header" data-sort="profit" style="text-align: right; padding: 12px 16px;">Unrealized P&L ⇅</th>
+                            <th class="sort-header" data-sort="return" style="text-align: right; padding: 12px 16px;">Returns % ⇅</th>
+                            <th class="sort-header" data-sort="as_of" style="text-align: center; padding: 12px 16px;">Price As Of ⇅</th>
+                        </tr>
+                        <tr id="filter-row" style="background: rgba(15, 23, 42, 0.4);">
+                            <th style="padding: 6px 8px;"><input type="text" class="excel-filter" data-col="0" placeholder="Filter Owner..." style="width: 100%;"></th>
+                            <th style="padding: 6px 8px;"><input type="text" class="excel-filter" data-col="1" placeholder="Filter Broker..." style="width: 100%;"></th>
+                            <th style="padding: 6px 8px;"><input type="text" class="excel-filter" data-col="2" placeholder="Filter Symbol..." style="width: 100%;"></th>
+                            <th style="padding: 6px 8px;"><input type="text" class="excel-filter" data-col="3" placeholder="Filter Qty..." style="width: 100%;"></th>
+                            <th style="padding: 6px 8px;"></th>
+                            <th style="padding: 6px 8px;"><input type="text" class="excel-filter" data-col="5" placeholder="Filter Cost..." style="width: 100%;"></th>
+                            <th style="padding: 6px 8px;"></th>
+                            <th style="padding: 6px 8px;"><input type="text" class="excel-filter" data-col="7" placeholder="Filter Value..." style="width: 100%;"></th>
+                            <th style="padding: 6px 8px;"><input type="text" class="excel-filter" data-col="8" placeholder="Filter PnL..." style="width: 100%;"></th>
+                            <th style="padding: 6px 8px;"><input type="text" class="excel-filter" data-col="9" placeholder="Filter %..." style="width: 100%;"></th>
+                            <th style="padding: 6px 8px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if holdings %}
+                            {% for h in holdings %}
+                            <tr class="stock-row">
+                                <td style="font-weight: 600; color: #a78bfa; padding: 12px 16px;">{{ h.owner }}</td>
+                                <td style="color: var(--text-secondary); font-size: 13px; padding: 12px 16px;">{{ h.broker }}</td>
+                                <td style="font-family: monospace; font-weight: 600; color: var(--accent-blue); padding: 12px 16px;">{{ h.symbol }}</td>
+                                <td style="text-align: right; font-weight: 500; padding: 12px 16px;">{{ "{:,.2f}".format(h.quantity) }}</td>
+                                <td style="text-align: right; color: var(--text-secondary); padding: 12px 16px;">₹{{ "{:,.2f}".format(h.avg_cost) }}</td>
+                                <td style="text-align: right; font-weight: 500; padding: 12px 16px;">₹{{ h.cost_value|format_inr }}</td>
+                                <td style="text-align: right; color: var(--accent-blue); padding: 12px 16px;">₹{{ "{:,.2f}".format(h.current_price) }}</td>
+                                <td style="text-align: right; font-weight: 600; padding: 12px 16px;">₹{{ h.current_value|format_inr }}</td>
+                                <td style="text-align: right; font-weight: 600; color: {% if h.gain >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; padding: 12px 16px;">
+                                    ₹{{ h.gain|format_inr }}
+                                </td>
+                                <td style="text-align: right; padding: 12px 16px;">
+                                    <span class="badge {% if h.gain >= 0 %}badge-positive{% else %}badge-negative{% endif %}">
+                                        {{ "{:+.2%}".format(h.returns_pct) }}
+                                    </span>
+                                </td>
+                                <td style="text-align: center; color: var(--text-secondary); font-size: 12px; padding: 12px 16px;">{{ h.as_of_date }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="11" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                    No equity holdings found in database. Click <strong>Import Global Report (FY)</strong> to import transactions.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                    <tfoot style="border-top: 2px solid var(--glass-border);">
+                        <tr id="subtotal-row" style="font-weight: bold; background: rgba(30, 41, 59, 0.65);">
+                            <td colspan="3" style="text-align: left; padding: 12px 16px;">Total (Filtered)</td>
+                            <td id="subtotal-qty" style="text-align: right; padding: 12px 16px;">0.00</td>
+                            <td style="padding: 12px 16px;"></td>
+                            <td id="subtotal-cost" style="text-align: right; padding: 12px 16px;">₹0.00</td>
+                            <td style="padding: 12px 16px;"></td>
+                            <td id="subtotal-value" style="text-align: right; padding: 12px 16px;">₹0.00</td>
+                            <td id="subtotal-pnl" style="text-align: right; padding: 12px 16px;">₹0.00</td>
+                            <td id="subtotal-returns" style="text-align: right; padding: 12px 16px;">0.00%</td>
+                            <td style="padding: 12px 16px;"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const table = document.getElementById("holdings-table");
+            if (!table) return;
+
+            const tbody = table.querySelector("tbody");
+            const originalRows = Array.from(tbody.querySelectorAll("tr.stock-row"));
+            const filters = Array.from(table.querySelectorAll(".excel-filter"));
+
+            // --- 1. Dynamic Subtotal Aggregator ---
+            function updateSubtotals() {
+                let totalQty = 0;
+                let totalCost = 0;
+                let totalValue = 0;
+                let totalPnl = 0;
+
+                originalRows.forEach(row => {
+                    if (row.style.display !== "none") {
+                        const qtyVal = parseFloat(row.cells[3].textContent.replace(/,/g, "").trim()) || 0;
+                        const costVal = parseFloat(row.cells[5].textContent.replace(/[₹,]/g, "").trim()) || 0;
+                        const marketVal = parseFloat(row.cells[7].textContent.replace(/[₹,]/g, "").trim()) || 0;
+                        const pnlVal = parseFloat(row.cells[8].textContent.replace(/[₹,]/g, "").trim()) || 0;
+
+                        totalQty += qtyVal;
+                        totalCost += costVal;
+                        totalValue += marketVal;
+                        totalPnl += pnlVal;
+                    }
+                });
+
+                const returnsPct = totalCost > 0 ? (totalValue - totalCost) / totalCost : 0;
+
+                document.getElementById("subtotal-qty").textContent = totalQty.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                document.getElementById("subtotal-cost").textContent = formatINR(totalCost);
+                document.getElementById("subtotal-value").textContent = formatINR(totalValue);
+                document.getElementById("subtotal-pnl").textContent = formatINR(totalPnl);
+                
+                const returnsEl = document.getElementById("subtotal-returns");
+                returnsEl.textContent = (returnsPct >= 0 ? "+" : "") + (returnsPct * 100).toFixed(2) + "%";
+
+                const pnlEl = document.getElementById("subtotal-pnl");
+                if (totalPnl >= 0) {
+                    pnlEl.style.color = "var(--accent-green)";
+                    returnsEl.style.color = "var(--accent-green)";
+                } else {
+                    pnlEl.style.color = "var(--accent-red)";
+                    returnsEl.style.color = "var(--accent-red)";
+                }
+            }
+
+            function formatINR(num) {
+                let p = num.toFixed(2).split(".");
+                let x = p[0];
+                let y = p[1];
+                let lastThree = x.substring(x.length - 3);
+                let otherNumbers = x.substring(0, x.length - 3);
+                if (otherNumbers !== '') {
+                    lastThree = ',' + lastThree;
+                }
+                let res = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + lastThree + "." + y;
+                return "₹" + res;
+            }
+
+            // --- 2. Live Filtering ---
+            function filterTable() {
+                const filterValues = {};
+                filters.forEach(input => {
+                    const colIndex = parseInt(input.getAttribute("data-col"));
+                    const val = input.value.toLowerCase().trim();
+                    if (val !== "") {
+                        filterValues[colIndex] = val;
+                    }
+                });
+
+                originalRows.forEach(row => {
+                    let matches = true;
+                    const cells = row.querySelectorAll("td");
+
+                    for (const colIndex in filterValues) {
+                        const cellText = cells[colIndex].textContent.toLowerCase();
+                        const filterText = filterValues[colIndex];
+                        if (!cellText.includes(filterText)) {
+                            matches = false;
+                            break;
+                        }
+                    }
+
+                    if (matches) {
+                        row.style.display = "";
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+
+                updateSubtotals();
+            }
+
+            filters.forEach(input => {
+                input.addEventListener("input", filterTable);
+            });
+
+            // Check URL parameters for initial filters on load
+            const urlParams = new URLSearchParams(window.location.search);
+            const brokerParam = urlParams.get('broker');
+            const ownerParam = urlParams.get('owner');
+
+            if (brokerParam) {
+                const brokerFilter = document.querySelector('.excel-filter[data-col="1"]');
+                if (brokerFilter) {
+                    brokerFilter.value = brokerParam;
+                }
+            }
+            if (ownerParam) {
+                const ownerFilter = document.querySelector('.excel-filter[data-col="0"]');
+                if (ownerFilter) {
+                    ownerFilter.value = ownerParam;
+                }
+            }
+            if (brokerParam || ownerParam) {
+                filterTable();
+            }
+
+            // --- 3. Dynamic Sorting ---
+            let currentSortCol = null;
+            let currentSortOrder = "asc";
+
+            const headers = table.querySelectorAll(".sort-header");
+            headers.forEach((header, index) => {
+                header.addEventListener("click", function() {
+                    const sortKey = this.getAttribute("data-sort");
+                    const colIndex = index;
+
+                    if (currentSortCol === sortKey) {
+                        currentSortOrder = currentSortOrder === "asc" ? "desc" : "asc";
+                    } else {
+                        currentSortCol = sortKey;
+                        currentSortOrder = "asc";
+                    }
+
+                    headers.forEach(h => {
+                        const text = h.textContent.replace(/[▲▼↕⇅]/g, "").trim();
+                        if (h.getAttribute("data-sort") === sortKey) {
+                            h.innerHTML = text + (currentSortOrder === "asc" ? " ▲" : " ▼");
+                        } else {
+                            h.innerHTML = text + " ⇅";
+                        }
+                    });
+
+                    sortRows(colIndex, sortKey);
+                });
+            });
+
+            function parseNumericValue(text) {
+                let clean = text.replace(/[₹%,]/g, "").trim();
+                let val = parseFloat(clean);
+                return isNaN(val) ? -Infinity : val;
+            }
+
+            function sortRows(colIndex, sortKey) {
+                const isNumeric = ["qty", "avg_cost", "cost", "cmp", "value", "profit", "return"].includes(sortKey);
+
+                originalRows.sort((a, b) => {
+                    const valA = a.cells[colIndex].textContent.trim();
+                    const valB = b.cells[colIndex].textContent.trim();
+
+                    if (isNumeric) {
+                        const numA = parseNumericValue(valA);
+                        const numB = parseNumericValue(valB);
+                        return currentSortOrder === "asc" ? numA - numB : numB - numA;
+                    } else {
+                        return currentSortOrder === "asc"
+                            ? valA.localeCompare(valB)
+                            : valB.localeCompare(valA);
+                    }
+                });
+
+                originalRows.forEach(row => tbody.appendChild(row));
+            }
+
+            // Run initial subtotal calculation on load
+            updateSubtotals();
+        });
+    </script>
+</body>
+</html>
+

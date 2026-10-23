@@ -1,0 +1,325 @@
+<!-- templates/alternatives/aif_dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIF &amp; PMS Portfolio</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="/static/js/backup.js?v=2"></script>
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/portfolio/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Portfolio Overview</a>
+                        <a href="/mutual-funds/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue); box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <a href="/alternatives/unlisted/" class="nav-link">Unlisted Shares</a>
+                <a href="/alternatives/aif/" class="nav-link active">AIF / PMS</a>
+            </div>
+        </header>
+
+        <!-- Portfolio Metrics Summary -->
+        <div class="metrics-grid">
+            <div class="glass-card metric-card">
+                <div class="metric-title">Total Committed</div>
+                <div class="metric-value">₹{{ summary.total_invested|format_inr }}</div>
+                <div class="metric-change" style="color: var(--text-secondary);">Capital Deployed</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Current Valuation</div>
+                <div class="metric-value">₹{{ summary.total_current_value|format_inr }}</div>
+                <div class="metric-change" style="color: var(--text-secondary);">Latest NAV Value</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Absolute Gain</div>
+                <div class="metric-value" style="color: {% if summary.total_pnl >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                    ₹{{ summary.total_pnl|format_inr }}
+                </div>
+                <div class="metric-change {% if summary.total_pnl >= 0 %}positive{% else %}negative{% endif %}">
+                    {% if summary.total_pnl >= 0 %}▲{% else %}▼{% endif %} Unrealized P&amp;L
+                </div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Overall Return</div>
+                <div class="metric-value">
+                    <span class="badge {% if summary.total_return_pct >= 0 %}badge-positive{% else %}badge-negative{% endif %}" style="font-size: 20px; padding: 6px 14px;">
+                        {{ "{:+.2f}".format(summary.total_return_pct * 100) }}%
+                    </span>
+                </div>
+                <div class="metric-change" style="color: var(--text-secondary);">{{ summary.count }} Fund{{ 's' if summary.count != 1 else '' }}</div>
+            </div>
+        </div>
+
+        <!-- Operations Panel -->
+        <div class="glass-card" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                <div style="font-weight: 500; font-size: 15px; color: var(--text-secondary);">
+                    Active holdings: <strong style="color: var(--text-primary);">{{ summary.count }} funds</strong>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); background: rgba(15, 23, 42, 0.6); padding: 5px 12px; border-radius: 6px; border: 1px solid var(--glass-border);">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+                    <span>Excel File: <strong>{{ sync_status.file_mtime_str if sync_status else 'Synced' }}</strong></span>
+                </div>
+                <!-- Search / Filter -->
+                <div style="position: relative;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.3-4.3"></path>
+                    </svg>
+                    <input type="text" id="searchInput" placeholder="Search funds, owners, managers…" oninput="filterTable()" style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px 12px 8px 36px; color: var(--text-primary); font-size: 13px; font-family: inherit; width: 280px; transition: border-color 0.2s ease;" onfocus="this.style.borderColor='var(--accent-blue)'" onblur="this.style.borderColor='var(--glass-border)'">
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <!-- Sync from Excel Button -->
+                <button onclick="syncAifExcel()" id="sync-excel-btn" class="btn" style="padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border: 1px solid rgba(59, 130, 246, 0.4); color: white; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);">
+                    <svg id="sync-icon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"></path>
+                    </svg>
+                    <span id="sync-btn-text">Sync from Excel</span>
+                </button>
+                <a href="/alternatives/aif/export-xlsx" class="btn-primary" style="text-decoration: none;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path>
+                    </svg>
+                    Export to Excel
+                </a>
+            </div>
+        </div>
+
+        <!-- Notification Banner -->
+        <div id="sync-banner" style="display: none; padding: 12px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <span id="sync-banner-text"></span>
+            <button onclick="document.getElementById('sync-banner').style.display='none'" style="background: none; border: none; color: inherit; cursor: pointer; font-size: 16px;">&times;</button>
+        </div>
+
+        <!-- Holdings Table -->
+        <div class="glass-card" style="padding: 24px;">
+            <div class="table-container" style="margin-top: 0;">
+                <table style="margin-top: 0;">
+                    <thead>
+                        <tr>
+                            <th>Owner</th>
+                            <th>Fund Name</th>
+                            <th>Type</th>
+                            <th>Manager</th>
+                            <th>Investment Date</th>
+                            <th>Valuation Date</th>
+                            <th style="text-align: right;">Invested</th>
+                            <th style="text-align: right;">Current Value</th>
+                            <th style="text-align: right;">P&amp;L</th>
+                            <th style="text-align: right;">Return %</th>
+                            <th style="text-align: right;">XIRR %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="holdingsTableBody">
+                        {% if holdings %}
+                            {% for h in holdings %}
+                            <tr class="holding-row">
+                                <td style="font-weight: 600; color: #a78bfa;">{{ h.owner }}</td>
+                                <td style="font-weight: 500; max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ h.fund_name }}">
+                                    <a href="/alternatives/aif/{{ h.id }}" style="color: var(--text-primary); text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-blue)'" onmouseout="this.style.color='var(--text-primary)'">{{ h.fund_name }}</a>
+                                    {% if h.notes and ('Exit Load' in h.notes or 'Redeemable' in h.notes) %}
+                                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">{{ h.notes }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if h.fund_type == 'AIF' %}
+                                        <span style="padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; background: rgba(59, 130, 246, 0.15); color: var(--accent-blue);">AIF</span>
+                                    {% elif h.fund_type == 'PMS' %}
+                                        <span style="padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; background: rgba(139, 92, 246, 0.15); color: var(--accent-purple);">PMS</span>
+                                    {% else %}
+                                        <span style="padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; background: rgba(148, 163, 184, 0.15); color: var(--text-secondary);">{{ h.fund_type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td style="color: var(--text-secondary); font-size: 13px;">{{ h.manager_name or '—' }}</td>
+                                <td style="color: var(--text-secondary); font-size: 13px; white-space: nowrap;">
+                                    {{ h.investment_date }}
+                                </td>
+                                <td style="color: #60a5fa; font-size: 13px; white-space: nowrap; font-weight: 500;">
+                                    {{ h.as_of_date }}
+                                </td>
+                                <td style="text-align: right; font-weight: 500;">₹{{ h.amount_invested|format_inr }}</td>
+                                <td style="text-align: right; font-weight: 600; color: #f8fafc;">₹{{ h.current_value|format_inr }}</td>
+                                <td style="text-align: right; font-weight: 600; color: {% if h.pnl >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                    {{ "+" if h.pnl >= 0 else "" }}₹{{ h.pnl|format_inr }}
+                                </td>
+                                <td style="text-align: right;">
+                                    <span class="badge {% if h.return_pct >= 0 %}badge-positive{% else %}badge-negative{% endif %}">
+                                        {{ "{:+.2f}".format(h.return_pct * 100) }}%
+                                    </span>
+                                </td>
+                                <td style="text-align: right; font-weight: 500; color: {% if h.xirr is not none and h.xirr >= 0 %}var(--accent-green){% elif h.xirr is not none %}var(--accent-red){% else %}var(--text-secondary){% endif %};">
+                                    {% if h.xirr is not none %}
+                                        {{ "{:.2f}".format(h.xirr) }}%
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="11" style="text-align: center; padding: 60px 40px; color: var(--text-secondary);">
+                                    <div style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">No active AIF / PMS holdings found</div>
+                                    <div style="font-size: 13px;">Click "Sync from Excel" above to import active investments from AIF DATA.xlsx.</div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Exited / Closed Investments Section -->
+        {% if exited_holdings %}
+        <div class="glass-card" style="padding: 24px; margin-top: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; cursor: pointer;" onclick="toggleClosedSection()">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 16px; font-weight: 600; color: var(--text-primary);">Closed / Redeemed Investments</span>
+                    <span style="padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; background: rgba(148, 163, 184, 0.15); color: var(--text-secondary);">{{ exited_summary.count }}</span>
+                </div>
+                <div style="color: var(--accent-blue); font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                    <span id="closed-toggle-text">Show Historical</span>
+                    <svg id="closed-arrow" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="transition: transform 0.2s ease;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <div id="closed-table-wrap" style="display: none;">
+                <div class="table-container" style="margin-top: 0;">
+                    <table style="margin-top: 0; opacity: 0.85;">
+                        <thead>
+                            <tr>
+                                <th>Owner</th>
+                                <th>Fund Name</th>
+                                <th>Type</th>
+                                <th>Manager</th>
+                                <th>Investment Date</th>
+                                <th style="text-align: right;">Invested Capital</th>
+                                <th>Status / Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for eh in exited_holdings %}
+                            <tr>
+                                <td style="font-weight: 600; color: #a78bfa;">{{ eh.owner }}</td>
+                                <td style="font-weight: 500; color: var(--text-secondary);">
+                                    <a href="/alternatives/aif/{{ eh.id }}" style="color: var(--text-secondary); text-decoration: none;">{{ eh.fund_name }}</a>
+                                </td>
+                                <td>
+                                    <span style="padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; background: rgba(148, 163, 184, 0.12); color: var(--text-secondary);">{{ eh.fund_type }}</span>
+                                </td>
+                                <td style="color: var(--text-secondary); font-size: 13px;">{{ eh.manager_name or '—' }}</td>
+                                <td style="color: var(--text-secondary); font-size: 13px;">{{ eh.investment_date }}</td>
+                                <td style="text-align: right; font-weight: 500; color: var(--text-secondary);">₹{{ eh.amount_invested|format_inr }}</td>
+                                <td>
+                                    <span style="padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; background: rgba(239, 68, 68, 0.15); color: #f87171;">
+                                        {{ eh.notes or 'REDEEMED' }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function filterTable() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('.holding-row');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
+        }
+
+        function toggleClosedSection() {
+            const wrap = document.getElementById('closed-table-wrap');
+            const arrow = document.getElementById('closed-arrow');
+            const text = document.getElementById('closed-toggle-text');
+            if (wrap.style.display === 'none') {
+                wrap.style.display = 'block';
+                arrow.style.transform = 'rotate(180deg)';
+                text.textContent = 'Hide Historical';
+            } else {
+                wrap.style.display = 'none';
+                arrow.style.transform = 'rotate(0deg)';
+                text.textContent = 'Show Historical';
+            }
+        }
+
+        async function syncAifExcel() {
+            const btn = document.getElementById('sync-excel-btn');
+            const icon = document.getElementById('sync-icon');
+            const btnText = document.getElementById('sync-btn-text');
+            const banner = document.getElementById('sync-banner');
+            const bannerText = document.getElementById('sync-banner-text');
+
+            btn.disabled = true;
+            btnText.textContent = 'Syncing...';
+            icon.style.animation = 'spin 1s linear infinite';
+
+            try {
+                const resp = await fetch('/alternatives/aif/sync-excel', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' }
+                });
+                const res = await resp.json();
+                if (res.success) {
+                    banner.style.display = 'flex';
+                    banner.style.background = 'rgba(16, 185, 129, 0.15)';
+                    banner.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+                    banner.style.color = '#34d399';
+                    bannerText.innerHTML = `✓ Successfully synced <strong>${res.result.active_count} active funds</strong> from Excel. Reloading…`;
+                    setTimeout(() => window.location.reload(), 1200);
+                } else {
+                    throw new Error(res.error || 'Sync failed');
+                }
+            } catch (err) {
+                banner.style.display = 'flex';
+                banner.style.background = 'rgba(239, 68, 68, 0.15)';
+                banner.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+                banner.style.color = '#f87171';
+                bannerText.innerHTML = `✗ Error syncing from Excel: ${err.message}`;
+                btn.disabled = false;
+                btnText.textContent = 'Sync from Excel';
+                icon.style.animation = 'none';
+            }
+        }
+    </script>
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</body>
+</html>

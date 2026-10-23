@@ -1,0 +1,748 @@
+<!-- templates/mutual_funds/unique_funds.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unique Funds Directory</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=6">
+    <script src="/static/js/backup.js?v=2"></script>
+    <style>
+        .directory-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .search-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-family: inherit;
+            width: 320px;
+            outline: none;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        .search-box:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        .editable-cell {
+            color: var(--accent-blue);
+            cursor: pointer;
+            border-bottom: 1px dashed rgba(59, 130, 246, 0.4);
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+            display: inline-block;
+        }
+        .editable-cell:hover {
+            background: rgba(59, 130, 246, 0.15);
+        }
+        .inline-input, .inline-select {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--accent-blue);
+            color: white;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+            outline: none;
+            font-family: inherit;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--glass-border);
+            padding: 16px 24px;
+            border-radius: 8px;
+            color: white;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .toast.success {
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+        .toast.error {
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+        .status-badge {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .status-active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .status-inactive {
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        /* Excel-like column filter inputs */
+        .col-filter {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 5px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            outline: none;
+            font-family: inherit;
+            transition: border-color 0.2s ease;
+        }
+        .col-filter:focus {
+            border-color: var(--accent-blue);
+        }
+        /* Sort header */
+        .sort-header {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s ease;
+            white-space: nowrap;
+        }
+        .sort-header:hover {
+            color: var(--text-primary);
+        }
+        .stats-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--glass-border);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/mutual-funds/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue); box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <a href="/mutual-funds/" class="nav-link">Holdings AUM</a>
+                <a href="/mutual-funds/pnl" class="nav-link">Capital Gains (FIFO)</a>
+                <a href="/mutual-funds/performance" class="nav-link">XIRR &amp; CAGR</a>
+                <a href="/mutual-funds/sips" class="nav-link">SIP Tracker</a>
+                <a href="/mutual-funds/transactions" class="nav-link">Transactions Ledger</a>
+                <a href="/mutual-funds/account-report" class="nav-link">Account Report</a>
+                <a href="/mutual-funds/monthly-profits" class="nav-link">Monthly Profits</a>
+                <a href="/mutual-funds/ter-cost" class="nav-link">TER & Broker Costs</a>
+                <a href="/mutual-funds/unique-funds" class="nav-link active">Unique Funds</a>
+                <a href="/mutual-funds/underperforming" class="nav-link">Underperformance Diagnostics</a>
+                <a href="/mutual-funds/compare-nav" class="nav-link">Compare NAVs</a>
+
+                <a href="/mutual-funds/upload" class="nav-link">Upload CAS PDF</a>
+            </div>
+        </header>
+        <!-- Controls panel -->
+        <div class="glass-card directory-controls">
+            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                <input type="text" id="searchInput" class="search-box" value="{{ q }}" placeholder="Search schemes...">
+                <button onclick="openAddFundModal()" class="btn" style="padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; background: linear-gradient(135deg, var(--accent-blue) 0%, #1d4ed8 100%); border: 1px solid rgba(59, 130, 246, 0.4); color: white; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
+                    </svg>
+                    <span>Add New Fund</span>
+                </button>
+                <button onclick="triggerCSVImport()" class="btn" style="padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.4); color: white; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"></path>
+                    </svg>
+                    <span>Import Exit Loads (CSV)</span>
+                </button>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <span class="stats-pill">
+                        <span style="color: #34d399;">●</span> Active: <strong style="color: var(--text-primary);">{{ active_count }}</strong>
+                    </span>
+                    <span class="stats-pill">
+                        <span style="color: #f87171;">●</span> Inactive: <strong style="color: var(--text-primary);">{{ total_count - active_count }}</strong>
+                    </span>
+                    <span class="stats-pill">
+                        Total: <strong style="color: var(--text-primary);">{{ total_count }}</strong>
+                    </span>
+                </div>
+            </div>
+            
+            <div style="font-size: 13px; color: var(--text-secondary); font-style: italic;">
+                Double-click blue fields to inline edit. Filters work per-column.
+            </div>
+        </div>
+
+        <!-- Master Unique Funds Grid -->
+        <div class="glass-card" style="padding: 24px;">
+            <div class="table-container" style="margin-top: 0;">
+                <table id="uniqueFundsTable" class="table-compact" style="margin-top: 0;">
+                    <thead>
+                        <!-- Header row with sortable columns -->
+                        <tr>
+                            <th class="sort-header" data-sort="id" data-col="0" style="padding-left: 16px;">ID ⇅</th>
+                            <th class="sort-header" data-sort="status" data-col="1">Status ⇅</th>
+                            <th class="sort-header" data-sort="clean" data-col="2">Clean Fund Name ⇅</th>
+                            <th class="sort-header" data-sort="scheme" data-col="3">Original AMC Scheme Name ⇅</th>
+                            <th class="sort-header" data-sort="type" data-col="4">Fund Type ⇅</th>
+                            <th class="sort-header" data-sort="advisor" data-col="5">Advisor ⇅</th>
+                            <th class="sort-header" data-sort="lt_tenure" data-col="6" style="text-align: right;">Long Term Tenure ⇅</th>
+                            <th class="sort-header" data-sort="exitpct" data-col="7" style="text-align: right;">Exit Load % ⇅</th>
+                            <th class="sort-header" data-sort="exitdays" data-col="8" style="text-align: right; padding-right: 16px;">No Exit Load (Days) ⇅</th>
+                        </tr>
+                        <!-- Column filter row -->
+                        <tr style="background: rgba(15, 23, 42, 0.45); border-bottom: 2px solid var(--glass-border);">
+                            <th style="padding-left: 16px;"></th>
+                            <th><select class="col-filter" data-col="1"><option value="">All</option><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></th>
+                            <th><input type="text" class="col-filter" data-col="2" placeholder="Filter name..."></th>
+                            <th><input type="text" class="col-filter" data-col="3" placeholder="Filter scheme..."></th>
+                            <th><input type="text" class="col-filter" data-col="4" placeholder="Filter type..."></th>
+                            <th><input type="text" class="col-filter" data-col="5" placeholder="Filter advisor..."></th>
+                            <th></th>
+                            <th></th>
+                            <th style="padding-right: 16px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for f in funds %}
+                        <tr class="fund-row" data-id="{{ f.id }}">
+                            <td style="padding-left: 16px; font-family: monospace; color: var(--text-secondary);">{{ f.id }}</td>
+                            <td>
+                                {% if f.is_active %}
+                                <span class="status-badge status-active">ACTIVE</span>
+                                {% else %}
+                                <span class="status-badge status-inactive">INACTIVE</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="editable-cell editable-text" data-field="clean_name" data-val="{{ f.clean_name }}">{{ f.clean_name }}</span>
+                            </td>
+                            <td style="color: var(--text-secondary); font-size: 12px; max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ f.scheme_name }}">
+                                {{ f.scheme_name }}
+                            </td>
+                            <td>
+                                <span class="editable-cell editable-select-type" data-field="fund_type" data-val="{{ f.fund_type }}">{{ f.fund_type }}</span>
+                            </td>
+                            <td style="color: var(--text-primary); font-weight: 500;">
+                                <span data-field="advisor" data-val="{{ f.advisor }}">{{ f.advisor }}</span>
+                            </td>
+                            <td style="text-align: right;">
+                                <span class="editable-cell editable-select-lt" data-field="long_term_tenure" data-val="{{ f.long_term_tenure }}">
+                                    {% if f.long_term_tenure == 730 %}2 Years{% else %}1 Year{% endif %}
+                                </span>
+                            </td>
+                            <td style="text-align: right;">
+                                <span class="editable-cell editable-number-float" data-field="exit_load_pct" data-val="{{ f.exit_load_pct }}">{{ "{:,.2f}%".format(f.exit_load_pct) }}</span>
+                            </td>
+                            <td style="text-align: right; padding-right: 16px;">
+                                <span class="editable-cell editable-number-int" data-field="no_exit_load_tenure" data-val="{{ f.no_exit_load_tenure }}">{{ f.no_exit_load_tenure }} days</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span id="toastIcon"></span>
+        <span id="toastMessage"></span>
+    </div>
+
+    <!-- Add Fund Modal -->
+    <div id="addFundModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(12px); z-index: 2000; justify-content: center; align-items: center;">
+        <div class="glass-card" style="width: 500px; padding: 32px; border-radius: 16px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); border: 1px solid var(--glass-border); background: rgba(30, 41, 59, 0.95); position: relative;">
+            <button onclick="closeAddFundModal()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 24px; line-height: 1; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">&times;</button>
+            <h2 style="margin-top: 0; margin-bottom: 24px; color: var(--text-primary); font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+                <svg width="22" height="22" fill="none" stroke="var(--accent-blue)" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Add Fund Master Record
+            </h2>
+            <form id="addFundForm" onsubmit="submitAddFund(event)">
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Original AMC Scheme Name <span style="color: #ef4444;">*</span></label>
+                    <input type="text" name="scheme_name" required placeholder="e.g. AXIS SMALL CAP FUND DIRECT GROWTH" style="width: 100%; box-sizing: border-box; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border); color: white; padding: 10px 14px; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--accent-blue)'" onblur="this.style.borderColor='var(--glass-border)'">
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Clean Fund Name <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">(Auto-inferred if blank)</span></label>
+                    <input type="text" name="clean_name" placeholder="e.g. Axis Small Cap" style="width: 100%; box-sizing: border-box; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border); color: white; padding: 10px 14px; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--accent-blue)'" onblur="this.style.borderColor='var(--glass-border)'">
+                </div>
+                
+                <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                    <div style="flex: 1;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Fund Type</label>
+                        <select name="fund_type" style="width: 100%; box-sizing: border-box; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border); color: white; padding: 10px 14px; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--accent-blue)'" onblur="this.style.borderColor='var(--glass-border)'">
+                            <option value="">Auto-infer from name</option>
+                            <option value="EQUITY">EQUITY</option>
+                            <option value="MIDCAP">MIDCAP</option>
+                            <option value="LARGE CAP">LARGE CAP</option>
+                            <option value="SMALLCAP">SMALLCAP</option>
+                            <option value="FLEXI">FLEXI</option>
+                            <option value="MULTICAP">MULTICAP</option>
+                            <option value="LARGE & MID">LARGE & MID</option>
+                            <option value="FOCUSED FUND">FOCUSED FUND</option>
+                            <option value="VALUE">VALUE</option>
+                            <option value="MOMENTUM">MOMENTUM</option>
+                            <option value="ELSS">ELSS</option>
+                            <option value="LIQUID">LIQUID</option>
+                            <option value="ARBITRAGE">ARBITRAGE</option>
+                            <option value="GOLD">GOLD</option>
+                            <option value="SILVER">SILVER</option>
+                            <option value="ROW">ROW</option>
+                            <option value="MULTI-ASSET">MULTI-ASSET</option>
+                            <option value="DEBT">DEBT</option>
+                            <option value="OTHER">OTHER</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Advisor</label>
+                        <select name="advisor" style="width: 100%; box-sizing: border-box; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border); color: white; padding: 10px 14px; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--accent-blue)'" onblur="this.style.borderColor='var(--glass-border)'">
+                            <option value="DIRECT">DIRECT</option>
+                            <option value="Prime Wealth">Prime Wealth</option>
+                            <option value="Nexus Capital">Nexus Capital</option>
+                            <option value="OTHER">OTHER</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                    <div style="flex: 1;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Long Term Tenure</label>
+                        <select name="long_term_tenure" style="width: 100%; box-sizing: border-box; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border); color: white; padding: 10px 14px; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--accent-blue)'" onblur="this.style.borderColor='var(--glass-border)'">
+                            <option value="365">1 Year (365 days)</option>
+                            <option value="730">2 Years (730 days)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 16px; margin-bottom: 24px;">
+                    <div style="flex: 1;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Exit Load %</label>
+                        <input type="number" name="exit_load_pct" step="0.01" min="0" max="100" value="0.00" style="width: 100%; box-sizing: border-box; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border); color: white; padding: 10px 14px; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--accent-blue)'" onblur="this.style.borderColor='var(--glass-border)'">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">No Exit Load Tenure (Days)</label>
+                        <input type="number" name="no_exit_load_tenure" step="1" min="0" value="0" style="width: 100%; box-sizing: border-box; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border); color: white; padding: 10px 14px; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--accent-blue)'" onblur="this.style.borderColor='var(--glass-border)'">
+                    </div>
+                </div>
+                
+                <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                    <button type="button" onclick="closeAddFundModal()" style="padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); color: var(--text-secondary); cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">Cancel</button>
+                    <button type="submit" style="padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; background: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.4); color: white; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='var(--accent-blue)'">Save Fund</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const table = document.getElementById("uniqueFundsTable");
+            const tbody = table.querySelector("tbody");
+            const allRows = Array.from(tbody.querySelectorAll("tr.fund-row"));
+
+            // ──────────────────────────────────────────────
+            // 1. Global Search (top search box)
+            // ──────────────────────────────────────────────
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', applyAllFilters);
+
+            // ──────────────────────────────────────────────
+            // 2. Per-Column Filtering
+            // ──────────────────────────────────────────────
+            const colFilters = document.querySelectorAll(".col-filter");
+            colFilters.forEach(f => {
+                f.addEventListener("input", applyAllFilters);
+                f.addEventListener("change", applyAllFilters);
+            });
+
+            // Apply filters on initial load (e.g. if q is pre-populated in searchInput)
+            if (searchInput.value.trim() !== "") {
+                applyAllFilters();
+            }
+
+            function applyAllFilters() {
+                const globalSearch = searchInput.value.toLowerCase().trim();
+                
+                // Collect column filter values
+                const colFilterValues = {};
+                colFilters.forEach(f => {
+                    const col = parseInt(f.getAttribute("data-col"));
+                    const val = (f.value || "").toLowerCase().trim();
+                    if (val) colFilterValues[col] = val;
+                });
+
+                allRows.forEach(row => {
+                    const cells = row.querySelectorAll("td");
+                    const rowText = row.textContent.toLowerCase();
+                    
+                    // Global search
+                    if (globalSearch && !rowText.includes(globalSearch)) {
+                        row.style.display = "none";
+                        return;
+                    }
+
+                    // Column filters
+                    for (const col in colFilterValues) {
+                        const cellText = cells[col].textContent.toLowerCase().trim();
+                        const filterVal = colFilterValues[col];
+                        if (parseInt(col) === 1) {
+                            // Exact match for Status (ACTIVE vs INACTIVE)
+                            if (cellText !== filterVal) {
+                                row.style.display = "none";
+                                return;
+                            }
+                        } else {
+                            if (!cellText.includes(filterVal)) {
+                                row.style.display = "none";
+                                return;
+                            }
+                        }
+                    }
+
+                    row.style.display = "";
+                });
+            }
+
+            // ──────────────────────────────────────────────
+            // 3. Column Sorting
+            // ──────────────────────────────────────────────
+            let currentSortCol = null;
+            let currentSortOrder = "asc";
+
+            const sortHeaders = document.querySelectorAll(".sort-header");
+            sortHeaders.forEach(header => {
+                header.addEventListener("click", function() {
+                    const sortKey = this.getAttribute("data-sort");
+                    const colIndex = parseInt(this.getAttribute("data-col"));
+
+                    if (currentSortCol === sortKey) {
+                        currentSortOrder = currentSortOrder === "asc" ? "desc" : "asc";
+                    } else {
+                        currentSortCol = sortKey;
+                        currentSortOrder = "asc";
+                    }
+
+                    // Update indicators
+                    sortHeaders.forEach(h => {
+                        const text = h.textContent.replace(/[▲▼↕⇅]/g, "").trim();
+                        h.textContent = h === this
+                            ? text + (currentSortOrder === "asc" ? " ▲" : " ▼")
+                            : text + " ⇅";
+                    });
+
+                    const isNumeric = ["id", "lt_tenure", "exitpct", "exitdays"].includes(sortKey);
+
+                    allRows.sort((a, b) => {
+                        const valA = a.cells[colIndex].textContent.trim();
+                        const valB = b.cells[colIndex].textContent.trim();
+
+                        if (isNumeric) {
+                            let numA = parseFloat(valA.replace(/[₹%,days]/g, "")) || 0;
+                            let numB = parseFloat(valB.replace(/[₹%,days]/g, "")) || 0;
+                            if (sortKey === "lt_tenure") {
+                                numA = valA.includes("2") ? 730 : 365;
+                                numB = valB.includes("2") ? 730 : 365;
+                            }
+                            return currentSortOrder === "asc" ? numA - numB : numB - numA;
+                        } else {
+                            return currentSortOrder === "asc"
+                                ? valA.localeCompare(valB)
+                                : valB.localeCompare(valA);
+                        }
+                    });
+
+                    allRows.forEach(row => tbody.appendChild(row));
+                });
+            });
+
+            // ──────────────────────────────────────────────
+            // 4. Interactive Inline Editing
+            // ──────────────────────────────────────────────
+            document.querySelectorAll('.editable-cell').forEach(span => {
+                span.addEventListener('dblclick', function() {
+                    if (this.querySelector('input') || this.querySelector('select')) return;
+                    
+                    const field = this.getAttribute('data-field');
+                    const currentVal = this.getAttribute('data-val');
+                    const row = this.closest('.fund-row');
+                    const fundId = row.getAttribute('data-id');
+
+                    let input;
+
+                    if (this.classList.contains('editable-text')) {
+                        input = document.createElement('input');
+                        input.type = 'text';
+                        input.value = currentVal;
+                        input.className = 'inline-input';
+                    } else if (this.classList.contains('editable-select-lt')) {
+                        input = document.createElement('select');
+                        input.className = 'inline-select';
+                        const options = [
+                            { val: "365", label: "1 Year" },
+                            { val: "730", label: "2 Years" }
+                        ];
+                        options.forEach(optData => {
+                            const opt = document.createElement('option');
+                            opt.value = optData.val;
+                            opt.textContent = optData.label;
+                            if (optData.val === String(currentVal)) opt.selected = true;
+                            input.appendChild(opt);
+                        });
+                    } else if (this.classList.contains('editable-number-float')) {
+                        input = document.createElement('input');
+                        input.type = 'number';
+                        input.step = '0.01';
+                        input.min = '0';
+                        input.max = '100';
+                        input.value = currentVal;
+                        input.className = 'inline-input';
+                    } else if (this.classList.contains('editable-number-int')) {
+                        input = document.createElement('input');
+                        input.type = 'number';
+                        input.step = '1';
+                        input.min = '0';
+                        input.value = currentVal;
+                        input.className = 'inline-input';
+                    } else if (this.classList.contains('editable-select-type')) {
+                        input = document.createElement('select');
+                        input.className = 'inline-select';
+                        const categories = [
+                            "EQUITY", "MIDCAP", "LARGE CAP", "SMALLCAP", "FLEXI", "MULTICAP",
+                            "LARGE & MID", "FOCUSED FUND", "VALUE", "MOMENTUM", "ELSS",
+                            "LIQUID", "ARBITRAGE", "GOLD", "SILVER", "ROW",
+                            "FINANCE", "HEALTHCARE", "IT", "CONSUMER", "DEFENCE",
+                            "ENERGY", "INFRA", "MANUFACTURE", "AUTO", "PSU FUND",
+                            "MULTI-ASSET", "BULLION", "DEBT", "BALANCED", "OTHER", "UNKNOWN"
+                        ];
+                        // Add current value if not in list
+                        if (!categories.includes(currentVal.toUpperCase())) {
+                            categories.unshift(currentVal.toUpperCase());
+                        }
+                        categories.forEach(cat => {
+                            const opt = document.createElement('option');
+                            opt.value = cat;
+                            opt.textContent = cat;
+                            if (cat === currentVal.toUpperCase()) opt.selected = true;
+                            input.appendChild(opt);
+                        });
+                    } else if (this.classList.contains('editable-select-advisor')) {
+                        input = document.createElement('select');
+                        input.className = 'inline-select';
+                        const advisors = ["Prime Wealth", "Nexus Capital", "DIRECT", "OTHER"];
+                        if (!advisors.includes(currentVal)) {
+                            advisors.unshift(currentVal);
+                        }
+                        advisors.forEach(adv => {
+                            const opt = document.createElement('option');
+                            opt.value = adv;
+                            opt.textContent = adv;
+                            if (adv === currentVal) opt.selected = true;
+                            input.appendChild(opt);
+                        });
+                    }
+
+                    const originalText = this.textContent;
+                    this.textContent = '';
+                    this.appendChild(input);
+                    input.focus();
+
+                    const saveValue = async () => {
+                        const newVal = input.value.trim();
+                        if (newVal === currentVal || newVal === "") {
+                            this.removeChild(input);
+                            this.textContent = originalText;
+                            return;
+                        }
+
+                        const cleanNameVal = field === 'clean_name' ? newVal : row.querySelector('[data-field="clean_name"]').getAttribute('data-val');
+                        const fundTypeVal = field === 'fund_type' ? newVal : row.querySelector('[data-field="fund_type"]').getAttribute('data-val');
+                        const advisorVal = field === 'advisor' ? newVal : row.querySelector('[data-field="advisor"]').getAttribute('data-val');
+                        const ltTenureVal = field === 'long_term_tenure' ? newVal : row.querySelector('[data-field="long_term_tenure"]').getAttribute('data-val');
+                        const exitLoadVal = field === 'exit_load_pct' ? newVal : (row.querySelector('[data-field="exit_load_pct"]') ? row.querySelector('[data-field="exit_load_pct"]').getAttribute('data-val') : '0.0');
+                        const tenureVal = field === 'no_exit_load_tenure' ? newVal : (row.querySelector('[data-field="no_exit_load_tenure"]') ? row.querySelector('[data-field="no_exit_load_tenure"]').getAttribute('data-val') : '0');
+
+                        const formData = new FormData();
+                        formData.append('clean_name', cleanNameVal);
+                        formData.append('fund_type', fundTypeVal);
+                        formData.append('advisor', advisorVal);
+                        formData.append('long_term_tenure', ltTenureVal);
+                        formData.append('exit_load_pct', exitLoadVal);
+                        formData.append('no_exit_load_tenure', tenureVal);
+
+                        try {
+                            const response = await fetch(`/mutual-funds/unique-funds/${fundId}/update`, {
+                                method: 'POST',
+                                body: formData
+                            });
+                            const res = await response.json();
+                            
+                            if (res.success) {
+                                this.setAttribute('data-val', newVal);
+                                if (field === 'long_term_tenure') {
+                                    this.textContent = newVal === "730" ? "2 Years" : "1 Year";
+                                } else if (field === 'exit_load_pct') {
+                                    this.textContent = `${parseFloat(newVal).toFixed(2)}%`;
+                                } else if (field === 'no_exit_load_tenure') {
+                                    this.textContent = `${newVal} days`;
+                                } else {
+                                    this.textContent = newVal;
+                                }
+                                showToast(res.message, 'success');
+                            } else {
+                                showToast(`Failed to update fund: ${res.error}`, 'error');
+                                this.textContent = originalText;
+                            }
+                        } catch (err) {
+                            showToast(`Server connection error: ${err}`, 'error');
+                            this.textContent = originalText;
+                        }
+                    };
+
+                    input.addEventListener('blur', saveValue);
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            saveValue();
+                        } else if (e.key === 'Escape') {
+                            span.removeChild(input);
+                            span.textContent = originalText;
+                        }
+                    });
+                });
+            });
+
+            // ──────────────────────────────────────────────
+            // 5. Toast Notifications
+            // ──────────────────────────────────────────────
+        });
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastMessage = document.getElementById('toastMessage');
+
+            toast.className = `toast show ${type}`;
+            toastMessage.textContent = message;
+            
+            if (type === 'success') {
+                toastIcon.innerHTML = '✔';
+                toastIcon.style.color = '#10b981';
+            } else {
+                toastIcon.innerHTML = '❌';
+                toastIcon.style.color = '#ef4444';
+            }
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        // Add Fund Modal logic
+        function openAddFundModal() {
+            document.getElementById('addFundModal').style.display = 'flex';
+        }
+        
+        function closeAddFundModal() {
+            document.getElementById('addFundModal').style.display = 'none';
+            document.getElementById('addFundForm').reset();
+        }
+        
+        async function submitAddFund(e) {
+            e.preventDefault();
+            const form = document.getElementById('addFundForm');
+            const formData = new FormData(form);
+            
+            try {
+                const response = await fetch('/mutual-funds/unique-funds/add', {
+                    method: 'POST',
+                    body: formData
+                });
+                const res = await response.json();
+                
+                if (res.success) {
+                    showToast(res.message, 'success');
+                    closeAddFundModal();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showToast(`Failed to add fund: ${res.error}`, 'error');
+                }
+            } catch (err) {
+                showToast(`Server connection error: ${err}`, 'error');
+            }
+        }
+
+        async function triggerCSVImport() {
+            if (!confirm("Are you sure you want to bulk-import long term tenures from Mutual_Fund_Screener_5_28_2026.csv? This will overwrite matched tenures in the database.")) {
+                return;
+            }
+            showToast("Importing long term tenures from CSV...", "success");
+            try {
+                const response = await fetch('/mutual-funds/unique-funds/import-csv', {
+                    method: 'POST'
+                });
+                const res = await response.json();
+                if (res.success) {
+                    showToast(res.message, "success");
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    showToast(`Import failed: ${res.error}`, "error");
+                }
+            } catch (err) {
+                showToast(`Server error: ${err}`, "error");
+            }
+        }
+    </script>
+</body>
+</html>

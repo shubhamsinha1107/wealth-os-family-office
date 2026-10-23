@@ -1,0 +1,126 @@
+<!-- templates/mutual_funds/performance.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fund Type Performance Report</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <script src="/static/js/backup.js?v=2"></script>
+    <style>
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #60a5fa, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/mutual-funds/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue); box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <a href="/mutual-funds/" class="nav-link">Holdings AUM</a>
+                <a href="/mutual-funds/pnl" class="nav-link">Capital Gains (FIFO)</a>
+                <a href="/mutual-funds/performance" class="nav-link active">XIRR & CAGR</a>
+                <a href="/mutual-funds/sips" class="nav-link">SIP Tracker</a>
+                <a href="/mutual-funds/transactions" class="nav-link">Transactions Ledger</a>
+                <a href="/mutual-funds/account-report" class="nav-link">Account Report</a>
+                <a href="/mutual-funds/monthly-profits" class="nav-link">Monthly Profits</a>
+                <a href="/mutual-funds/unique-funds" class="nav-link">Unique Funds</a>
+                <a href="/mutual-funds/underperforming" class="nav-link">Underperformance Diagnostics</a>
+                <a href="/mutual-funds/compare-nav" class="nav-link">Compare NAVs</a>
+
+                <a href="/mutual-funds/upload" class="nav-link">Upload CAS PDF</a>
+            </div>
+        </header>
+
+        <!-- Information banner -->
+        <div class="glass-card" style="background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.25); display: flex; align-items: center; gap: 16px; padding: 16px 24px;">
+            <div style="background: rgba(59, 130, 246, 0.2); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <svg width="20" height="20" fill="none" stroke="#60a5fa" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 1 1 1.084 1.085l-.042.022a.75.75 0 0 1-1.084-1.085zM12 18.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5zM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"></path>
+                </svg>
+            </div>
+            <div style="font-size: 14px; line-height: 1.5; color: #93c5fd;">
+                <strong>Fund Type Performance Engine</strong>: Grouped performance metrics are dynamically aggregated across all active purchase lots (FIFO remaining units). The weighted average period in months is calculated using purchase amounts as weights. Formulas match the CAMS Reader & Report analysis specifications.
+            </div>
+        </div>
+
+        <!-- 1. FUND TYPE PERFORMANCE REPORT TABLE -->
+        <div class="glass-card" style="padding: 24px 0 0 0;">
+            <h2 class="section-title" style="margin-left: 24px;">Fund Type Wise Performance</h2>
+            <div class="table-container">
+                <table style="margin-top: 0; min-width: 900px;">
+                    <thead>
+                        <tr>
+                            <th style="padding-left: 24px;">Fund Type</th>
+                            <th style="text-align: right;">Total Invested</th>
+                            <th style="text-align: right;">Current Value</th>
+                            <th style="text-align: right;">Weighted Period</th>
+                            <th style="text-align: right;">Exposure</th>
+                            <th style="text-align: right;">CAGR</th>
+                            <th style="text-align: right; padding-right: 24px;">Percentage Change</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in report %}
+                        <tr>
+                            <td style="padding-left: 24px; font-weight: 600; color: #a78bfa;">{{ item.fund_type }}</td>
+                            <td style="text-align: right; font-weight: 500;">₹{{ item.total_invested|format_la_cr }}</td>
+                            <td style="text-align: right; font-weight: 500; color: #60a5fa;">₹{{ item.current_value|format_la_cr }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ "{:,.1f}".format(item.weighted_period) }} m</td>
+                            <td style="text-align: right; font-weight: 600; color: #f472b6;">{{ "{:,.2f}%".format(item.exposure) }}</td>
+                            <td style="text-align: right; font-weight: 700; color: {% if item.cagr >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                {{ "{:,.1f}%".format(item.cagr) }}
+                            </td>
+                            <td style="text-align: right; font-weight: 700; color: {% if item.percentage_change >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; padding-right: 24px;">
+                                {{ "{:,.1f}%".format(item.percentage_change) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        <!-- Overall Total Row -->
+                        <tr style="border-top: 2px solid var(--glass-border); background: rgba(255, 255, 255, 0.03); font-weight: bold;">
+                            <td style="padding-left: 24px; color: var(--text-primary);">TOTAL</td>
+                            <td style="text-align: right; font-weight: 700;">₹{{ totals.total_invested|format_la_cr }}</td>
+                            <td style="text-align: right; font-weight: 700; color: #60a5fa;">₹{{ totals.current_value|format_la_cr }}</td>
+                            <td style="text-align: right; font-family: monospace;">{{ "{:,.1f}".format(totals.weighted_period) }} m</td>
+                            <td style="text-align: right; font-weight: 700; color: #f472b6;">100.00%</td>
+                            <td style="text-align: right; font-weight: 800; color: {% if totals.cagr >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                {{ "{:,.1f}%".format(totals.cagr) }}
+                            </td>
+                            <td style="text-align: right; font-weight: 800; color: {% if totals.percentage_change >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; padding-right: 24px;">
+                                {{ "{:,.1f}%".format(totals.percentage_change) }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

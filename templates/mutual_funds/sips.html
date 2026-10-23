@@ -1,0 +1,268 @@
+<!-- templates/mutual_funds/sips.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active SIP Tracker</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <script src="/static/js/backup.js?v=2"></script>
+    <style>
+        .sip-table th {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 12px 10px;
+        }
+        .sip-table td {
+            padding: 12px 10px;
+            font-size: 13px;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .filter-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        select.search-box {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/mutual-funds/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue); box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <a href="/mutual-funds/" class="nav-link">Holdings AUM</a>
+                <a href="/mutual-funds/pnl" class="nav-link">Capital Gains (FIFO)</a>
+                <a href="/mutual-funds/performance" class="nav-link">XIRR & CAGR</a>
+                <a href="/mutual-funds/sips" class="nav-link active">SIP Tracker</a>
+                <a href="/mutual-funds/transactions" class="nav-link">Transactions Ledger</a>
+                <a href="/mutual-funds/account-report" class="nav-link">Account Report</a>
+                <a href="/mutual-funds/monthly-profits" class="nav-link">Monthly Profits</a>
+                <a href="/mutual-funds/unique-funds" class="nav-link">Unique Funds</a>
+                <a href="/mutual-funds/underperforming" class="nav-link">Underperformance Diagnostics</a>
+                <a href="/mutual-funds/compare-nav" class="nav-link">Compare NAVs</a>
+
+                <a href="/mutual-funds/upload" class="nav-link">Upload CAS PDF</a>
+            </div>
+        </header>
+
+        <!-- Filters Control Panel -->
+        <div class="glass-card" style="padding: 20px; margin-bottom: 24px;">
+            <form action="/mutual-funds/sips" method="GET" style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
+                
+                <!-- Account/Owner Filter -->
+                <div class="filter-group">
+                    <span class="filter-label">Account</span>
+                    <select name="owner_id" class="search-box" style="width: 160px; padding: 9px 12px; height: 38px;">
+                        <option value="">All Accounts</option>
+                        {% for o in owners %}
+                        <option value="{{ o.id }}" {% if o.id == selected_owner_id %}selected{% endif %}>{{ o.short_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Advisor Filter -->
+                <div class="filter-group">
+                    <span class="filter-label">Advisor</span>
+                    <select name="advisor" class="search-box" style="width: 180px; padding: 9px 12px; height: 38px;">
+                        <option value="">All Advisors</option>
+                        {% for adv in advisors %}
+                        <option value="{{ adv }}" {% if adv == selected_advisor %}selected{% endif %}>{{ adv }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Transaction Type Filter -->
+                <div class="filter-group">
+                    <span class="filter-label">Type</span>
+                    <select name="txn_type" class="search-box" style="width: 140px; padding: 9px 12px; height: 38px;">
+                        <option value="">All Types</option>
+                        <option value="SIP" {% if selected_txn_type == 'SIP' %}selected{% endif %}>SIP</option>
+                        <option value="STP" {% if selected_txn_type == 'STP' %}selected{% endif %}>STP</option>
+                        <option value="PURCHASE" {% if selected_txn_type == 'PURCHASE' %}selected{% endif %}>PURCHASE</option>
+                    </select>
+                </div>
+
+                <!-- Date Range Filters -->
+                <div class="filter-group">
+                    <span class="filter-label">Date Range (Latest Payment)</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="date" name="start_date" class="search-box" value="{{ selected_start_date }}" style="width: 140px; padding: 8px 12px; height: 38px;">
+                        <span style="color: var(--text-secondary);">to</span>
+                        <input type="date" name="end_date" class="search-box" value="{{ selected_end_date or '' }}" style="width: 140px; padding: 8px 12px; height: 38px;">
+                    </div>
+                </div>
+
+                <!-- Form Action Buttons -->
+                <div style="display: flex; gap: 8px; height: 38px; align-items: center;">
+                    <button type="submit" class="btn" style="padding: 0 20px; height: 38px; font-size: 13px; font-weight: 600; background: var(--accent-blue); color: white; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;">
+                        Filter
+                    </button>
+                    <a href="/mutual-funds/sips" class="btn-secondary" style="padding: 0 20px; height: 38px; font-size: 13px; font-weight: 500; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.05); color: var(--text-secondary);">
+                        Reset
+                    </a>
+                    <button type="button" id="export-excel-btn" onclick="exportExcel()"
+                        style="padding: 0 20px; height: 38px; font-size: 13px; font-weight: 600;
+                               background: linear-gradient(135deg, #16a34a, #15803d);
+                               color: white; border: none; border-radius: 8px; cursor: pointer;
+                               display: inline-flex; align-items: center; gap: 6px;
+                               transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(22,163,74,0.3);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Export Excel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- SIP Metrics Summary -->
+        <div class="metrics-grid" style="margin-bottom: 24px;">
+            <div class="glass-card metric-card" style="grid-column: span 2;">
+                <div class="metric-title">Monthly SIP Outflow (Run Rate)</div>
+                <div class="metric-value" style="color: var(--accent-blue);">₹{{ total_monthly_flow|format_inr }}</div>
+                <div class="metric-change" style="color: var(--text-secondary);">
+                    Equivalent Monthly run rate: <strong>{{ total_monthly_flow_formatted }}</strong>
+                </div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Active Plans Tracked</div>
+                <div class="metric-value">{{ sips|length }}</div>
+                <div class="metric-change" style="color: var(--text-secondary);">System Inferred SIPs</div>
+            </div>
+        </div>
+
+        <!-- SIP List Table -->
+        <div class="glass-card" style="padding: 24px;">
+            <div class="table-container" style="margin-top: 0;">
+                <table class="sip-table" style="margin-top: 0;">
+                    <thead>
+                        <tr>
+                            <th style="padding-left: 24px; text-align: center; width: 60px;">S No.</th>
+                            <th style="text-align: left;">Fund Name</th>
+                            <th style="text-align: center; width: 100px;">Account</th>
+                            <th style="text-align: left; width: 140px;">Advisor</th>
+                            <th style="text-align: center; width: 110px;">Type</th>
+                            <th style="text-align: right; width: 130px;">Amount</th>
+                            <th style="text-align: right; width: 180px;">Total Monthly Amount</th>
+                            <th style="text-align: center; width: 90px;">Txns (30D)</th>
+                            <th style="text-align: center; width: 130px;">Last Date 1</th>
+                            <th style="text-align: center; width: 130px; padding-right: 24px;">Last Date 2</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if sips %}
+                            {% for s in sips %}
+                            <tr>
+                                <td style="padding-left: 24px; text-align: center; color: var(--text-secondary);">{{ s.s_no }}</td>
+                                <td style="font-weight: 600; max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ s.scheme }}">
+                                    {{ s.scheme }}
+                                </td>
+                                <td style="text-align: center; font-weight: 500; color: #a78bfa;">{{ s.owner }}</td>
+                                <td style="color: var(--text-secondary);">{{ s.advisor }}</td>
+                                <td style="text-align: center;">
+                                    {% if s.txn_type == 'SIP' %}
+                                    <span class="badge" style="background: rgba(167, 139, 250, 0.15); color: #a78bfa; border: 1px solid rgba(167, 139, 250, 0.3); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px;">SIP</span>
+                                    {% elif s.txn_type == 'STP' %}
+                                    <span class="badge" style="background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.25); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px;">STP</span>
+                                    {% else %}
+                                    <span class="badge" style="background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px;">PURCHASE</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: right; font-weight: 500; font-family: monospace;">{{ s.amount_formatted }}</td>
+                                <td style="text-align: right; font-weight: 600; color: var(--accent-blue); font-family: monospace;">{{ s.monthly_equivalent_formatted }}</td>
+                                <td style="text-align: center;">
+                                    {% if s.txn_count_1m == 0 %}
+                                    <span style="color: var(--text-secondary); font-size: 13px;">—</span>
+                                    {% elif s.txn_count_1m >= 4 %}
+                                    <span style="background: rgba(34,197,94,0.12); color: #4ade80; border: 1px solid rgba(34,197,94,0.25); font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 12px;">{{ s.txn_count_1m }}</span>
+                                    {% elif s.txn_count_1m >= 2 %}
+                                    <span style="background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.25); font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 12px;">{{ s.txn_count_1m }}</span>
+                                    {% else %}
+                                    <span style="background: rgba(239,68,68,0.10); color: #f87171; border: 1px solid rgba(239,68,68,0.22); font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 12px;">{{ s.txn_count_1m }}</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center; font-family: monospace; color: var(--text-secondary);">{{ s.last_date_1 or "—" }}</td>
+                                <td style="text-align: center; font-family: monospace; color: var(--text-secondary); padding-right: 24px;">{{ s.last_date_2 or "—" }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="10" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                    No active SIP plans found matching the filters.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<script>
+function exportExcel() {
+    // Build export URL using the same filter values currently in the filter form
+    const form   = document.querySelector('form');
+    const params = new URLSearchParams();
+
+    const owner    = form.querySelector('[name="owner_id"]').value;
+    const advisor  = form.querySelector('[name="advisor"]').value;
+    const txnType  = form.querySelector('[name="txn_type"]').value;
+    const startDt  = form.querySelector('[name="start_date"]').value;
+    const endDt    = form.querySelector('[name="end_date"]').value;
+
+    if (owner)   params.set('owner_id',   owner);
+    if (advisor) params.set('advisor',    advisor);
+    if (txnType) params.set('txn_type',   txnType);
+    if (startDt) params.set('start_date', startDt);
+    if (endDt)   params.set('end_date',   endDt);
+
+    const btn = document.getElementById('export-excel-btn');
+    btn.textContent = 'Generating…';
+    btn.disabled = true;
+
+    const url = '/mutual-funds/sips/export?' + params.toString();
+    // Trigger download via hidden anchor
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    setTimeout(() => {
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export Excel`;
+        btn.disabled = false;
+    }, 3000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+# Python Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+
+# Sensitive Environment Configurations
+.env
+.env.local
+
+# Databases & Backups
+*.db
+*.sqlite3
+*.dump
+dumps/
+latest.json
+*_cache.json
+*.feather
+
+# Spreadsheets & Raw Financial PDFs
+*.xlsx
+*.xls
+*.csv
+*.pdf
+DATA/
+exports/
+
+# Logs & Credentials
+*.log
+*.pem
+*.key
+*.reg
+
+# IDEs & OS metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Launch Packs & Social Media Drafts
+*LAUNCH_PACK*.md
+*LINKEDIN*.md

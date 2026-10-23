@@ -1,0 +1,965 @@
+<!-- templates/mutual_funds/monthly_profits.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Realized Profits Calendar</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <script src="/static/js/backup.js?v=2"></script>
+    <style>
+        .chip-label {
+            cursor: pointer;
+        }
+        .chip-btn {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .chip-btn:hover {
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(15, 23, 42, 0.7);
+        }
+        .chip-btn.active {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+            box-shadow: 0 2px 10px 0 rgba(59, 130, 246, 0.3);
+        }
+        .account-tabs-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .acct-tab-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .acct-tab-btn:hover {
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+        .acct-tab-btn.active {
+            color: var(--text-primary);
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.4);
+        }
+        .filter-form-bar {
+            display: flex;
+            gap: 16px;
+            align-items: flex-end;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            background: rgba(30, 41, 59, 0.25);
+            border: 1px solid var(--glass-border);
+            padding: 16px 20px;
+            border-radius: 12px;
+        }
+        .filter-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .filter-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .fy-selector {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-family: inherit;
+            cursor: pointer;
+            min-width: 180px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .fy-selector:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        
+        /* Calendar Grid Styles */
+        .calendar-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 6px;
+            margin-top: 8px;
+        }
+        .calendar-table th {
+            text-align: center;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 13px;
+            padding: 8px 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .calendar-table td {
+            border-radius: 8px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        
+        .calendar-cell {
+            padding: 14px 8px;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            min-width: 82px;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+        
+        .calendar-cell:hover {
+            transform: scale(1.06);
+            z-index: 10;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        }
+        
+        /* Cell States */
+        .cell-positive {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+        .cell-positive:hover {
+            background: rgba(16, 185, 129, 0.3);
+            border-color: rgba(16, 185, 129, 0.6);
+        }
+        
+        .cell-negative {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.25);
+        }
+        .cell-negative:hover {
+            background: rgba(239, 68, 68, 0.3);
+            border-color: rgba(239, 68, 68, 0.6);
+        }
+        
+        .cell-zero {
+            background: rgba(30, 41, 59, 0.25);
+            color: #475569;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        .cell-zero:hover {
+            background: rgba(30, 41, 59, 0.45);
+            color: var(--text-secondary);
+        }
+        
+        /* Total Columns and Rows */
+        .cell-total-label {
+            font-weight: 700;
+            color: var(--text-primary);
+            text-align: left;
+            padding-left: 16px;
+            min-width: 80px;
+        }
+        
+        .cell-yearly-total {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            font-weight: 700;
+            text-align: right;
+            padding: 14px 12px;
+            font-size: 13px;
+        }
+        
+        .row-grand-total {
+            font-weight: 700;
+            background: rgba(30, 41, 59, 0.35);
+        }
+        .row-grand-total td {
+            border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+            padding: 14px 8px;
+            font-size: 13px;
+        }
+        
+        /* Tooltip style fallback details */
+        .tooltip-text {
+            visibility: hidden;
+            background-color: #0f172a;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 6px 12px;
+            position: absolute;
+            z-index: 100;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            border: 1px solid var(--glass-border);
+            font-size: 11px;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+        .calendar-cell:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spinning {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/mutual-funds/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue); box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Navigation Sub-tabs -->
+            <div class="nav-tabs">
+                <a href="/mutual-funds/" class="nav-link">Holdings AUM</a>
+                <a href="/mutual-funds/pnl" class="nav-link">Capital Gains (FIFO)</a>
+                <a href="/mutual-funds/performance" class="nav-link">XIRR & CAGR</a>
+                <a href="/mutual-funds/sips" class="nav-link">SIP Tracker</a>
+                <a href="/mutual-funds/transactions" class="nav-link">Transactions Ledger</a>
+                <a href="/mutual-funds/account-report" class="nav-link">Account Report</a>
+                <a href="/mutual-funds/monthly-profits" class="nav-link active">Monthly Profits</a>
+                <a href="/mutual-funds/category-alpha" class="nav-link" style="color: #60a5fa; font-weight: 600;">🎯 Category Alpha & Rotation</a>
+                <a href="/mutual-funds/ter-cost" class="nav-link">TER & Broker Costs</a>
+                <a href="/mutual-funds/unique-funds" class="nav-link">Unique Funds</a>
+                <a href="/mutual-funds/underperforming" class="nav-link">Underperformance Diagnostics</a>
+                <a href="/mutual-funds/compare-nav" class="nav-link">Compare NAVs</a>
+                <a href="/mutual-funds/upload" class="nav-link">Upload CAS PDF</a>
+            </div>
+        </header>
+
+        <!-- Account Selector Tabs -->
+        <div class="account-tabs-bar" style="margin-top: 24px;">
+            {% for a in accounts %}
+                <a href="/mutual-funds/monthly-profits?act={{ a.code }}&advisor={{ selected_advisor }}&fund_type={{ selected_fund_type }}&aum_fund_type={{ selected_aum_fund_type_str }}" class="acct-tab-btn {% if selected_code == a.code %}active{% endif %}">
+                    {{ a.name }}
+                </a>
+            {% endfor %}
+        </div>
+
+        <!-- Filter Form Panel -->
+        <form id="filter-form" method="GET" action="/mutual-funds/monthly-profits" class="filter-form-bar">
+            <!-- Hidden Account Field to preserve selection -->
+            <input type="hidden" name="act" value="{{ selected_code }}">
+            <input type="hidden" name="aum_fund_type" value="{{ selected_aum_fund_type_str }}">
+            
+            <div class="filter-field">
+                <label for="advisor" class="filter-label">Advisor</label>
+                <select name="advisor" id="advisor" class="fy-selector" onchange="this.form.submit()">
+                    <option value="ALL" {% if selected_advisor == 'ALL' %}selected{% endif %}>ALL ADVISORS</option>
+                    {% for adv in advisors %}
+                        <option value="{{ adv }}" {% if selected_advisor == adv %}selected{% endif %}>{{ adv|upper }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-field">
+                <label for="fund_type" class="filter-label">Fund Type</label>
+                <select name="fund_type" id="fund_type" class="fy-selector" onchange="this.form.submit()">
+                    <option value="ALL" {% if selected_fund_type == 'ALL' %}selected{% endif %}>ALL FUND TYPES</option>
+                    {% for ft in fund_types %}
+                        <option value="{{ ft }}" {% if selected_fund_type == ft %}selected{% endif %}>{{ ft|upper }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div style="margin-left: auto; display: flex; gap: 12px; align-items: center;">
+                {% if selected_advisor != 'ALL' or selected_fund_type != 'ALL' %}
+                <a href="/mutual-funds/monthly-profits?act={{ selected_code }}" class="btn" style="padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #f87171; text-decoration: none; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Clear Filters
+                </a>
+                {% endif %}
+                <button type="button" onclick="triggerRecalculate()" id="recalc-btn" class="btn" style="padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: 1px solid rgba(59, 130, 246, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                    <svg id="sync-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"></path>
+                    </svg>
+                    <span id="recalc-btn-text">Recalculate Profits</span>
+                </button>
+            </div>
+        </form>
+
+        <!-- Metric Summary Cards -->
+        <div class="metrics-grid" style="margin-bottom: 24px;">
+            <div class="glass-card metric-card">
+                <div class="metric-title">Total Realized Profit</div>
+                <div class="metric-value" style="color: {% if total_realized >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                    ₹{{ total_realized|format_inr_no_paise }}
+                </div>
+                <div class="metric-change" style="color: var(--text-secondary);">Realized Capital Gains</div>
+            </div>
+            
+            <div class="glass-card metric-card">
+                <div class="metric-title">Short-Term Gain (STCG)</div>
+                <div class="metric-value" style="color: {% if total_stcg >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                    ₹{{ total_stcg|format_inr_no_paise }}
+                </div>
+                <div class="metric-change" style="color: var(--text-secondary);">Holding period &lt; 365 days</div>
+            </div>
+            
+            <div class="glass-card metric-card">
+                <div class="metric-title">Long-Term Gain (LTCG)</div>
+                <div class="metric-value" style="color: {% if total_ltcg >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                    ₹{{ total_ltcg|format_inr_no_paise }}
+                </div>
+                <div class="metric-change" style="color: var(--text-secondary);">Holding period &ge; 365 days</div>
+            </div>
+        </div>
+
+        <!-- Calendar Matrix Card -->
+        <div class="glass-card" style="padding: 24px; overflow-x: auto;">
+            <h3 style="margin-top: 0; margin-bottom: 16px; font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" fill="none" stroke="var(--accent-blue)" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"></path>
+                </svg>
+                Monthly Booked Profits Calendar
+            </h3>
+            
+            <div class="table-container" style="margin-top: 0; overflow: visible;">
+                <table class="calendar-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding-left: 16px; min-width: 80px;">Year</th>
+                            <th style="text-align: right; padding-right: 12px; min-width: 120px;">Total Profits</th>
+                            <th>Jan</th>
+                            <th>Feb</th>
+                            <th>Mar</th>
+                            <th>Apr</th>
+                            <th>May</th>
+                            <th>Jun</th>
+                            <th>Jul</th>
+                            <th>Aug</th>
+                            <th>Sep</th>
+                            <th>Oct</th>
+                            <th>Nov</th>
+                            <th>Dec</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if years %}
+                            {% for y in years %}
+                            <tr>
+                                <td class="cell-total-label" style="color: #a78bfa; font-size: 14px;">{{ y }}</td>
+                                <td class="cell-yearly-total" style="color: {% if yearly_totals[y] >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; padding-right: 12px;">
+                                    ₹{{ yearly_totals[y]|format_inr_no_paise }}
+                                </td>
+                                {% for m in range(1, 13) %}
+                                    {% set val = profits_by_year_month[y][m] %}
+                                    <td class="calendar-cell {% if val > 0.01 %}cell-positive{% elif val < -0.01 %}cell-negative{% else %}cell-zero{% endif %}">
+                                        {% if val > 0.01 or val < -0.01 %}
+                                            ₹{{ val|format_inr_no_paise }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                        <span class="tooltip-text">
+                                            {{ month_names[m] }} {{ y }}: {% if val >= 0 %}₹{% else %}-₹{% endif %}{{ val|abs|format_inr }}
+                                        </span>
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                            
+                            <!-- Bottom Summary Row -->
+                            <tr class="row-grand-total">
+                                <td class="cell-total-label" style="color: var(--text-primary);">Total</td>
+                                <td style="text-align: right; color: {% if grand_total >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; padding-right: 12px; font-weight: 700; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                                    ₹{{ grand_total|format_inr_no_paise }}
+                                </td>
+                                {% for m in range(1, 13) %}
+                                    {% set m_val = monthly_totals[m] %}
+                                    <td style="text-align: center; font-weight: 700; color: {% if m_val > 0.01 %}var(--accent-green){% elif m_val < -0.01 %}var(--accent-red){% else %}var(--text-secondary){% endif %};">
+                                        {% if m_val > 0.01 or m_val < -0.01 %}
+                                            ₹{{ m_val|format_inr_no_paise }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="14" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                    No capital gains/sales recorded for the selected filters.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 3-Metric Benchmark & Large Cap Multi-Horizon Comparison Card -->
+        <div class="glass-card" style="padding: 24px; margin-top: 24px; overflow-x: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <h3 style="margin: 0; font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                        <svg width="20" height="20" fill="none" stroke="var(--accent-blue)" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"></path>
+                        </svg>
+                        Portfolio vs Benchmark & Large Cap Peer Comparison
+                    </h3>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                        Comparing across <strong>1M, 3M, 6M, 1 YR, 2 YR, 3 YR</strong> using all 3 core methodologies: <em>Cash Flow Mirroring (PME / XIRR)</em>, <em>Point-to-Point CAGR</em>, and <em>Risk-Adjusted Metrics</em>.
+                    </div>
+                </div>
+
+                <!-- Suite Switcher Buttons -->
+                <div style="display: flex; gap: 6px; background: rgba(15, 23, 42, 0.7); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                    <button type="button" class="chip-btn active" id="btn-suite-twrr" onclick="switchSuiteView('twrr')" style="font-size: 12px; padding: 6px 12px; border-radius: 6px;">
+                        📈 1. Point-to-Point CAGR
+                    </button>
+                    <button type="button" class="chip-btn" id="btn-suite-pme" onclick="switchSuiteView('pme')" style="font-size: 12px; padding: 6px 12px; border-radius: 6px;">
+                        🌟 2. Cash Flow Mirroring (XIRR)
+                    </button>
+                    <button type="button" class="chip-btn" id="btn-suite-risk" onclick="switchSuiteView('risk')" style="font-size: 12px; padding: 6px 12px; border-radius: 6px;">
+                        🛡️ 3. Risk-Adjusted (Sharpe / MDD)
+                    </button>
+                    <button type="button" class="chip-btn" id="btn-suite-master" onclick="switchSuiteView('master')" style="font-size: 12px; padding: 6px 12px; border-radius: 6px;">
+                        📋 Master Table
+                    </button>
+                </div>
+            </div>
+
+            <!-- View 1: Point-to-Point CAGR & Category Breakdown -->
+            <div id="view-suite-twrr" class="suite-view">
+                <div class="table-container" style="margin-top: 0;">
+                    <table class="calendar-table" style="border-spacing: 2px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--glass-border);">
+                                <th style="text-align: left; padding: 12px 14px;">Horizon</th>
+                                <th style="text-align: center; padding: 12px 12px;">Opening AUM</th>
+                                <th style="text-align: center; padding: 12px 12px;">Net Addition</th>
+                                <th style="text-align: center; padding: 12px 12px; color: var(--accent-blue);">Market Movement<br><span style="font-size: 10px; font-weight: normal; opacity: 0.7;">(Organic Gain ₹)</span></th>
+                                <th style="text-align: center; padding: 12px 12px;">Ending AUM</th>
+                                <th style="text-align: center; padding: 12px 12px; color: var(--accent-blue);">Total Return<br><span style="font-size: 10px; font-weight: normal; opacity: 0.7;">(Dietz %)</span></th>
+                                <th style="text-align: center; padding: 12px 12px; color: #60a5fa;">Equity Contrib<br><span style="font-size: 10px; font-weight: normal; opacity: 0.7;">(Impact to Return)</span></th>
+                                <th style="text-align: center; padding: 12px 12px; color: #fbbf24;">Gold/Bullion Contrib<br><span style="font-size: 10px; font-weight: normal; opacity: 0.7;">(Impact to Return)</span></th>
+                                <th style="text-align: center; padding: 12px 12px; color: #34d399;">Liquid Contrib<br><span style="font-size: 10px; font-weight: normal; opacity: 0.7;">(Impact to Return)</span></th>
+                                <th style="text-align: center; padding: 12px 12px; color: #a78bfa;">Nifty 50 TRI<br><span style="font-size: 10px; font-weight: normal; opacity: 0.7;">(Benchmark %)</span></th>
+                                <th style="text-align: center; padding: 12px 12px; color: #f59e0b;">Large Cap Peers<br><span style="font-size: 10px; font-weight: normal; opacity: 0.7;">(Category Avg %)</span></th>
+                                <th style="text-align: center; padding: 12px 14px; min-width: 120px;">Alpha vs Nifty<br><span style="font-size: 10px; font-weight: normal; opacity: 0.7;">(Outperformance Δ)</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if horizon_comparison and horizon_comparison.twrr_suite %}
+                                {% for r in horizon_comparison.twrr_suite %}
+                                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                                    <td style="text-align: left; padding: 12px 14px; font-weight: 700; color: #a78bfa; white-space: nowrap;">
+                                        {{ r.horizon }}{% if r.is_annualized %} <span style="font-size: 10px; font-weight: normal; color: var(--text-secondary);">(p.a.)</span>{% endif %}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 12px; font-family: monospace; font-size: 13px;">
+                                        ₹{{ r.opening_aum|format_la_cr }}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 12px; font-family: monospace; font-size: 13px; color: {% if r.net_addition > 0 %}#34d399{% elif r.net_addition < 0 %}#f87171{% else %}var(--text-secondary){% endif %};">
+                                        {% if r.net_addition > 0 %}+{% elif r.net_addition < 0 %}-{% endif %}₹{{ r.net_addition|abs|format_la_cr }}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 12px; font-family: monospace; font-size: 13px; font-weight: bold; color: {% if r.market_movement_amt > 0 %}var(--accent-green){% elif r.market_movement_amt < 0 %}var(--accent-red){% else %}var(--text-secondary){% endif %};">
+                                        {% if r.market_movement_amt > 0 %}+{% elif r.market_movement_amt < 0 %}-{% endif %}₹{{ r.market_movement_amt|abs|format_la_cr }}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 12px; font-family: monospace; font-size: 13px; font-weight: 600;">
+                                        ₹{{ r.ending_aum|format_la_cr }}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 12px; font-family: monospace; font-size: 13px; font-weight: bold; color: {% if r.portfolio_return >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                        {% if r.portfolio_return > 0 %}+{% endif %}{{ "%.2f"|format(r.portfolio_return) }}%
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 12px; font-family: monospace; font-size: 13px;">
+                                        <span style="font-weight: 600; color: {% if r.equity_contrib_pct >= 0 %}#60a5fa{% else %}#f87171{% endif %};">
+                                            {% if r.equity_contrib_pct > 0 %}+{% endif %}{{ "%.2f"|format(r.equity_contrib_pct) }}%
+                                        </span>
+                                        <div style="font-size: 10px; opacity: 0.75; color: var(--text-secondary);">({% if r.eq_gain_amt > 0 %}+{% elif r.eq_gain_amt < 0 %}-{% endif %}₹{{ r.eq_gain_amt|abs|format_la_cr }})</div>
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 12px; font-family: monospace; font-size: 13px;">
+                                        <span style="font-weight: 600; color: {% if r.gold_contrib_pct >= 0 %}#fbbf24{% else %}#f87171{% endif %};">
+                                            {% if r.gold_contrib_pct > 0 %}+{% endif %}{{ "%.2f"|format(r.gold_contrib_pct) }}%
+                                        </span>
+                                        <div style="font-size: 10px; opacity: 0.75; color: var(--text-secondary);">({% if r.gold_gain_amt > 0 %}+{% elif r.gold_gain_amt < 0 %}-{% endif %}₹{{ r.gold_gain_amt|abs|format_la_cr }})</div>
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 12px; font-family: monospace; font-size: 13px;">
+                                        <span style="font-weight: 600; color: {% if r.liquid_contrib_pct >= 0 %}#34d399{% else %}#f87171{% endif %};">
+                                            {% if r.liquid_contrib_pct > 0 %}+{% endif %}{{ "%.2f"|format(r.liquid_contrib_pct) }}%
+                                        </span>
+                                        <div style="font-size: 10px; opacity: 0.75; color: var(--text-secondary);">({% if r.liq_gain_amt > 0 %}+{% elif r.liq_gain_amt < 0 %}-{% endif %}₹{{ r.liq_gain_amt|abs|format_la_cr }})</div>
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 12px; font-family: monospace; font-size: 13px; color: {% if r.benchmark_return >= 0 %}var(--text-primary){% else %}#f87171{% endif %};">
+                                        {% if r.benchmark_return > 0 %}+{% endif %}{{ "%.2f"|format(r.benchmark_return) }}%
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 12px; font-family: monospace; font-size: 13px; color: {% if r.large_cap_return >= 0 %}var(--text-primary){% else %}#f87171{% endif %};">
+                                        {% if r.large_cap_return > 0 %}+{% endif %}{{ "%.2f"|format(r.large_cap_return) }}%
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 14px;">
+                                        <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-family: monospace; font-size: 12px; font-weight: bold; background: {% if r.alpha_vs_benchmark >= 0 %}rgba(16, 185, 129, 0.15){% else %}rgba(239, 68, 68, 0.15){% endif %}; color: {% if r.alpha_vs_benchmark >= 0 %}#34d399{% else %}#f87171{% endif %}; border: 1px solid {% if r.alpha_vs_benchmark >= 0 %}rgba(16, 185, 129, 0.3){% else %}rgba(239, 68, 68, 0.3){% endif %};">
+                                            {% if r.alpha_vs_benchmark > 0 %}+{% endif %}{{ "%.2f"|format(r.alpha_vs_benchmark) }}%
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- View 2: Cash Flow Mirroring (PME / XIRR) -->
+            <div id="view-suite-pme" class="suite-view" style="display: none;">
+                <div class="table-container" style="margin-top: 0;">
+                    <table class="calendar-table" style="border-spacing: 2px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--glass-border);">
+                                <th style="text-align: left; padding: 12px 14px;">Horizon</th>
+                                <th style="text-align: center; padding: 12px 12px;">Opening AUM</th>
+                                <th style="text-align: center; padding: 12px 12px;">Net Addition</th>
+                                <th style="text-align: center; padding: 12px 12px; color: var(--accent-blue);">Market Movement</th>
+                                <th style="text-align: center; padding: 12px 12px;">Ending AUM</th>
+                                <th style="text-align: center; padding: 12px 14px; color: var(--accent-blue);">Portfolio XIRR<br><span style="font-size: 10px; font-weight: normal; opacity: 0.7;">(Actual Cash Flows)</span></th>
+                                <th style="text-align: center; padding: 12px 14px; color: #a78bfa;">Simulated Nifty XIRR<br><span style="font-size: 10px; font-weight: normal; opacity: 0.7;">(Mirror Cash Flows)</span></th>
+                                <th style="text-align: center; padding: 12px 14px; color: #f59e0b;">Simulated Large Cap XIRR<br><span style="font-size: 10px; font-weight: normal; opacity: 0.7;">(Mirror Cash Flows)</span></th>
+                                <th style="text-align: center; padding: 12px 14px; min-width: 130px;">Money Alpha (vs Nifty)<br><span style="font-size: 10px; font-weight: normal; opacity: 0.7;">(True PME Outperformance)</span></th>
+                                <th style="text-align: center; padding: 12px 14px; min-width: 130px;">Money Alpha (vs Large Cap)<br><span style="font-size: 10px; font-weight: normal; opacity: 0.7;">(vs Peer Fund)</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if horizon_comparison and horizon_comparison.pme_suite %}
+                                {% for r in horizon_comparison.pme_suite %}
+                                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                                    <td style="text-align: left; padding: 12px 14px; font-weight: 700; color: #a78bfa; white-space: nowrap;">
+                                        {{ r.horizon }}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 12px; font-family: monospace; font-size: 13px;">
+                                        ₹{{ r.opening_aum|format_la_cr }}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 12px; font-family: monospace; font-size: 13px; color: {% if r.net_addition > 0 %}#34d399{% elif r.net_addition < 0 %}#f87171{% else %}var(--text-secondary){% endif %};">
+                                        {% if r.net_addition > 0 %}+{% elif r.net_addition < 0 %}-{% endif %}₹{{ r.net_addition|abs|format_la_cr }}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 12px; font-family: monospace; font-size: 13px; font-weight: bold; color: {% if r.market_movement_amt > 0 %}var(--accent-green){% elif r.market_movement_amt < 0 %}var(--accent-red){% else %}var(--text-secondary){% endif %};">
+                                        {% if r.market_movement_amt > 0 %}+{% elif r.market_movement_amt < 0 %}-{% endif %}₹{{ r.market_movement_amt|abs|format_la_cr }}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 12px; font-family: monospace; font-size: 13px; font-weight: 600;">
+                                        ₹{{ r.ending_aum|format_la_cr }}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 14px; font-family: monospace; font-size: 13px; font-weight: bold; color: {% if r.portfolio_xirr >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                        {% if r.portfolio_xirr > 0 %}+{% endif %}{{ "%.2f"|format(r.portfolio_xirr) }}%
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 14px; font-family: monospace; font-size: 13px; color: {% if r.benchmark_xirr >= 0 %}var(--text-primary){% else %}#f87171{% endif %};">
+                                        {% if r.benchmark_xirr > 0 %}+{% endif %}{{ "%.2f"|format(r.benchmark_xirr) }}%
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 14px; font-family: monospace; font-size: 13px; color: {% if r.large_cap_xirr >= 0 %}var(--text-primary){% else %}#f87171{% endif %};">
+                                        {% if r.large_cap_xirr > 0 %}+{% endif %}{{ "%.2f"|format(r.large_cap_xirr) }}%
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 14px;">
+                                        <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-family: monospace; font-size: 12px; font-weight: bold; background: {% if r.alpha_vs_benchmark >= 0 %}rgba(16, 185, 129, 0.15){% else %}rgba(239, 68, 68, 0.15){% endif %}; color: {% if r.alpha_vs_benchmark >= 0 %}#34d399{% else %}#f87171{% endif %}; border: 1px solid {% if r.alpha_vs_benchmark >= 0 %}rgba(16, 185, 129, 0.3){% else %}rgba(239, 68, 68, 0.3){% endif %};">
+                                            {% if r.alpha_vs_benchmark > 0 %}+{% endif %}{{ "%.2f"|format(r.alpha_vs_benchmark) }}%
+                                        </span>
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 14px;">
+                                        <span style="display: inline-block; padding: 4px 8px; border-radius: 6px; font-family: monospace; font-size: 12px; font-weight: bold; background: {% if r.alpha_vs_large_cap >= 0 %}rgba(59, 130, 246, 0.15){% else %}rgba(239, 68, 68, 0.15){% endif %}; color: {% if r.alpha_vs_large_cap >= 0 %}#60a5fa{% else %}#f87171{% endif %}; border: 1px solid {% if r.alpha_vs_large_cap >= 0 %}rgba(59, 130, 246, 0.3){% else %}rgba(239, 68, 68, 0.3){% endif %};">
+                                            {% if r.alpha_vs_large_cap > 0 %}+{% endif %}{{ "%.2f"|format(r.alpha_vs_large_cap) }}%
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- View 3: Risk-Adjusted & Downside Metrics -->
+            <div id="view-suite-risk" class="suite-view" style="display: none;">
+                <div class="table-container" style="margin-top: 0;">
+                    <table class="calendar-table" style="border-spacing: 2px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--glass-border);">
+                                <th style="text-align: left; padding: 12px 16px;">Horizon</th>
+                                <th style="text-align: center; padding: 12px 16px; color: var(--accent-blue);">Sharpe Ratio<br><span style="font-size: 11px; font-weight: normal; opacity: 0.7;">(Portfolio vs Nifty)</span></th>
+                                <th style="text-align: center; padding: 12px 16px; color: #a78bfa;">Sortino Ratio<br><span style="font-size: 11px; font-weight: normal; opacity: 0.7;">(Downside Protection)</span></th>
+                                <th style="text-align: center; padding: 12px 16px; color: #f59e0b;">Max Drawdown (%)<br><span style="font-size: 11px; font-weight: normal; opacity: 0.7;">(Portfolio vs Nifty)</span></th>
+                                <th style="text-align: center; padding: 12px 16px; color: #ec4899;">Annualized Volatility (σ)<br><span style="font-size: 11px; font-weight: normal; opacity: 0.7;">(Total Risk)</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if horizon_comparison and horizon_comparison.risk_suite %}
+                                {% for r in horizon_comparison.risk_suite %}
+                                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                                    <td style="text-align: left; padding: 12px 16px; font-weight: 700; color: #a78bfa;">
+                                        {{ r.horizon }}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 16px; font-family: monospace;">
+                                        <strong style="color: {% if r.portfolio.sharpe >= r.benchmark.sharpe %}var(--accent-green){% else %}var(--text-primary){% endif %};">{{ "%.2f"|format(r.portfolio.sharpe) }}</strong>
+                                        <span style="color: var(--text-secondary); font-size: 11px; margin: 0 4px;">vs</span>
+                                        <span style="color: var(--text-secondary);">{{ "%.2f"|format(r.benchmark.sharpe) }}</span>
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 16px; font-family: monospace;">
+                                        <strong style="color: {% if r.portfolio.sortino >= r.benchmark.sortino %}var(--accent-green){% else %}var(--text-primary){% endif %};">{{ "%.2f"|format(r.portfolio.sortino) }}</strong>
+                                        <span style="color: var(--text-secondary); font-size: 11px; margin: 0 4px;">vs</span>
+                                        <span style="color: var(--text-secondary);">{{ "%.2f"|format(r.benchmark.sortino) }}</span>
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 16px; font-family: monospace;">
+                                        <strong style="color: {% if r.portfolio.max_drawdown <= r.benchmark.max_drawdown %}var(--accent-green){% else %}#f87171{% endif %};">{{ "%.1f"|format(r.portfolio.max_drawdown) }}%</strong>
+                                        <span style="color: var(--text-secondary); font-size: 11px; margin: 0 4px;">vs</span>
+                                        <span style="color: var(--text-secondary);">{{ "%.1f"|format(r.benchmark.max_drawdown) }}%</span>
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 16px; font-family: monospace;">
+                                        <strong>{{ "%.1f"|format(r.portfolio.volatility) }}%</strong>
+                                        <span style="color: var(--text-secondary); font-size: 11px; margin: 0 4px;">vs</span>
+                                        <span style="color: var(--text-secondary);">{{ "%.1f"|format(r.benchmark.volatility) }}%</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- View 4: Master Table (Side-by-Side) -->
+            <div id="view-suite-master" class="suite-view" style="display: none;">
+                <div class="table-container" style="margin-top: 0;">
+                    <table class="calendar-table" style="border-spacing: 2px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--glass-border);">
+                                <th style="text-align: left; padding: 12px 12px;">Horizon</th>
+                                <th style="text-align: center; padding: 12px 10px;">Opening AUM</th>
+                                <th style="text-align: center; padding: 12px 10px;">Net Addition</th>
+                                <th style="text-align: center; padding: 12px 10px;">Market Movement</th>
+                                <th style="text-align: center; padding: 12px 10px;">Ending AUM</th>
+                                <th style="text-align: center; padding: 12px 10px; color: var(--accent-blue);">Total Return</th>
+                                <th style="text-align: center; padding: 12px 10px; color: #60a5fa;">Equity Contrib</th>
+                                <th style="text-align: center; padding: 12px 10px; color: #fbbf24;">Bullion Contrib</th>
+                                <th style="text-align: center; padding: 12px 10px; color: #34d399;">Liquid Contrib</th>
+                                <th style="text-align: center; padding: 12px 10px; color: #a78bfa;">Nifty 50</th>
+                                <th style="text-align: center; padding: 12px 10px; color: #34d399;">Return Alpha</th>
+                                <th style="text-align: center; padding: 12px 10px; color: #60a5fa;">Portfolio XIRR</th>
+                                <th style="text-align: center; padding: 12px 10px; color: #c084fc;">Nifty XIRR</th>
+                                <th style="text-align: center; padding: 12px 10px; color: #34d399;">XIRR Alpha</th>
+                                <th style="text-align: center; padding: 12px 10px;">Sharpe</th>
+                                <th style="text-align: center; padding: 12px 10px;">MDD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if horizon_comparison and horizon_comparison.master_suite %}
+                                {% for r in horizon_comparison.master_suite %}
+                                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                                    <td style="text-align: left; padding: 12px 12px; font-weight: 700; color: #a78bfa; white-space: nowrap;">
+                                        {{ r.horizon }}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 10px; font-family: monospace; font-size: 12px;">
+                                        ₹{{ r.opening_aum|format_la_cr }}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 10px; font-family: monospace; font-size: 12px; color: {% if r.net_addition > 0 %}#34d399{% elif r.net_addition < 0 %}#f87171{% else %}var(--text-secondary){% endif %};">
+                                        {% if r.net_addition > 0 %}+{% elif r.net_addition < 0 %}-{% endif %}₹{{ r.net_addition|abs|format_la_cr }}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 10px; font-family: monospace; font-size: 12px; font-weight: bold; color: {% if r.market_movement_amt > 0 %}var(--accent-green){% elif r.market_movement_amt < 0 %}var(--accent-red){% else %}var(--text-secondary){% endif %};">
+                                        {% if r.market_movement_amt > 0 %}+{% elif r.market_movement_amt < 0 %}-{% endif %}₹{{ r.market_movement_amt|abs|format_la_cr }}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 10px; font-family: monospace; font-size: 12px; font-weight: 600;">
+                                        ₹{{ r.ending_aum|format_la_cr }}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 10px; font-family: monospace; font-size: 12px; font-weight: bold; color: {% if r.twrr_return >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                        {% if r.twrr_return > 0 %}+{% endif %}{{ "%.2f"|format(r.twrr_return) }}%
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 10px; font-family: monospace; font-size: 12px; color: #60a5fa;">
+                                        {% if r.equity_contrib_pct is not none %}{% if r.equity_contrib_pct > 0 %}+{% endif %}{{ "%.2f"|format(r.equity_contrib_pct) }}%{% else %}-{% endif %}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 10px; font-family: monospace; font-size: 12px; color: #fbbf24;">
+                                        {% if r.gold_contrib_pct is not none %}{% if r.gold_contrib_pct > 0 %}+{% endif %}{{ "%.2f"|format(r.gold_contrib_pct) }}%{% else %}-{% endif %}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 10px; font-family: monospace; font-size: 12px; color: #34d399;">
+                                        {% if r.liquid_contrib_pct is not none %}{% if r.liquid_contrib_pct > 0 %}+{% endif %}{{ "%.2f"|format(r.liquid_contrib_pct) }}%{% else %}-{% endif %}
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 10px; font-family: monospace; font-size: 12px;">
+                                        {% if r.bm_twrr_return > 0 %}+{% endif %}{{ "%.2f"|format(r.bm_twrr_return) }}%
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 10px; font-family: monospace; font-size: 12px; font-weight: bold; color: {% if r.twrr_alpha >= 0 %}#34d399{% else %}#f87171{% endif %};">
+                                        {% if r.twrr_alpha > 0 %}+{% endif %}{{ "%.2f"|format(r.twrr_alpha) }}%
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 10px; font-family: monospace; font-size: 12px; font-weight: bold; color: {% if r.pme_xirr >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                        {% if r.pme_xirr > 0 %}+{% endif %}{{ "%.2f"|format(r.pme_xirr) }}%
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 10px; font-family: monospace; font-size: 12px;">
+                                        {% if r.bm_pme_xirr > 0 %}+{% endif %}{{ "%.2f"|format(r.bm_pme_xirr) }}%
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 10px; font-family: monospace; font-size: 12px; font-weight: bold; color: {% if r.pme_alpha >= 0 %}#34d399{% else %}#f87171{% endif %};">
+                                        {% if r.pme_alpha > 0 %}+{% endif %}{{ "%.2f"|format(r.pme_alpha) }}%
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 10px; font-family: monospace; font-size: 12px;">
+                                        {{ "%.2f"|format(r.sharpe) }} <span style="opacity: 0.5;">/ {{ "%.2f"|format(r.bm_sharpe) }}</span>
+                                    </td>
+                                    <td style="text-align: center; padding: 12px 10px; font-family: monospace; font-size: 12px;">
+                                        {{ "%.1f"|format(r.max_drawdown) }}%
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- AUM Organic Growth & Performance Card -->
+        <div class="glass-card" style="padding: 24px; margin-top: 24px; overflow-x: auto;">
+            <h3 style="margin-top: 0; margin-bottom: 16px; font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" fill="none" stroke="var(--accent-blue)" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"></path>
+                </svg>
+                Monthly AUM Organic Growth & Performance (Modified Dietz)
+            </h3>
+            
+            <!-- AUM Specific Filter Bar -->
+            <form id="aum-filter-form" method="GET" action="/mutual-funds/monthly-profits" class="filter-form-bar" style="margin-bottom: 20px; padding: 12px 16px; background: rgba(30, 41, 59, 0.15);">
+                <!-- Hidden inputs to preserve other filters -->
+                <input type="hidden" name="act" value="{{ selected_code }}">
+                <input type="hidden" name="advisor" value="{{ selected_advisor }}">
+                <input type="hidden" name="fund_type" value="{{ selected_fund_type }}">
+                
+                <div class="filter-field" style="display: block; width: 100%;">
+                    <label class="filter-label" style="margin-bottom: 8px; font-size: 11px;">Filter AUM Growth by Fund Types:</label>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <label class="chip-label">
+                            <input type="checkbox" name="aum_fund_type" value="ALL" {% if 'ALL' in selected_aum_fund_types %}checked{% endif %} style="display:none;" onchange="handleAUMFundTypeChange(this)">
+                            <span class="chip-btn {% if 'ALL' in selected_aum_fund_types %}active{% endif %}">ALL</span>
+                        </label>
+                        {% for ft in fund_types %}
+                        <label class="chip-label">
+                            <input type="checkbox" name="aum_fund_type" value="{{ ft }}" {% if ft in selected_aum_fund_types %}checked{% endif %} style="display:none;" onchange="handleAUMFundTypeChange(this)">
+                            <span class="chip-btn {% if ft in selected_aum_fund_types %}active{% endif %}">{{ ft|upper }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </form>
+            
+            <div class="table-container" style="margin-top: 0;">
+                <table class="calendar-table" style="border-spacing: 2px;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--glass-border);">
+                             <th style="text-align: center; padding: 12px 16px; vertical-align: bottom;">Month</th>
+                             <th style="text-align: center; padding: 12px 16px; vertical-align: bottom;">Opening AUM</th>
+                             <th style="text-align: center; padding: 12px 16px; vertical-align: bottom;">Net Cash Flow</th>
+                             <th style="text-align: center; padding: 12px 16px; color: var(--accent-blue); vertical-align: bottom; line-height: 1.3;">Organic Growth<br><span style="font-size: 11px; font-weight: normal; opacity: 0.7;">(Market Effect)</span></th>
+                             <th style="text-align: center; padding: 12px 16px; color: var(--accent-blue); vertical-align: bottom; line-height: 1.3;">Organic Return<br><span style="font-size: 11px; font-weight: normal; opacity: 0.7;">(Dietz %)</span></th>
+                             <th style="text-align: center; padding: 12px 16px; color: #a78bfa; vertical-align: bottom; line-height: 1.3;">Static Return<br><span style="font-size: 11px; font-weight: normal; opacity: 0.7;">(No Flow %)</span></th>
+                             <th style="text-align: center; padding: 12px 16px; color: #a78bfa; vertical-align: bottom; line-height: 1.3; min-width: 160px;">Large | Gold | Mid<br><span style="font-size: 11px; font-weight: normal; opacity: 0.7;">(Buy & Hold %)</span></th>
+                             <th style="text-align: center; padding: 12px 16px; vertical-align: bottom;">Ending AUM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if aum_report.monthly_data %}
+                            {% for m in aum_report.monthly_data %}
+                            <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                                <td style="text-align: center; padding: 12px 16px; font-weight: 600; color: #a78bfa;">
+                                    {{ m.month_name }} {{ m.year }}
+                                </td>
+                                <td style="text-align: center; padding: 12px 16px; font-family: monospace;">
+                                    ₹{{ m.opening_aum|format_la_cr }}
+                                </td>
+                                <td style="text-align: center; padding: 12px 16px; font-family: monospace; color: {% if m.net_cash_flow > 0 %}#34d399{% elif m.net_cash_flow < 0 %}#f87171{% else %}var(--text-secondary){% endif %};">
+                                    {% if m.net_cash_flow > 0 %}+{% elif m.net_cash_flow < 0 %}-{% endif %}₹{{ m.net_cash_flow|abs|format_la_cr }}
+                                </td>
+                                <td style="text-align: center; padding: 12px 16px; font-family: monospace; font-weight: bold; color: {% if m.organic_gain > 0 %}var(--accent-green){% elif m.organic_gain < 0 %}var(--accent-red){% else %}var(--text-secondary){% endif %};">
+                                    {% if m.organic_gain > 0 %}+{% elif m.organic_gain < 0 %}-{% endif %}₹{{ m.organic_gain|abs|format_la_cr }}
+                                </td>
+                                <td style="text-align: center; padding: 12px 16px; font-family: monospace; font-weight: bold; color: {% if m.dietz_return > 0 %}var(--accent-green){% elif m.dietz_return < 0 %}var(--accent-red){% else %}var(--text-secondary){% endif %};">
+                                    {% if m.dietz_return > 0 %}+{% endif %}{{ "%.2f"|format(m.dietz_return) }}%
+                                </td>
+                                <td style="text-align: center; padding: 12px 16px; font-family: monospace; font-weight: bold; color: {% if m.static_return > 0 %}var(--accent-green){% elif m.static_return < 0 %}var(--accent-red){% else %}var(--text-secondary){% endif %};">
+                                    {% if m.static_return > 0 %}+{% endif %}{{ "%.2f"|format(m.static_return) }}%
+                                </td>
+                                <td style="text-align: center; padding: 12px 16px; font-family: monospace; font-weight: bold; letter-spacing: -0.02em;">
+                                    {% if m.large_cap_return is not none %}
+                                        <span style="color: {% if m.large_cap_return > 0.001 %}var(--accent-green){% elif m.large_cap_return < -0.001 %}var(--accent-red){% else %}var(--text-secondary){% endif %};">
+                                            {% if m.large_cap_return > 0.001 %}+{% endif %}{{ "%.1f"|format(m.large_cap_return) }}%
+                                        </span>
+                                    {% else %}
+                                        <span style="color: var(--text-secondary);">-</span>
+                                    {% endif %}
+                                    <span style="color: rgba(255, 255, 255, 0.15); margin: 0 4px;">|</span>
+                                    {% if m.gold_return is not none %}
+                                        <span style="color: {% if m.gold_return > 0.001 %}var(--accent-green){% elif m.gold_return < -0.001 %}var(--accent-red){% else %}var(--text-secondary){% endif %};">
+                                            {% if m.gold_return > 0.001 %}+{% endif %}{{ "%.1f"|format(m.gold_return) }}%
+                                        </span>
+                                    {% else %}
+                                        <span style="color: var(--text-secondary);">-</span>
+                                    {% endif %}
+                                    <span style="color: rgba(255, 255, 255, 0.15); margin: 0 4px;">|</span>
+                                    {% if m.midcap_return is not none %}
+                                        <span style="color: {% if m.midcap_return > 0.001 %}var(--accent-green){% elif m.midcap_return < -0.001 %}var(--accent-red){% else %}var(--text-secondary){% endif %};">
+                                            {% if m.midcap_return > 0.001 %}+{% endif %}{{ "%.1f"|format(m.midcap_return) }}%
+                                        </span>
+                                    {% else %}
+                                        <span style="color: var(--text-secondary);">-</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center; padding: 12px 16px; font-family: monospace; font-weight: 600;">
+                                    ₹{{ m.ending_aum|format_la_cr }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                    No historical data available for the selected filters.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function triggerRecalculate() {
+            const btn = document.getElementById('recalc-btn');
+            const btnText = document.getElementById('recalc-btn-text');
+            const icon = document.getElementById('sync-icon');
+            
+            if (btn.disabled) return;
+            
+            // Set loading state
+            btn.disabled = true;
+            btn.style.opacity = '0.7';
+            btn.style.cursor = 'not-allowed';
+            btnText.innerText = 'Recalculating...';
+            icon.classList.add('spinning');
+            
+            fetch('/mutual-funds/monthly-profits/sync', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload page to fetch fresh data
+                    window.location.reload();
+                } else {
+                    alert('Recalculation failed: ' + (data.error || 'Unknown error'));
+                    resetBtn();
+                }
+            })
+            .catch(err => {
+                alert('Network error occurred during recalculation.');
+                resetBtn();
+            });
+            
+            function resetBtn() {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+                btnText.innerText = 'Recalculate Profits';
+                icon.classList.remove('spinning');
+            }
+        }
+
+        function handleAUMFundTypeChange(checkbox) {
+            const form = document.getElementById('aum-filter-form');
+            const allCheckbox = form.querySelector('input[name="aum_fund_type"][value="ALL"]');
+            const otherCheckboxes = Array.from(form.querySelectorAll('input[name="aum_fund_type"]')).filter(cb => cb.value !== 'ALL');
+            
+            if (checkbox.value === 'ALL') {
+                if (checkbox.checked) {
+                    // Uncheck all other options
+                    otherCheckboxes.forEach(cb => cb.checked = false);
+                } else {
+                    // Can't uncheck ALL if nothing else is checked
+                    const hasCheckedOther = otherCheckboxes.some(cb => cb.checked);
+                    if (!hasCheckedOther) {
+                        checkbox.checked = true;
+                        return;
+                    }
+                }
+            } else {
+                if (checkbox.checked) {
+                    // Uncheck ALL
+                    allCheckbox.checked = false;
+                } else {
+                    // If nothing else is checked, check ALL
+                    const hasCheckedOther = otherCheckboxes.some(cb => cb.checked);
+                    if (!hasCheckedOther) {
+                        allCheckbox.checked = true;
+                    }
+                }
+            }
+            
+            // Submit the form
+            form.submit();
+        }
+
+        function switchSuiteView(suite) {
+            // Hide all suite views
+            const views = document.querySelectorAll('.suite-view');
+            views.forEach(v => {
+                v.style.display = 'none';
+            });
+
+            // Deactivate all buttons
+            const btns = document.querySelectorAll('[id^="btn-suite-"]');
+            btns.forEach(b => {
+                b.classList.remove('active');
+            });
+
+            // Show selected view and activate button
+            const targetView = document.getElementById('view-suite-' + suite);
+            const targetBtn = document.getElementById('btn-suite-' + suite);
+            if (targetView) {
+                targetView.style.display = 'block';
+            }
+            if (targetBtn) {
+                targetBtn.classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>

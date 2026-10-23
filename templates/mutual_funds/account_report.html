@@ -1,0 +1,2100 @@
+<!-- templates/mutual_funds/account_report.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Wise Report</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <script src="/static/js/backup.js?v=2" defer></script>
+    <style>
+        .account-tabs-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .acct-tab-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .acct-tab-btn:hover {
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+        .acct-tab-btn.active {
+            color: var(--text-primary);
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.4);
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        .metric-card {
+            padding: 24px;
+            text-align: center;
+        }
+        .summary-tables-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        @media (max-width: 900px) {
+            .summary-tables-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        .section-header {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            padding-left: 4px;
+            border-left: 4px solid var(--accent-blue);
+            line-height: 1;
+        }
+        .excel-filter {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 5px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            outline: none;
+            font-family: inherit;
+            transition: border-color 0.2s ease;
+        }
+        .excel-filter:focus {
+            border-color: var(--accent-blue);
+        }
+        /* Multi-Select Dropdown for Fund Type */
+        .ms-dropdown-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .ms-dropdown-btn {
+            width: 28px;
+            height: 24px;
+            box-sizing: border-box;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            border-radius: 6px;
+            font-size: 11px;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .ms-dropdown-btn:hover, .ms-dropdown-btn.active {
+            border-color: var(--accent-blue);
+            color: var(--text-primary);
+        }
+        .ms-dropdown-panel {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            min-width: 180px;
+            max-height: 320px;
+            overflow-y: auto;
+            background: rgba(15, 23, 42, 0.97);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.55);
+            z-index: 1000;
+            padding: 6px 0;
+        }
+        .ms-dropdown-panel.open { display: block; }
+        .ms-dropdown-panel::-webkit-scrollbar { width: 5px; }
+        .ms-dropdown-panel::-webkit-scrollbar-track { background: transparent; }
+        .ms-dropdown-panel::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.4); border-radius: 3px; }
+        .ms-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 11px;
+            color: var(--text-secondary);
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+        .ms-dropdown-item:hover {
+            background: rgba(59, 130, 246, 0.12);
+            color: var(--text-primary);
+        }
+        .ms-dropdown-item input[type=checkbox] {
+            accent-color: var(--accent-blue);
+            width: 13px;
+            height: 13px;
+            cursor: pointer;
+        }
+        .ms-dropdown-item.select-all {
+            border-bottom: 1px solid var(--glass-border);
+            margin-bottom: 2px;
+            padding-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .ms-dropdown-item .ms-count-badge {
+            margin-left: auto;
+            background: rgba(59, 130, 246, 0.18);
+            color: #93c5fd;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        .sort-header {
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+            padding-right: 18px !important;
+            transition: color 0.2s ease;
+        }
+        .sort-header:hover {
+            color: var(--text-primary);
+        }
+        #col-visibility-btn {
+            background: rgba(30, 41, 59, 0.45);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+        #col-visibility-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+        #col-visibility-dropdown {
+            background: rgba(15, 23, 42, 0.95) !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 12px !important;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5) !important;
+            border: 1px solid var(--glass-border) !important;
+        }
+        #col-visibility-dropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+        #col-visibility-dropdown::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 3px;
+        }
+        #col-visibility-dropdown::-webkit-scrollbar-thumb {
+            background: rgba(100, 116, 139, 0.5);
+            border-radius: 3px;
+        }
+        #col-visibility-dropdown::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.7);
+        }
+        .col-visibility-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 6px 8px;
+            border-radius: 6px;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+        .col-visibility-label:hover {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-primary);
+        }
+        #reset-columns-btn:hover {
+            color: var(--text-primary) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/mutual-funds/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue); box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <a href="/mutual-funds/" class="nav-link">Holdings AUM</a>
+                <a href="/mutual-funds/pnl" class="nav-link">Capital Gains (FIFO)</a>
+                <a href="/mutual-funds/performance" class="nav-link">XIRR & CAGR</a>
+                <a href="/mutual-funds/sips" class="nav-link">SIP Tracker</a>
+                <a href="/mutual-funds/transactions" class="nav-link">Transactions Ledger</a>
+                <a href="/mutual-funds/account-report" class="nav-link active">Account Report</a>
+                <a href="/mutual-funds/monthly-profits" class="nav-link">Monthly Profits</a>
+                <a href="/mutual-funds/category-alpha" class="nav-link">Category Alpha & Rotation</a>
+                <a href="/mutual-funds/ter-cost" class="nav-link">TER & Broker Costs</a>
+                <a href="/mutual-funds/unique-funds" class="nav-link">Unique Funds</a>
+                <a href="/mutual-funds/underperforming" class="nav-link">Underperformance Diagnostics</a>
+                <a href="/mutual-funds/compare-nav" class="nav-link">Compare NAVs</a>
+                <a href="/mutual-funds/upload" class="nav-link">Upload CAS PDF</a>
+            </div>
+        </header>
+
+        <!-- Account Selection Tabs -->
+        <div class="account-tabs-bar">
+            {% for a in accounts %}
+            <a href="?act={{ a.code }}" class="acct-tab-btn {% if selected_code == a.code %}active{% endif %}">
+                {% if a.code == 'CONSOLIDATED' %}
+                    Consolidated Family Portfolio
+                {% elif a.code == '4_ACCOUNTS' %}
+                    Core 4 Accounts (PATRIARCH, MR, VG, APEX)
+                {% else %}
+                    {{ a.code }} - {{ a.name }}
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+
+        {% if report.error %}
+        <div class="alert alert-error">
+            {{ report.error }}
+        </div>
+        {% else %}
+        <!-- Summary Cards Grid -->
+        <div class="summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+            <div class="glass-card metric-card">
+                <div class="metric-title">Total Cost</div>
+                <div class="metric-value">₹{{ report.total_cost|format_inr }}</div>
+                <div style="font-size: 12px; color: var(--text-secondary);">Total Invested Capital</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Current Value</div>
+                <div class="metric-value" style="color: #60a5fa;">₹{{ report.total_value|format_inr }}</div>
+                <div style="font-size: 12px; color: var(--text-secondary);">Latest Synced Portfolio Valuation</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Total Gain / Loss</div>
+                <div class="metric-value {% if report.total_gain >= 0 %}metric-change positive{% else %}metric-change negative{% endif %}">
+                    ₹{{ report.total_gain|format_inr }}
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary);">Realized & Unrealized Net Profits</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Absolute Returns (%)</div>
+                <div class="metric-value {% if report.return_pct >= 0 %}metric-change positive{% else %}metric-change negative{% endif %}">
+                    {{ "{:,.2f}%".format(report.return_pct) }}
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary);">Net Percentage Portfolio Growth</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Portfolio XIRR (%)</div>
+                <div class="metric-value {% if report.total_xirr and report.total_xirr >= 0 %}metric-change positive{% elif report.total_xirr %}metric-change negative{% endif %}">
+                    {% if report.total_xirr is not none %}{{ "{:,.2f}%".format(report.total_xirr) }}{% else %}-{% endif %}
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary);">Annualized Money-Weighted Return</div>
+            </div>
+        </div>
+
+        <!-- Grouped summaries tables container -->
+        <div class="summary-tables-container">
+            <!-- 1. Asset Class Exposure Table -->
+            <div class="glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+                    <div class="section-header" style="margin: 0;">Asset Class Exposure</div>
+                    <button onclick="exportSummaryTableToExcel('asset-class-table', 'Asset_Class_Exposure')" class="btn" style="padding: 5px 12px; border-radius: 7px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 5px; cursor: pointer; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; transition: all 0.2s ease;">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path>
+                        </svg>
+                        Download Excel
+                    </button>
+                </div>
+                <div class="table-container" style="margin-top: 0;">
+                    <table id="asset-class-table" data-portfolio-xirr="{% if report.total_xirr is not none %}{{ report.total_xirr }}{% endif %}">
+                        <thead>
+                            <tr>
+                                <th>Asset Class</th>
+                                <th style="text-align: right;">Cost Value</th>
+                                <th style="text-align: right;">Current Value</th>
+                                <th style="text-align: right;">Absolute Return</th>
+                                <th style="text-align: right;">XIRR %</th>
+                                <th style="text-align: right;">Allocation %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in report.asset_class_summary %}
+                            <tr data-category="{{ item.asset_class }}" data-cost="{{ item.purchase_value }}" data-value="{{ item.current_value }}" data-return="{{ item.return_pct }}" data-xirr="{% if item.xirr_pct is not none %}{{ item.xirr_pct }}{% endif %}" data-alloc="{{ item.allocation_pct }}">
+                                <td style="font-weight: 600;">{{ item.asset_class }}</td>
+                                <td style="text-align: right;" data-raw="{{ item.purchase_value }}">₹{{ item.purchase_value|format_inr }}</td>
+                                <td style="text-align: right;" data-raw="{{ item.current_value }}">₹{{ item.current_value|format_inr }}</td>
+                                <td style="text-align: right; font-weight: 500;" data-raw="{{ item.return_pct }}" class="{% if item.return_pct >= 0 %}metric-change positive{% else %}metric-change negative{% endif %}">
+                                    {{ "{:,.2f}%".format(item.return_pct) }}
+                                </td>
+                                <td style="text-align: right; font-weight: 600;" data-raw="{% if item.xirr_pct is not none %}{{ item.xirr_pct }}{% endif %}" class="{% if item.xirr_pct and item.xirr_pct >= 0 %}metric-change positive{% elif item.xirr_pct %}metric-change negative{% endif %}">
+                                    {% if item.xirr_pct is not none %}{{ "{:,.2f}%".format(item.xirr_pct) }}{% else %}-{% endif %}
+                                </td>
+                                <td style="text-align: right; font-weight: 600; color: #a78bfa;" data-raw="{{ item.allocation_pct }}">{{ "{:,.2f}%".format(item.allocation_pct) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: rgba(59, 130, 246, 0.12); border-top: 2px solid rgba(59, 130, 246, 0.4); font-weight: bold;">
+                                <td style="color: var(--text-primary); font-weight: 700;">Total</td>
+                                <td style="text-align: right; color: var(--text-primary); font-weight: 700;">₹{{ report.total_cost|format_inr }}</td>
+                                <td style="text-align: right; color: #60a5fa; font-weight: 700;">₹{{ report.total_value|format_inr }}</td>
+                                <td style="text-align: right; font-weight: 700;" class="{% if report.return_pct >= 0 %}metric-change positive{% else %}metric-change negative{% endif %}">
+                                    {{ "{:,.2f}%".format(report.return_pct) }}
+                                </td>
+                                <td style="text-align: right; font-weight: 700;" class="{% if report.total_xirr and report.total_xirr >= 0 %}metric-change positive{% elif report.total_xirr %}metric-change negative{% endif %}">
+                                    {% if report.total_xirr is not none %}{{ "{:,.2f}%".format(report.total_xirr) }}{% else %}-{% endif %}
+                                </td>
+                                <td style="text-align: right; font-weight: 700; color: #10b981;">100.00%</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2. Fund Type summary Table -->
+            <div class="glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+                    <div class="section-header" style="margin: 0;">Category Wise Allocation</div>
+                    <button onclick="exportSummaryTableToExcel('category-allocation-table', 'Category_Wise_Allocation')" class="btn" style="padding: 5px 12px; border-radius: 7px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 5px; cursor: pointer; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; transition: all 0.2s ease;">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path>
+                        </svg>
+                        Download Excel
+                    </button>
+                </div>
+                <div class="table-container" style="margin-top: 0;">
+                    <table id="category-allocation-table" data-portfolio-xirr="{% if report.total_xirr is not none %}{{ report.total_xirr }}{% endif %}">
+                        <thead>
+                            <tr>
+                                <th>Fund Type</th>
+                                <th style="text-align: right;">Cost Value</th>
+                                <th style="text-align: right;">Current Value</th>
+                                <th style="text-align: right;">Absolute Return</th>
+                                <th style="text-align: right;">XIRR %</th>
+                                <th style="text-align: right;">Allocation %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in report.fund_type_summary %}
+                            <tr data-category="{{ item.fund_type }}" data-cost="{{ item.purchase_value }}" data-value="{{ item.current_value }}" data-return="{{ item.return_pct }}" data-xirr="{% if item.xirr_pct is not none %}{{ item.xirr_pct }}{% endif %}" data-alloc="{{ item.allocation_pct }}">
+                                <td style="font-weight: 600;">{{ item.fund_type }}</td>
+                                <td style="text-align: right;" data-raw="{{ item.purchase_value }}">₹{{ item.purchase_value|format_inr }}</td>
+                                <td style="text-align: right;" data-raw="{{ item.current_value }}">₹{{ item.current_value|format_inr }}</td>
+                                <td style="text-align: right; font-weight: 500;" data-raw="{{ item.return_pct }}" class="{% if item.return_pct >= 0 %}metric-change positive{% else %}metric-change negative{% endif %}">
+                                    {{ "{:,.2f}%".format(item.return_pct) }}
+                                </td>
+                                <td style="text-align: right; font-weight: 600;" data-raw="{% if item.xirr_pct is not none %}{{ item.xirr_pct }}{% endif %}" class="{% if item.xirr_pct and item.xirr_pct >= 0 %}metric-change positive{% elif item.xirr_pct %}metric-change negative{% endif %}">
+                                    {% if item.xirr_pct is not none %}{{ "{:,.2f}%".format(item.xirr_pct) }}{% else %}-{% endif %}
+                                </td>
+                                <td style="text-align: right; font-weight: 600; color: #a78bfa;" data-raw="{{ item.allocation_pct }}">{{ "{:,.2f}%".format(item.allocation_pct) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: rgba(59, 130, 246, 0.12); border-top: 2px solid rgba(59, 130, 246, 0.4); font-weight: bold;">
+                                <td style="color: var(--text-primary); font-weight: 700;">Total</td>
+                                <td style="text-align: right; color: var(--text-primary); font-weight: 700;">₹{{ report.total_cost|format_inr }}</td>
+                                <td style="text-align: right; color: #60a5fa; font-weight: 700;">₹{{ report.total_value|format_inr }}</td>
+                                <td style="text-align: right; font-weight: 700;" class="{% if report.return_pct >= 0 %}metric-change positive{% else %}metric-change negative{% endif %}">
+                                    {{ "{:,.2f}%".format(report.return_pct) }}
+                                </td>
+                                <td style="text-align: right; font-weight: 700;" class="{% if report.total_xirr and report.total_xirr >= 0 %}metric-change positive{% elif report.total_xirr %}metric-change negative{% endif %}">
+                                    {% if report.total_xirr is not none %}{{ "{:,.2f}%".format(report.total_xirr) }}{% else %}-{% endif %}
+                                </td>
+                                <td style="text-align: right; font-weight: 700; color: #10b981;">100.00%</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Detailed Asset Wise Table -->
+        <div class="glass-card" style="padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+                <div class="section-header" style="margin-left: 0; margin-bottom: 0; border-left: 4px solid var(--accent-blue);">ASSET WISE DATA (BY ADVISOR + FUND CATEGORY)</div>
+                
+                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    <!-- Account Quick Select Option -->
+                    <div style="display: flex; align-items: center; gap: 8px; background: rgba(30, 41, 59, 0.45); border: 1px solid var(--glass-border); border-radius: 8px; padding: 5px 12px;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="color: #60a5fa;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"></path>
+                        </svg>
+                        <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Account:</span>
+                        <select id="account-toolbar-select" onchange="if(this.value){ window.location.href='?act=' + this.value; }" style="background: transparent; border: none; color: #60a5fa; font-weight: 700; font-size: 13px; outline: none; cursor: pointer;">
+                            {% for a in accounts %}
+                            <option value="{{ a.code }}" {% if selected_code == a.code %}selected{% endif %} style="background: #0f172a; color: white;">
+                                {% if a.code == 'CONSOLIDATED' %}
+                                    Consolidated Family Portfolio
+                                {% elif a.code == '4_ACCOUNTS' %}
+                                    Core 4 Accounts (PATRIARCH, MR, VG, APEX)
+                                {% else %}
+                                    {{ a.code }} - {{ a.name }}
+                                {% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Consolidate by Scheme Button -->
+                    <button id="consolidate-scheme-btn" class="btn" style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(30, 41, 59, 0.45); border: 1px solid var(--glass-border); color: var(--text-secondary); transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"></path>
+                        </svg>
+                        <span id="consolidate-btn-text">Consolidate by Scheme</span>
+                    </button>
+                    
+                    <!-- Force Self-Heal Returns Button -->
+                    <button id="self-heal-btn" class="btn" style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(30, 41, 59, 0.45); border: 1px solid var(--glass-border); color: var(--text-secondary); transition: all 0.2s ease;" onclick="triggerSelfHeal()">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"></path>
+                        </svg>
+                        <span id="self-heal-btn-text">Self-Heal Missing Returns</span>
+                    </button>
+                    
+                    <!-- Export to Excel Button -->
+                    <button onclick="exportDetailedTableToExcel()" class="btn" style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path>
+                        </svg>
+                        Export Visible to Excel
+                    </button>
+                    
+                    <div style="position: relative; display: inline-block;">
+                        <button id="col-visibility-btn" class="btn" style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            Show/Hide Columns
+                        </button>
+                    <div id="col-visibility-dropdown" class="glass-card" style="display: none; position: absolute; right: 0; top: calc(100% + 8px); z-index: 100; min-width: 240px; max-height: 400px; overflow-y: auto; padding: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 6px;">
+                            <span>Show Columns</span>
+                            <button id="reset-columns-btn" style="background: none; border: none; color: var(--accent-blue); font-size: 10px; font-weight: 700; cursor: pointer; text-transform: uppercase; padding: 0; transition: color 0.2s;">Show All</button>
+                        </div>
+                        <div id="col-checkboxes-container" style="display: flex; flex-direction: column; gap: 8px;">
+                            <!-- Populated via JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="table-container" style="margin-top: 0;">
+                <table id="detailed-assets-table" class="table-compact" style="margin-top: 0;">
+                    <thead>
+                        <tr id="header-row">
+                            <th style="padding-left: 24px; width: 50px;">S.No</th>
+                            <th class="sort-header" data-sort="account" style="width: 80px;">Account ⇅</th>
+                            <th class="sort-header" data-sort="folio" style="width: 120px;">Folio ⇅</th>
+                            <th class="sort-header" data-sort="advisor" style="width: 100px;">Advisor ⇅</th>
+                            <th class="sort-header" data-sort="scheme">Scheme Name ⇅</th>
+                            <th class="sort-header" data-sort="type" style="width: 120px;">Fund Type ⇅</th>
+                            <th class="sort-header" data-sort="cost" style="text-align: right; width: 110px;">Cost Value ⇅</th>
+                            <th class="sort-header" data-sort="value" style="text-align: right; width: 110px;">Current Value ⇅</th>
+                            <th class="sort-header" data-sort="profit" style="text-align: right; width: 110px;">Gain / Loss ⇅</th>
+                            <th class="sort-header" data-sort="return" style="text-align: right; width: 110px;">Absolute Return ⇅</th>
+                            <th class="sort-header" data-sort="r_1m" style="text-align: right; width: 80px;">1M Ret ⇅</th>
+                            <th class="sort-header" data-sort="r_3m" style="text-align: right; width: 80px;">3M Ret ⇅</th>
+                            <th class="sort-header" data-sort="r_6m" style="text-align: right; width: 80px;">6M Ret ⇅</th>
+                            <th class="sort-header" data-sort="r_1y" style="text-align: right; width: 80px;">1Y Ret ⇅</th>
+                            <th class="sort-header" data-sort="period" style="text-align: right; width: 80px;" title="Weighted average holding period in months">Period (M) ⇅</th>
+                            <th class="sort-header" data-sort="lt_tenure" style="text-align: right; width: 110px;" title="Long term holding tenure configured for scheme">LT Tenure ⇅</th>
+                            <th class="sort-header" data-sort="lt_val" style="text-align: right; width: 120px;" title="Current valuation of units held longer than long term holding tenure">Long Term Value ⇅</th>
+                            <th class="sort-header" data-sort="st_val" style="text-align: right; width: 120px;" title="Current valuation of units held less than or equal to long term holding tenure">Short Term Value ⇅</th>
+                            <th class="sort-header" data-sort="lt_pct" style="text-align: right; width: 100px;" title="Percentage of units that are long term">Long Term % ⇅</th>
+                            
+                            <th class="sort-header" data-sort="el_tenure" style="text-align: right; width: 110px;" title="No exit load holding tenure configured for scheme">Exit Load Tenure ⇅</th>
+                            <th class="sort-header" data-sort="el_free" style="text-align: right; width: 120px;" title="Current valuation of units whose age is greater than exit load tenure">Exit Load Free Value ⇅</th>
+                            <th class="sort-header" data-sort="el_subject" style="text-align: right; width: 120px;" title="Current valuation of units whose age is within exit load tenure">Exit Load Subject Value ⇅</th>
+                            <th class="sort-header" data-sort="el_amt" style="text-align: right; width: 100px; color: #f87171;" title="Estimated exit load cost if redeemed today">Exit Load Amt ⇅</th>
+                            <th class="sort-header" data-sort="alloc" style="text-align: right; padding-right: 24px; width: 100px;">Allocation ⇅</th>
+                        </tr>
+                        <!-- Excel Column Filters row -->
+                        <tr class="filter-row" style="background: rgba(15, 23, 42, 0.45); border-bottom: 2px solid var(--glass-border);">
+                            <th style="padding-left: 24px;"></th>
+                            <th>
+                                <div style="display: flex; gap: 4px; align-items: center; width: 100%;">
+                                    <input type="text" class="excel-filter" data-col="1" placeholder="Filter Account..." style="flex: 1; min-width: 0;">
+                                    <div class="ms-dropdown-wrapper" id="account-ms-wrapper" style="width: auto; flex-shrink: 0;">
+                                        <button type="button" class="ms-dropdown-btn" id="account-ms-btn" title="Filter Accounts">▼</button>
+                                        <div class="ms-dropdown-panel" id="account-ms-panel" style="left: 0; min-width: 170px;">
+                                            <!-- Populated dynamically by JS -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </th>
+                            <th><input type="text" class="excel-filter" data-col="2" placeholder="Filter Folio..."></th>
+                            <th>
+                                <div style="display: flex; gap: 4px; align-items: center; width: 100%;">
+                                    <input type="text" class="excel-filter" data-col="3" placeholder="Filter Adv..." style="flex: 1; min-width: 0;">
+                                    <div class="ms-dropdown-wrapper" id="advisor-ms-wrapper" style="width: auto; flex-shrink: 0;">
+                                        <button type="button" class="ms-dropdown-btn" id="advisor-ms-btn" title="Filter Advisors">▼</button>
+                                        <div class="ms-dropdown-panel" id="advisor-ms-panel" style="left: 0; min-width: 160px;">
+                                            <!-- Populated dynamically by JS -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </th>
+                            <th><input type="text" class="excel-filter" data-col="4" placeholder="Filter Scheme..."></th>
+                            <th>
+                                <div style="display: flex; gap: 4px; align-items: center; width: 100%;">
+                                    <input type="text" class="excel-filter" data-col="5" placeholder="Filter Type..." style="flex: 1; min-width: 0;">
+                                    <div class="ms-dropdown-wrapper" id="fund-type-ms-wrapper" style="width: auto; flex-shrink: 0;">
+                                        <button type="button" class="ms-dropdown-btn" id="fund-type-ms-btn">▼</button>
+                                        <div class="ms-dropdown-panel" id="fund-type-ms-panel" style="right: 0; left: auto; min-width: 160px;">
+                                            <!-- Populated dynamically by JS -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </th>
+                            <th></th> <!-- Cost -->
+                            <th></th> <!-- Value -->
+                            <th></th> <!-- Gain / Loss -->
+                            <th></th> <!-- return -->
+                            <th></th> <!-- 1M Ret -->
+                            <th></th> <!-- 3M Ret -->
+                            <th></th> <!-- 6M Ret -->
+                            <th></th> <!-- 1Y Ret -->
+                            <th></th> <!-- Period -->
+                            <th></th> <!-- lt_tenure -->
+                            <th></th> <!-- lt_val -->
+                            <th></th> <!-- st_val -->
+                            <th></th> <!-- lt_pct -->
+                            <th></th> <!-- el_tenure -->
+                            <th></th> <!-- el_free -->
+                            <th></th> <!-- el_subject -->
+                            <th></th> <!-- el_amt -->
+                            <th style="padding-right: 24px;"></th> <!-- alloc -->
+                        </tr>
+                        <!-- Subtotal Row -->
+                        <tr id="subtotal-row" style="background: rgba(59, 130, 246, 0.12); border-bottom: 2px solid rgba(59, 130, 246, 0.4); font-weight: bold;">
+                            <th style="padding-left: 24px; color: var(--text-secondary);"></th>
+                            <th style="text-align: left; color: var(--text-primary); font-weight: 700;">Subtotal (Visible)</th>
+                            <th></th> <!-- Folio -->
+                            <th></th> <!-- Advisor -->
+                            <th></th> <!-- Scheme -->
+                            <th></th> <!-- Fund Type -->
+                            <th id="subtotal-cost" style="text-align: right; color: var(--text-primary); font-weight: 700;">₹0.00</th>
+                            <th id="subtotal-value" style="text-align: right; color: #60a5fa; font-weight: 700;">₹0.00</th>
+                            <th id="subtotal-profit" style="text-align: right; color: #10b981; font-weight: 700;">₹0.00</th>
+                            <th id="subtotal-return" style="text-align: right; font-weight: 700;">0.00%</th>
+                            <th id="subtotal-r-1m" style="text-align: right; color: var(--text-secondary); font-weight: 700;">-</th>
+                            <th id="subtotal-r-3m" style="text-align: right; color: var(--text-secondary); font-weight: 700;">-</th>
+                            <th id="subtotal-r-6m" style="text-align: right; color: var(--text-secondary); font-weight: 700;">-</th>
+                            <th id="subtotal-r-1y" style="text-align: right; color: var(--text-secondary); font-weight: 700;">-</th>
+                            <th id="subtotal-period" style="text-align: right; color: var(--text-secondary); font-weight: 700; font-family: monospace;">0.0</th>
+                            <th></th> <!-- LT Tenure -->
+                            <th id="subtotal-lt-val" style="text-align: right; color: var(--accent-green); font-weight: 700;">₹0.00</th>
+                            <th id="subtotal-st-val" style="text-align: right; color: #fbbf24; font-weight: 700;">₹0.00</th>
+                            <th id="subtotal-lt-pct" style="text-align: right; color: #a78bfa; font-weight: 700;">0.0%</th>
+                            <th></th> <!-- Exit Load Tenure -->
+                            <th id="subtotal-el-free" style="text-align: right; color: var(--accent-green); font-weight: 700;">₹0.00</th>
+                            <th id="subtotal-el-subject" style="text-align: right; color: #fbbf24; font-weight: 700;">₹0.00</th>
+                            <th id="subtotal-el-amt" style="text-align: right; color: #f87171; font-weight: 700;">₹0.00</th>
+                            <th id="subtotal-alloc" style="text-align: right; padding-right: 24px; color: #10b981; font-weight: 700;">0.00%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in report.detailed_assets %}
+                        <tr class="asset-row">
+                            <td style="padding-left: 24px; color: var(--text-secondary); font-family: monospace;">{{ item.s_no }}</td>
+                            <td style="color: var(--text-secondary); font-weight: bold;">{{ item.account }}</td>
+                            <td style="font-family: monospace; color: var(--text-secondary); font-size: 12px;">{{ item.folio }}</td>
+                            <td style="font-weight: 600; color: #a78bfa;">{{ item.advisor }}</td>
+                            <td style="font-weight: 500; max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ item.scheme_name }}">
+                                {{ item.scheme_name }}
+                            </td>
+                            <td>
+                                <span class="badge badge-unsold" style="font-size: 11px; text-transform: none;">
+                                    {{ item.fund_type }}
+                                </span>
+                            </td>
+                             <td style="text-align: right;">₹{{ item.cost_value|format_inr }}</td>
+                             <td style="text-align: right; font-weight: 500; color: #60a5fa;">₹{{ item.current_value|format_inr }}</td>
+                             <td style="text-align: right; font-weight: 500;" class="{% if item.raw_profit >= 0 %}metric-change positive{% else %}metric-change negative{% endif %}">
+                                 ₹{{ item.raw_profit|format_inr }}
+                             </td>
+                             <td style="text-align: right; font-weight: 500;" class="{% if item.return_pct >= 0 %}metric-change positive{% else %}metric-change negative{% endif %}">
+                                 {{ "{:,.2f}%".format(item.return_pct) }}
+                             </td>
+                             <td style="text-align: right; font-family: monospace;" class="{% if item.r_1m and item.r_1m >= 0 %}metric-change positive{% elif item.r_1m %}metric-change negative{% endif %}">
+                                 {% if item.r_1m is not none %}{{ "{:,.2f}%".format(item.r_1m) }}{% else %}-{% endif %}
+                             </td>
+                             <td style="text-align: right; font-family: monospace;" class="{% if item.r_3m and item.r_3m >= 0 %}metric-change positive{% elif item.r_3m %}metric-change negative{% endif %}">
+                                 {% if item.r_3m is not none %}{{ "{:,.2f}%".format(item.r_3m) }}{% else %}-{% endif %}
+                             </td>
+                             <td style="text-align: right; font-family: monospace;" class="{% if item.r_6m and item.r_6m >= 0 %}metric-change positive{% elif item.r_6m %}metric-change negative{% endif %}">
+                                 {% if item.r_6m is not none %}{{ "{:,.2f}%".format(item.r_6m) }}{% else %}-{% endif %}
+                             </td>
+                             <td style="text-align: right; font-family: monospace;" class="{% if item.r_1y and item.r_1y >= 0 %}metric-change positive{% elif item.r_1y %}metric-change negative{% endif %}">
+                                 {% if item.r_1y is not none %}{{ "{:,.2f}%".format(item.r_1y) }}{% else %}-{% endif %}
+                             </td>
+                             <td style="text-align: right; font-family: monospace;">{{ "{:,.1f}".format(item.period) }}</td>
+                             <td style="text-align: right; font-family: monospace; color: var(--text-secondary);">
+                                 {% if item.long_term_tenure == 730 %}
+                                     2 Years (730d)
+                                 {% else %}
+                                     1 Year (365d)
+                                 {% endif %}
+                             </td>
+                             <td style="text-align: right; color: var(--accent-green);">₹{{ item.long_term_value|format_inr }}</td>
+                             <td style="text-align: right; color: #fbbf24;">₹{{ item.short_term_value|format_inr }}</td>
+                             <td style="text-align: right; font-family: monospace; color: #a78bfa; font-weight: 600;">{{ "{:,.1f}%".format(item.pct_long_term) }}</td>
+                             
+                             <td style="text-align: right; font-family: monospace; color: var(--text-secondary);">
+                                 {% if item.exit_load_tenure > 0 %}
+                                     {{ item.exit_load_tenure }} days <span style="font-size: 11px; color: #60a5fa;">({{ "{:,.1f}%".format(item.exit_load_pct) }})</span>
+                                 {% else %}
+                                     0 days
+                                 {% endif %}
+                             </td>
+                             <td style="text-align: right; color: var(--accent-green);">₹{{ item.free_value|format_inr }}</td>
+                             <td style="text-align: right; color: #fbbf24;">₹{{ item.subject_value|format_inr }}</td>
+                             <td style="text-align: right; font-weight: 600; color: {% if item.exit_load_amt > 0 %}#f87171{% else %}var(--text-secondary){% endif %};">
+                                 ₹{{ item.exit_load_amt|format_inr }}
+                             </td>
+                             <td style="text-align: right; font-weight: 600; color: #10b981; padding-right: 24px;">{{ "{:,.2f}%".format(item.allocation_pct) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Excel-like interactive Filtering and Sorting Engine -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const table = document.querySelector("#detailed-assets-table");
+            if (!table) return;
+            const tbody = table.querySelector("tbody");
+            const originalRows = Array.from(tbody.querySelectorAll("tr.asset-row"));
+            
+            // --- 1. Multi-Column Excel-like Filtering ---
+            const filters = document.querySelectorAll(".excel-filter");
+            filters.forEach(filterInput => {
+                filterInput.addEventListener("input", function() {
+                    filterTable();
+                });
+            });
+            
+            // --- Helper Formatting Functions for Subtotals ---
+            function formatINR(number) {
+                if (number === null || number === undefined || isNaN(number)) {
+                    return "0.00";
+                }
+                const isNegative = number < 0;
+                let val = Math.abs(number);
+                
+                const s = val.toFixed(2);
+                const parts = s.split('.');
+                const integerPart = parts[0];
+                const decimalPart = parts[1];
+                
+                let res;
+                if (integerPart.length <= 3) {
+                    res = integerPart;
+                } else {
+                    const lastThree = integerPart.substring(integerPart.length - 3);
+                    let remaining = integerPart.substring(0, integerPart.length - 3);
+                    
+                    const groups = [];
+                    while (remaining.length > 0) {
+                        groups.push(remaining.substring(remaining.length - 2));
+                        remaining = remaining.substring(0, remaining.length - 2);
+                    }
+                    groups.reverse();
+                    res = groups.join(',') + ',' + lastThree;
+                }
+                
+                let formatted = res + '.' + decimalPart;
+                if (isNegative) {
+                    formatted = '-' + formatted;
+                }
+                return formatted;
+            }
+
+            function formatINRWithCurrency(number) {
+                const isNegative = number < 0;
+                const cleanStr = formatINR(Math.abs(number));
+                return (isNegative ? "-₹" : "₹") + cleanStr;
+            }
+
+            function updateSubtotals() {
+                let totalCost = 0;
+                let totalValue = 0;
+                let totalProfit = 0;
+                let totalLTValue = 0;
+                let totalSTValue = 0;
+                let totalELFree = 0;
+                let totalELSubject = 0;
+                let totalELAmt = 0;
+                let totalAlloc = 0;
+                let weightedPeriodSum = 0;
+                
+                const visibleRows = Array.from(tbody.querySelectorAll("tr.asset-row")).filter(row => row.style.display !== "none");
+                
+                visibleRows.forEach(row => {
+                    const cells = row.cells;
+                    
+                    const getCellValue = (index) => {
+                        const txt = cells[index].textContent.trim();
+                        const clean = txt.replace(/[₹%,]/g, "").trim();
+                        const val = parseFloat(clean);
+                        return isNaN(val) ? 0 : val;
+                    };
+                    
+                    const cost = getCellValue(6);
+                    const value = getCellValue(7);
+                    const period = getCellValue(14);
+                    
+                    totalCost += cost;
+                    totalValue += value;
+                    totalProfit += (value - cost);
+                    weightedPeriodSum += period * value;
+                    
+                    totalLTValue += getCellValue(16);
+                    totalSTValue += getCellValue(17);
+                    totalELFree += getCellValue(20);
+                    totalELSubject += getCellValue(21);
+                    totalELAmt += getCellValue(22);
+                    totalAlloc += getCellValue(23);
+                });
+                
+                const avgPeriod = totalValue > 0 ? (weightedPeriodSum / totalValue) : 0;
+                const ltPct = totalValue > 0 ? (totalLTValue / totalValue) * 100 : 0;
+                const absoluteReturn = totalCost > 0 ? ((totalValue - totalCost) / totalCost) * 100 : 0;
+                
+                document.getElementById("subtotal-cost").textContent = formatINRWithCurrency(totalCost);
+                document.getElementById("subtotal-value").textContent = formatINRWithCurrency(totalValue);
+                
+                const profitCell = document.getElementById("subtotal-profit");
+                profitCell.textContent = formatINRWithCurrency(totalProfit);
+                if (totalProfit >= 0) {
+                    profitCell.className = "metric-change positive";
+                    profitCell.style.color = "#10b981";
+                } else {
+                    profitCell.className = "metric-change negative";
+                    profitCell.style.color = "#ef4444";
+                }
+                
+                const returnCell = document.getElementById("subtotal-return");
+                returnCell.textContent = absoluteReturn.toFixed(2) + "%";
+                if (absoluteReturn >= 0) {
+                    returnCell.className = "metric-change positive";
+                    returnCell.style.color = "#10b981";
+                } else {
+                    returnCell.className = "metric-change negative";
+                    returnCell.style.color = "#ef4444";
+                }
+                
+                document.getElementById("subtotal-period").textContent = avgPeriod.toFixed(1);
+                document.getElementById("subtotal-lt-val").textContent = formatINRWithCurrency(totalLTValue);
+                document.getElementById("subtotal-st-val").textContent = formatINRWithCurrency(totalSTValue);
+                document.getElementById("subtotal-lt-pct").textContent = ltPct.toFixed(1) + "%";
+                
+                document.getElementById("subtotal-el-free").textContent = formatINRWithCurrency(totalELFree);
+                document.getElementById("subtotal-el-subject").textContent = formatINRWithCurrency(totalELSubject);
+                
+                const elAmtCell = document.getElementById("subtotal-el-amt");
+                elAmtCell.textContent = formatINRWithCurrency(totalELAmt);
+                if (totalELAmt > 0) {
+                    elAmtCell.style.color = "#f87171";
+                } else {
+                    elAmtCell.style.color = "var(--text-secondary)";
+                }
+                
+                document.getElementById("subtotal-alloc").textContent = totalAlloc.toFixed(2) + "%";
+            }
+
+            // --- Consolidate by Scheme Toggle State ---
+            let isConsolidated = false;
+            const consolidateBtn = document.getElementById("consolidate-scheme-btn");
+            if (consolidateBtn) {
+                consolidateBtn.addEventListener("click", function() {
+                    isConsolidated = !isConsolidated;
+                    
+                    // Toggle active styles
+                    if (isConsolidated) {
+                        consolidateBtn.style.background = "var(--accent-blue)";
+                        consolidateBtn.style.color = "white";
+                        consolidateBtn.style.borderColor = "var(--accent-blue)";
+                        document.getElementById("consolidate-btn-text").textContent = "Show Detailed";
+                    } else {
+                        consolidateBtn.style.background = "rgba(30, 41, 59, 0.45)";
+                        consolidateBtn.style.color = "var(--text-secondary)";
+                        consolidateBtn.style.borderColor = "var(--glass-border)";
+                        document.getElementById("consolidate-btn-text").textContent = "Consolidate by Scheme";
+                    }
+                    
+                    filterTable();
+                });
+            }
+
+            function reapplyColumnVisibility() {
+                const hiddenColumnsKey = "hidden_cols_account_report";
+                const savedHiddenCols = JSON.parse(localStorage.getItem(hiddenColumnsKey) || "[]");
+                
+                const tableRows = table.rows;
+                for (let r = 0; r < tableRows.length; r++) {
+                    const row = tableRows[r];
+                    for (let c = 0; c < row.cells.length; c++) {
+                        if (savedHiddenCols.includes(c)) {
+                            row.cells[c].style.display = "none";
+                        } else {
+                            row.cells[c].style.display = "";
+                        }
+                    }
+                }
+            }
+
+            // --- Multi-Select Account Filter ---
+            const accountMsWrapper = document.getElementById('account-ms-wrapper');
+            const accountMsBtn = document.getElementById('account-ms-btn');
+            const accountMsPanel = document.getElementById('account-ms-panel');
+            let selectedAccounts = new Set(); // empty = all selected
+
+            function populateAccountDropdown() {
+                if (!accountMsPanel) return;
+                const accountCounts = {};
+                originalRows.forEach(row => {
+                    const act = row.cells[1].textContent.trim();
+                    if (act) {
+                        accountCounts[act] = (accountCounts[act] || 0) + 1;
+                    }
+                });
+
+                accountMsPanel.innerHTML = '';
+
+                // Select All
+                const selectAllItem = document.createElement('label');
+                selectAllItem.className = 'ms-dropdown-item select-all';
+                const selectAllCb = document.createElement('input');
+                selectAllCb.type = 'checkbox';
+                selectAllCb.checked = true;
+                selectAllCb.id = 'account-ms-select-all';
+                selectAllItem.appendChild(selectAllCb);
+                selectAllItem.appendChild(document.createTextNode('Select All'));
+                const totalBadge = document.createElement('span');
+                totalBadge.className = 'ms-count-badge';
+                totalBadge.textContent = originalRows.length;
+                selectAllItem.appendChild(totalBadge);
+                accountMsPanel.appendChild(selectAllItem);
+
+                selectAllCb.addEventListener('change', function() {
+                    const items = accountMsPanel.querySelectorAll('.account-ms-cb');
+                    items.forEach(cb => { cb.checked = selectAllCb.checked; });
+                    if (selectAllCb.checked) {
+                        selectedAccounts = new Set();
+                    } else {
+                        selectedAccounts = new Set(['__NONE__']);
+                    }
+                    updateAccountMsBtnLabel();
+                    filterTable();
+                });
+
+                // Sorted account codes
+                Object.keys(accountCounts).sort().forEach(act => {
+                    const item = document.createElement('label');
+                    item.className = 'ms-dropdown-item';
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.checked = true;
+                    cb.className = 'account-ms-cb';
+                    cb.value = act;
+                    item.appendChild(cb);
+                    item.appendChild(document.createTextNode(act));
+                    const badge = document.createElement('span');
+                    badge.className = 'ms-count-badge';
+                    badge.textContent = accountCounts[act];
+                    item.appendChild(badge);
+                    accountMsPanel.appendChild(item);
+
+                    cb.addEventListener('change', function() {
+                        rebuildSelectedAccounts();
+                        filterTable();
+                    });
+                });
+            }
+
+            function rebuildSelectedAccounts() {
+                if (!accountMsPanel) return;
+                const cbs = accountMsPanel.querySelectorAll('.account-ms-cb');
+                const checked = [];
+                const unchecked = [];
+                cbs.forEach(cb => {
+                    if (cb.checked) checked.push(cb.value);
+                    else unchecked.push(cb.value);
+                });
+                const selectAllCb = document.getElementById('account-ms-select-all');
+                if (unchecked.length === 0) {
+                    selectedAccounts = new Set();
+                    if (selectAllCb) { selectAllCb.checked = true; selectAllCb.indeterminate = false; }
+                } else if (checked.length === 0) {
+                    selectedAccounts = new Set(['__NONE__']);
+                    if (selectAllCb) { selectAllCb.checked = false; selectAllCb.indeterminate = false; }
+                } else {
+                    selectedAccounts = new Set(checked);
+                    if (selectAllCb) { selectAllCb.checked = false; selectAllCb.indeterminate = true; }
+                }
+                updateAccountMsBtnLabel();
+            }
+
+            function updateAccountMsBtnLabel() {
+                if (!accountMsBtn) return;
+                if (selectedAccounts.size === 0) {
+                    accountMsBtn.title = 'All accounts active';
+                    accountMsBtn.style.color = 'var(--text-secondary)';
+                    accountMsBtn.style.borderColor = 'var(--glass-border)';
+                    accountMsBtn.style.background = 'rgba(15, 23, 42, 0.8)';
+                } else if (selectedAccounts.has('__NONE__')) {
+                    accountMsBtn.title = 'No accounts selected';
+                    accountMsBtn.style.color = '#f87171';
+                    accountMsBtn.style.borderColor = '#f87171';
+                    accountMsBtn.style.background = 'rgba(248, 113, 113, 0.1)';
+                } else {
+                    accountMsBtn.title = Array.from(selectedAccounts).join(', ');
+                    accountMsBtn.style.color = '#60a5fa';
+                    accountMsBtn.style.borderColor = '#60a5fa';
+                    accountMsBtn.style.background = 'rgba(59, 130, 246, 0.15)';
+                }
+            }
+
+            if (accountMsBtn && accountMsPanel) {
+                accountMsBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    accountMsPanel.classList.toggle('open');
+                    accountMsBtn.classList.toggle('active');
+                });
+                document.addEventListener('click', function(e) {
+                    if (accountMsWrapper && !accountMsWrapper.contains(e.target)) {
+                        accountMsPanel.classList.remove('open');
+                        accountMsBtn.classList.remove('active');
+                    }
+                });
+                populateAccountDropdown();
+            }
+
+            // --- Multi-Select Advisor Filter ---
+            const advisorMsWrapper = document.getElementById('advisor-ms-wrapper');
+            const advisorMsBtn = document.getElementById('advisor-ms-btn');
+            const advisorMsPanel = document.getElementById('advisor-ms-panel');
+            let selectedAdvisors = new Set(); // empty = all selected
+
+            function populateAdvisorDropdown() {
+                if (!advisorMsPanel) return;
+                const advisorCounts = {};
+                originalRows.forEach(row => {
+                    const adv = row.cells[3].textContent.trim();
+                    if (adv) {
+                        advisorCounts[adv] = (advisorCounts[adv] || 0) + 1;
+                    }
+                });
+
+                advisorMsPanel.innerHTML = '';
+
+                // Select All
+                const selectAllItem = document.createElement('label');
+                selectAllItem.className = 'ms-dropdown-item select-all';
+                const selectAllCb = document.createElement('input');
+                selectAllCb.type = 'checkbox';
+                selectAllCb.checked = true;
+                selectAllCb.id = 'advisor-ms-select-all';
+                selectAllItem.appendChild(selectAllCb);
+                selectAllItem.appendChild(document.createTextNode('Select All'));
+                const totalBadge = document.createElement('span');
+                totalBadge.className = 'ms-count-badge';
+                totalBadge.textContent = originalRows.length;
+                selectAllItem.appendChild(totalBadge);
+                advisorMsPanel.appendChild(selectAllItem);
+
+                selectAllCb.addEventListener('change', function() {
+                    const items = advisorMsPanel.querySelectorAll('.advisor-ms-cb');
+                    items.forEach(cb => { cb.checked = selectAllCb.checked; });
+                    if (selectAllCb.checked) {
+                        selectedAdvisors = new Set();
+                    } else {
+                        selectedAdvisors = new Set(['__NONE__']);
+                    }
+                    updateAdvisorMsBtnLabel();
+                    filterTable();
+                });
+
+                // Sorted advisors
+                Object.keys(advisorCounts).sort().forEach(adv => {
+                    const item = document.createElement('label');
+                    item.className = 'ms-dropdown-item';
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.checked = true;
+                    cb.className = 'advisor-ms-cb';
+                    cb.value = adv;
+                    item.appendChild(cb);
+                    item.appendChild(document.createTextNode(adv));
+                    const badge = document.createElement('span');
+                    badge.className = 'ms-count-badge';
+                    badge.textContent = advisorCounts[adv];
+                    item.appendChild(badge);
+                    advisorMsPanel.appendChild(item);
+
+                    cb.addEventListener('change', function() {
+                        rebuildSelectedAdvisors();
+                        filterTable();
+                    });
+                });
+            }
+
+            function rebuildSelectedAdvisors() {
+                if (!advisorMsPanel) return;
+                const cbs = advisorMsPanel.querySelectorAll('.advisor-ms-cb');
+                const checked = [];
+                const unchecked = [];
+                cbs.forEach(cb => {
+                    if (cb.checked) checked.push(cb.value);
+                    else unchecked.push(cb.value);
+                });
+                const selectAllCb = document.getElementById('advisor-ms-select-all');
+                if (unchecked.length === 0) {
+                    selectedAdvisors = new Set();
+                    if (selectAllCb) { selectAllCb.checked = true; selectAllCb.indeterminate = false; }
+                } else if (checked.length === 0) {
+                    selectedAdvisors = new Set(['__NONE__']);
+                    if (selectAllCb) { selectAllCb.checked = false; selectAllCb.indeterminate = false; }
+                } else {
+                    selectedAdvisors = new Set(checked);
+                    if (selectAllCb) { selectAllCb.checked = false; selectAllCb.indeterminate = true; }
+                }
+                updateAdvisorMsBtnLabel();
+            }
+
+            function updateAdvisorMsBtnLabel() {
+                if (!advisorMsBtn) return;
+                if (selectedAdvisors.size === 0) {
+                    advisorMsBtn.title = 'All advisors active';
+                    advisorMsBtn.style.color = 'var(--text-secondary)';
+                    advisorMsBtn.style.borderColor = 'var(--glass-border)';
+                    advisorMsBtn.style.background = 'rgba(15, 23, 42, 0.8)';
+                } else if (selectedAdvisors.has('__NONE__')) {
+                    advisorMsBtn.title = 'No advisors selected';
+                    advisorMsBtn.style.color = '#f87171';
+                    advisorMsBtn.style.borderColor = '#f87171';
+                    advisorMsBtn.style.background = 'rgba(248, 113, 113, 0.1)';
+                } else {
+                    advisorMsBtn.title = Array.from(selectedAdvisors).join(', ');
+                    advisorMsBtn.style.color = '#60a5fa';
+                    advisorMsBtn.style.borderColor = '#60a5fa';
+                    advisorMsBtn.style.background = 'rgba(59, 130, 246, 0.15)';
+                }
+            }
+
+            if (advisorMsBtn && advisorMsPanel) {
+                advisorMsBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    advisorMsPanel.classList.toggle('open');
+                    advisorMsBtn.classList.toggle('active');
+                });
+                document.addEventListener('click', function(e) {
+                    if (advisorMsWrapper && !advisorMsWrapper.contains(e.target)) {
+                        advisorMsPanel.classList.remove('open');
+                        advisorMsBtn.classList.remove('active');
+                    }
+                });
+                populateAdvisorDropdown();
+            }
+
+            // --- Multi-Select Fund Type Filter ---
+            const msWrapper = document.getElementById('fund-type-ms-wrapper');
+            const msBtn = document.getElementById('fund-type-ms-btn');
+            const msPanel = document.getElementById('fund-type-ms-panel');
+            let selectedFundTypes = new Set(); // empty = all selected
+
+            function populateFundTypeDropdown() {
+                // Count occurrences for each simplified category
+                let countEquity = 0;
+                let countGoldSilver = 0;
+                let countLiquidArbitrage = 0;
+
+                originalRows.forEach(row => {
+                    const ft = row.cells[5].textContent.trim().toUpperCase();
+                    if (ft === "GOLD" || ft === "SILVER" || ft === "BULLION") {
+                        countGoldSilver++;
+                    } else if (ft === "LIQUID" || ft === "ARBITRAGE") {
+                        countLiquidArbitrage++;
+                    } else {
+                        countEquity++;
+                    }
+                });
+
+                const categories = [
+                    { id: "EQUITY", label: "EQUITY", count: countEquity },
+                    { id: "GOLD_SILVER", label: "GOLD/SILVER", count: countGoldSilver },
+                    { id: "LIQUID_ARBITRAGE", label: "LIQUID/ARBITRAGE", count: countLiquidArbitrage }
+                ];
+
+                msPanel.innerHTML = '';
+
+                // Select All item
+                const selectAllItem = document.createElement('label');
+                selectAllItem.className = 'ms-dropdown-item select-all';
+                const selectAllCb = document.createElement('input');
+                selectAllCb.type = 'checkbox';
+                selectAllCb.checked = true;
+                selectAllCb.id = 'ms-select-all';
+                selectAllItem.appendChild(selectAllCb);
+                selectAllItem.appendChild(document.createTextNode('Select All'));
+                const totalBadge = document.createElement('span');
+                totalBadge.className = 'ms-count-badge';
+                totalBadge.textContent = originalRows.length;
+                selectAllItem.appendChild(totalBadge);
+                msPanel.appendChild(selectAllItem);
+
+                selectAllCb.addEventListener('change', function() {
+                    const items = msPanel.querySelectorAll('.ms-type-cb');
+                    items.forEach(cb => { cb.checked = selectAllCb.checked; });
+                    if (selectAllCb.checked) {
+                        selectedFundTypes = new Set();
+                    } else {
+                        selectedFundTypes = new Set(['__NONE__']); // match nothing
+                    }
+                    updateMsBtnLabel();
+                    filterTable();
+                });
+
+                // Individual simplified category items
+                categories.forEach(cat => {
+                    const item = document.createElement('label');
+                    item.className = 'ms-dropdown-item';
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.checked = true;
+                    cb.className = 'ms-type-cb';
+                    cb.value = cat.id;
+                    item.appendChild(cb);
+                    item.appendChild(document.createTextNode(cat.label));
+                    const badge = document.createElement('span');
+                    badge.className = 'ms-count-badge';
+                    badge.textContent = cat.count;
+                    item.appendChild(badge);
+                    msPanel.appendChild(item);
+
+                    cb.addEventListener('change', function() {
+                        rebuildSelectedSet();
+                        filterTable();
+                    });
+                });
+            }
+
+            function rebuildSelectedSet() {
+                const cbs = msPanel.querySelectorAll('.ms-type-cb');
+                const checked = [];
+                const unchecked = [];
+                cbs.forEach(cb => {
+                    if (cb.checked) checked.push(cb.value);
+                    else unchecked.push(cb.value);
+                });
+                const selectAllCb = document.getElementById('ms-select-all');
+                if (unchecked.length === 0) {
+                    selectedFundTypes = new Set();
+                    selectAllCb.checked = true;
+                    selectAllCb.indeterminate = false;
+                } else if (checked.length === 0) {
+                    selectedFundTypes = new Set(['__NONE__']);
+                    selectAllCb.checked = false;
+                    selectAllCb.indeterminate = false;
+                } else {
+                    selectedFundTypes = new Set(checked);
+                    selectAllCb.checked = false;
+                    selectAllCb.indeterminate = true;
+                }
+                updateMsBtnLabel();
+            }
+
+            function updateMsBtnLabel() {
+                if (selectedFundTypes.size === 0) {
+                    msBtn.title = 'All types active';
+                    msBtn.style.color = 'var(--text-secondary)';
+                    msBtn.style.borderColor = 'var(--glass-border)';
+                    msBtn.style.background = 'rgba(15, 23, 42, 0.8)';
+                } else if (selectedFundTypes.has('__NONE__')) {
+                    msBtn.title = 'No types selected';
+                    msBtn.style.color = '#f87171';
+                    msBtn.style.borderColor = '#f87171';
+                    msBtn.style.background = 'rgba(248, 113, 113, 0.1)';
+                } else {
+                    const selectedLabels = [];
+                    const cbs = msPanel.querySelectorAll('.ms-type-cb');
+                    cbs.forEach(cb => {
+                        if (cb.checked) {
+                            const labelText = cb.nextSibling.textContent.trim();
+                            selectedLabels.push(labelText);
+                        }
+                    });
+                    msBtn.title = selectedLabels.join(', ');
+                    msBtn.style.color = '#60a5fa';
+                    msBtn.style.borderColor = '#60a5fa';
+                    msBtn.style.background = 'rgba(59, 130, 246, 0.15)';
+                }
+            }
+
+            // Toggle dropdown
+            msBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                msPanel.classList.toggle('open');
+                msBtn.classList.toggle('active');
+            });
+
+            // Close on outside click
+            document.addEventListener('click', function(e) {
+                if (!msWrapper.contains(e.target)) {
+                    msPanel.classList.remove('open');
+                    msBtn.classList.remove('active');
+                }
+            });
+
+            populateFundTypeDropdown();
+
+            function filterTable() {
+                const filterValues = {};
+                filters.forEach(input => {
+                    const colIndex = parseInt(input.getAttribute("data-col"));
+                    const val = input.value.toLowerCase().trim();
+                    if (val !== "") {
+                        filterValues[colIndex] = val;
+                    }
+                });
+                
+                // Clear tbody
+                tbody.innerHTML = "";
+                
+                const filteredRows = [];
+                originalRows.forEach(row => {
+                    let matches = true;
+                    const cells = row.querySelectorAll("td");
+                    
+                    // Text filters
+                    for (const colIndex in filterValues) {
+                        const cellText = cells[colIndex].textContent.toLowerCase();
+                        const filterText = filterValues[colIndex];
+                        if (!cellText.includes(filterText)) {
+                            matches = false;
+                            break;
+                        }
+                    }
+
+                    // Multi-select Account filter (column 1)
+                    if (matches && selectedAccounts.size > 0) {
+                        if (selectedAccounts.has('__NONE__')) {
+                            matches = false;
+                        } else {
+                            const act = cells[1].textContent.trim();
+                            if (!selectedAccounts.has(act)) {
+                                matches = false;
+                            }
+                        }
+                    }
+
+                    // Multi-select Advisor filter (column 3)
+                    if (matches && selectedAdvisors.size > 0) {
+                        if (selectedAdvisors.has('__NONE__')) {
+                            matches = false;
+                        } else {
+                            const adv = cells[3].textContent.trim();
+                            if (!selectedAdvisors.has(adv)) {
+                                matches = false;
+                            }
+                        }
+                    }
+                    
+                    // Multi-select Fund Type category filter (column 5)
+                    if (matches && selectedFundTypes.size > 0) {
+                        if (selectedFundTypes.has('__NONE__')) {
+                            matches = false;
+                        } else {
+                            const ft = cells[5].textContent.trim().toUpperCase();
+                            let rowCategory = "EQUITY";
+                            if (ft === "GOLD" || ft === "SILVER" || ft === "BULLION") {
+                                rowCategory = "GOLD_SILVER";
+                            } else if (ft === "LIQUID" || ft === "ARBITRAGE") {
+                                rowCategory = "LIQUID_ARBITRAGE";
+                            }
+                            
+                            if (!selectedFundTypes.has(rowCategory)) {
+                                matches = false;
+                            }
+                        }
+                    }
+                    
+                    if (matches) {
+                        filteredRows.push(row);
+                    }
+                });
+                
+                let rowsToRender = [];
+                
+                if (isConsolidated) {
+                    const groups = {};
+                    filteredRows.forEach(row => {
+                        const rawName = row.cells[4].textContent.trim();
+                        const key = rawName.toUpperCase().replace(/&/g, "AND").replace(/\s+/g, " ");
+                        if (!groups[key]) {
+                            groups[key] = {
+                                displayName: rawName,
+                                rows: []
+                            };
+                        }
+                        const hasLower = /[a-z]/.test(rawName);
+                        const currentHasLower = /[a-z]/.test(groups[key].displayName);
+                        if (hasLower && !currentHasLower) {
+                            groups[key].displayName = rawName;
+                        }
+                        groups[key].rows.push(row);
+                    });
+                    
+                    let sNo = 1;
+                    for (const key in groups) {
+                        const schemeName = groups[key].displayName;
+                        const rows = groups[key].rows;
+                        
+                        let accounts = new Set();
+                        let folios = new Set();
+                        let advisors = new Set();
+                        let fundTypes = new Set();
+                        let ltTenures = new Set();
+                        
+                        let totalCost = 0;
+                        let totalValue = 0;
+                        let totalLTValue = 0;
+                        let totalSTValue = 0;
+                        let totalELFree = 0;
+                        let totalELSubject = 0;
+                        let totalELAmt = 0;
+                        let totalAlloc = 0;
+                        let weightedPeriodSum = 0;
+                        
+                        rows.forEach(row => {
+                            const act = row.cells[1].textContent.trim();
+                            const fol = row.cells[2].textContent.trim();
+                            const adv = row.cells[3].textContent.trim();
+                            const ft = row.cells[5].textContent.trim();
+                            const ltt = row.cells[15].textContent.trim();
+                            
+                            if (act) accounts.add(act);
+                            if (fol) folios.add(fol);
+                            if (adv) advisors.add(adv);
+                            if (ft) fundTypes.add(ft);
+                            if (ltt) ltTenures.add(ltt);
+                            
+                            const getVal = (index) => {
+                                  const txt = row.cells[index].textContent.trim();
+                                  const clean = txt.replace(/[₹%,]/g, "").trim();
+                                  const val = parseFloat(clean);
+                                  return isNaN(val) ? 0 : val;
+                            };
+                            
+                            const cost = getVal(6);
+                            const val = getVal(7);
+                            const period = getVal(14);
+                            
+                            totalCost += cost;
+                            totalValue += val;
+                            weightedPeriodSum += period * val;
+                            
+                            totalLTValue += getVal(16);
+                            totalSTValue += getVal(17);
+                            totalELFree += getVal(20);
+                            totalELSubject += getVal(21);
+                            totalELAmt += getVal(22);
+                            totalAlloc += getVal(23);
+                        });
+                        
+                        const avgPeriod = totalValue > 0 ? (weightedPeriodSum / totalValue) : 0;
+                        const ltPct = totalValue > 0 ? (totalLTValue / totalValue) * 100 : 0;
+                        const absoluteReturn = totalCost > 0 ? ((totalValue - totalCost) / totalCost) * 100 : 0;
+                        const totalProfit = totalValue - totalCost;
+                        
+                        const newRow = document.createElement("tr");
+                        newRow.className = "asset-row consolidated-row";
+                        
+                        const createCell = (text, align = "left", bold = false, color = null, className = null, title = null) => {
+                            const td = document.createElement("td");
+                            if (align !== "left") td.style.textAlign = align;
+                            if (bold) td.style.fontWeight = "bold";
+                            if (color) td.style.color = color;
+                            if (className) td.className = className;
+                            if (title) td.title = title;
+                            td.textContent = text;
+                            return td;
+                        };
+                        
+                        newRow.appendChild(createCell(sNo++, "left", false, "var(--text-secondary)"));
+                        newRow.appendChild(createCell(Array.from(accounts).join(", "), "left", true, "var(--text-secondary)"));
+                        newRow.appendChild(createCell(Array.from(folios).join(", "), "left", false, "var(--text-secondary)"));
+                        newRow.appendChild(createCell(Array.from(advisors).join(", "), "left", true, "#a78bfa"));
+                        
+                        const tdScheme = createCell(schemeName, "left", true, null, null, schemeName);
+                        tdScheme.style.maxWidth = "260px";
+                        tdScheme.style.whiteSpace = "nowrap";
+                        tdScheme.style.overflow = "hidden";
+                        tdScheme.style.textOverflow = "ellipsis";
+                        newRow.appendChild(tdScheme);
+                        
+                        const tdType = document.createElement("td");
+                        const badgeSpan = document.createElement("span");
+                        badgeSpan.className = "badge badge-unsold";
+                        badgeSpan.style.fontSize = "11px";
+                        badgeSpan.style.textTransform = "none";
+                        badgeSpan.textContent = Array.from(fundTypes).join(", ");
+                        tdType.appendChild(badgeSpan);
+                        newRow.appendChild(tdType);
+                        
+                        newRow.appendChild(createCell(formatINRWithCurrency(totalCost), "right"));
+                        newRow.appendChild(createCell(formatINRWithCurrency(totalValue), "right", true, "#60a5fa"));
+                        newRow.appendChild(createCell(formatINRWithCurrency(totalProfit), "right", true, null, totalProfit >= 0 ? "metric-change positive" : "metric-change negative"));
+                        newRow.appendChild(createCell(absoluteReturn.toFixed(2) + "%", "right", true, null, absoluteReturn >= 0 ? "metric-change positive" : "metric-change negative"));
+                        
+                        const getReturnClass = (txt) => {
+                            if (!txt || txt === "-") return null;
+                            const val = parseFloat(txt.replace(/[%,]/g, ""));
+                            return isNaN(val) ? null : (val >= 0 ? "metric-change positive" : "metric-change negative");
+                        };
+                        const r1m = rows[0].cells[10].textContent.trim();
+                        const r3m = rows[0].cells[11].textContent.trim();
+                        const r6m = rows[0].cells[12].textContent.trim();
+                        const r1y = rows[0].cells[13].textContent.trim();
+                        newRow.appendChild(createCell(r1m, "right", false, null, getReturnClass(r1m)));
+                        newRow.appendChild(createCell(r3m, "right", false, null, getReturnClass(r3m)));
+                        newRow.appendChild(createCell(r6m, "right", false, null, getReturnClass(r6m)));
+                        newRow.appendChild(createCell(r1y, "right", false, null, getReturnClass(r1y)));
+                        
+                        newRow.appendChild(createCell(avgPeriod.toFixed(1), "right"));
+                        newRow.appendChild(createCell(Array.from(ltTenures).join(", "), "right", false, "var(--text-secondary)"));
+                        newRow.appendChild(createCell(formatINRWithCurrency(totalLTValue), "right", false, "var(--accent-green)"));
+                        newRow.appendChild(createCell(formatINRWithCurrency(totalSTValue), "right", false, "#fbbf24"));
+                        newRow.appendChild(createCell(ltPct.toFixed(1) + "%", "right", true, "#a78bfa"));
+                        
+                        const exitLoadTexts = rows.map(r => r.cells[19].textContent.trim());
+                        newRow.appendChild(createCell(Array.from(new Set(exitLoadTexts)).join(", "), "right", false, "var(--text-secondary)"));
+                        
+                        newRow.appendChild(createCell(formatINRWithCurrency(totalELFree), "right", false, "var(--accent-green)"));
+                        newRow.appendChild(createCell(formatINRWithCurrency(totalELSubject), "right", false, "#fbbf24"));
+                        newRow.appendChild(createCell(formatINRWithCurrency(totalELAmt), "right", true, totalELAmt > 0 ? "#f87171" : "var(--text-secondary)"));
+                        newRow.appendChild(createCell(totalAlloc.toFixed(2) + "%", "right", true, "#10b981"));
+                        
+                        newRow.lastChild.style.paddingRight = "24px";
+                        
+                        rowsToRender.push(newRow);
+                    }
+                    
+                    // Sort consolidated rows by Allocation descending initially if no sort is active
+                    if (!currentSortCol) {
+                        rowsToRender.sort((a, b) => {
+                            const allocA = parseNumericValue(a.cells[23].textContent);
+                            const allocB = parseNumericValue(b.cells[23].textContent);
+                            return allocB - allocA;
+                        });
+                        rowsToRender.forEach((row, index) => {
+                            row.cells[0].textContent = index + 1;
+                        });
+                    }
+                } else {
+                    filteredRows.forEach((row, index) => {
+                        row.style.display = "";
+                        row.cells[0].textContent = index + 1;
+                        rowsToRender.push(row);
+                    });
+                }
+                
+                rowsToRender.forEach(row => {
+                    tbody.appendChild(row);
+                });
+                
+                reapplyColumnVisibility();
+                
+                if (currentSortCol) {
+                    const targetHeader = Array.from(headers).find(h => h.getAttribute("data-sort") === currentSortCol);
+                    if (targetHeader) {
+                        const colIndex = Array.from(headerRow.cells).indexOf(targetHeader);
+                        if (colIndex !== -1) {
+                            sortRows(colIndex, currentSortCol);
+                        }
+                    }
+                } else {
+                    updateSubtotals();
+                }
+            }
+            
+            // Run initial subtotal calculation on page load
+            updateSubtotals();
+            
+            // --- 2. Dynamic Column-wise Sorting ---
+            let currentSortCol = null;
+            let currentSortOrder = "asc"; // "asc" or "desc"
+            
+            const headers = document.querySelectorAll(".sort-header");
+            headers.forEach((header, index) => {
+                header.addEventListener("click", function() {
+                    const sortKey = this.getAttribute("data-sort");
+                    const colIndex = index + 1; // S.No is 0
+                    
+                    if (currentSortCol === sortKey) {
+                        currentSortOrder = currentSortOrder === "asc" ? "desc" : "asc";
+                    } else {
+                        currentSortCol = sortKey;
+                        currentSortOrder = "asc";
+                    }
+                    
+                    // Update UI indicators
+                    headers.forEach(h => {
+                        const text = h.textContent.replace(/[▲▼↕⇅]/g, "").trim();
+                        if (h.getAttribute("data-sort") === sortKey) {
+                            h.innerHTML = text + (currentSortOrder === "asc" ? " ▲" : " ▼");
+                        } else {
+                            h.innerHTML = text + " ⇅";
+                        }
+                    });
+                    
+                    sortRows(colIndex, sortKey);
+                });
+            });
+            
+            function parseNumericValue(text) {
+                // Strip ₹, %, commas, and parse float
+                let clean = text.replace(/[₹%,]/g, "").trim();
+                let val = parseFloat(clean);
+                return isNaN(val) ? -Infinity : val;
+            }
+            
+            function sortRows(colIndex, sortKey) {
+                const isNumeric = ["cost", "value", "profit", "return", "r_1m", "r_3m", "r_6m", "r_1y", "period", "lt_tenure", "lt_val", "st_val", "lt_pct", "el_tenure", "el_free", "el_subject", "el_amt", "alloc"].includes(sortKey);
+                
+                const currentRows = Array.from(tbody.querySelectorAll("tr.asset-row"));
+                
+                currentRows.sort((a, b) => {
+                    const valA = a.cells[colIndex].textContent.trim();
+                    const valB = b.cells[colIndex].textContent.trim();
+                    
+                    if (isNumeric) {
+                        const numA = parseNumericValue(valA);
+                        const numB = parseNumericValue(valB);
+                        return currentSortOrder === "asc" ? numA - numB : numB - numA;
+                    } else {
+                        return currentSortOrder === "asc" 
+                            ? valA.localeCompare(valB) 
+                            : valB.localeCompare(valA);
+                    }
+                });
+                
+                // Re-append sorted rows to tbody
+                currentRows.forEach(row => tbody.appendChild(row));
+                
+                // Re-index visible rows
+                let visibleCount = 1;
+                currentRows.forEach(row => {
+                    if (row.style.display !== "none") {
+                        row.cells[0].textContent = visibleCount++;
+                    }
+                });
+                
+                updateSubtotals();
+            }
+
+            // --- 3. Show/Hide Columns Visibility Control ---
+            const visibilityBtn = document.getElementById("col-visibility-btn");
+            const visibilityDropdown = document.getElementById("col-visibility-dropdown");
+            const checkboxesContainer = document.getElementById("col-checkboxes-container");
+            const headerRow = document.getElementById("header-row");
+            const resetBtn = document.getElementById("reset-columns-btn");
+            
+            if (visibilityBtn && visibilityDropdown && checkboxesContainer && headerRow) {
+                // Toggle dropdown display
+                visibilityBtn.addEventListener("click", function(e) {
+                    e.stopPropagation();
+                    const isHidden = visibilityDropdown.style.display === "none";
+                    visibilityDropdown.style.display = isHidden ? "block" : "none";
+                });
+                
+                // Hide dropdown when clicking outside
+                document.addEventListener("click", function(e) {
+                    if (!visibilityDropdown.contains(e.target) && e.target !== visibilityBtn) {
+                        visibilityDropdown.style.display = "none";
+                    }
+                });
+                
+                const tableHeaders = Array.from(headerRow.cells);
+                const hiddenColumnsKey = "hidden_cols_account_report";
+                const savedHiddenCols = JSON.parse(localStorage.getItem(hiddenColumnsKey) || "[]");
+                
+                tableHeaders.forEach((th, index) => {
+                    // Do not allow hiding S.No (index 0) or Scheme Name (index 4)
+                    if (index === 0 || index === 4) return;
+                    
+                    const columnName = th.textContent.replace(/[▲▼↕⇅]/g, "").trim();
+                    
+                    // Create checkbox element
+                    const label = document.createElement("label");
+                    label.className = "col-visibility-label";
+                    
+                    const checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.checked = !savedHiddenCols.includes(index);
+                    checkbox.style.cursor = "pointer";
+                    checkbox.style.accentColor = "var(--accent-blue)";
+                    
+                    const spanText = document.createElement("span");
+                    spanText.textContent = columnName;
+                    
+                    label.appendChild(checkbox);
+                    label.appendChild(spanText);
+                    checkboxesContainer.appendChild(label);
+                    
+                    const updateLabelStyle = () => {
+                        if (checkbox.checked) {
+                            label.style.color = "var(--text-primary)";
+                            label.style.fontWeight = "500";
+                        } else {
+                            label.style.color = "var(--text-secondary)";
+                            label.style.fontWeight = "400";
+                        }
+                    };
+                    
+                    const toggleColumnDisplay = () => {
+                        const showCol = checkbox.checked;
+                        
+                        // Toggle for all rows (headers, filters, and tbody cells)
+                        const tableRows = table.rows;
+                        for (let r = 0; r < tableRows.length; r++) {
+                            const targetCell = tableRows[r].cells[index];
+                            if (targetCell) {
+                                targetCell.style.display = showCol ? "" : "none";
+                            }
+                        }
+                        
+                        // Update localStorage
+                        const currentHidden = JSON.parse(localStorage.getItem(hiddenColumnsKey) || "[]");
+                        if (!showCol) {
+                            if (!currentHidden.includes(index)) {
+                                currentHidden.push(index);
+                            }
+                        } else {
+                            const storedIndex = currentHidden.indexOf(index);
+                            if (storedIndex !== -1) {
+                                currentHidden.splice(storedIndex, 1);
+                            }
+                        }
+                        localStorage.setItem(hiddenColumnsKey, JSON.stringify(currentHidden));
+                        updateLabelStyle();
+                    };
+                    
+                    checkbox.addEventListener("change", toggleColumnDisplay);
+                    
+                    // Apply saved preference on page load
+                    if (savedHiddenCols.includes(index)) {
+                        toggleColumnDisplay();
+                    } else {
+                        updateLabelStyle();
+                    }
+                });
+                
+                // Show All columns event handler
+                if (resetBtn) {
+                    resetBtn.addEventListener("click", function(e) {
+                        e.stopPropagation();
+                        const checkboxes = checkboxesContainer.querySelectorAll("input[type='checkbox']");
+                        checkboxes.forEach(cb => {
+                            if (!cb.checked) {
+                                cb.checked = true;
+                                cb.dispatchEvent(new Event("change"));
+                            }
+                        });
+                        localStorage.removeItem(hiddenColumnsKey);
+                    });
+                }
+            }
+        });
+
+        function triggerSelfHeal() {
+            const btn = document.getElementById("self-heal-btn");
+            const btnText = document.getElementById("self-heal-btn-text");
+            if (!btn || btn.disabled) return;
+            
+            btn.disabled = true;
+            btn.style.opacity = "0.6";
+            btn.style.cursor = "not-allowed";
+            btnText.textContent = "Self-Healing...";
+            
+            fetch("/mutual-funds/self-heal-history", {
+                method: "POST"
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    btnText.textContent = `Healed ${data.healed_codes_count} Funds!`;
+                    btn.style.background = "#10b981";
+                    btn.style.color = "white";
+                    
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    alert("Self-healing failed: " + (data.error || "Unknown error"));
+                    resetHealButton();
+                }
+            })
+            .catch(err => {
+                alert("Error during self-healing: " + err);
+                resetHealButton();
+            });
+            
+            function resetHealButton() {
+                btn.disabled = false;
+                btn.style.opacity = "";
+                btn.style.cursor = "";
+                btnText.textContent = "Self-Heal Missing Returns";
+                btn.style.background = "rgba(30, 41, 59, 0.45)";
+                btn.style.color = "var(--text-secondary)";
+            }
+        }
+
+        // Client-side HTML Table to Excel Exporter (ignoring hidden columns and hidden filtered rows)
+        function exportDetailedTableToExcel() {
+            const table = document.getElementById("detailed-assets-table");
+            if (!table) return;
+
+            const activeTab = document.querySelector(".acct-tab-btn.active");
+            const accountName = activeTab ? activeTab.textContent.trim().replace(/\s+/g, "_") : "Account_Report";
+            const filename = `${accountName}_Asset_Wise_Data.xls`;
+
+            function parseInrText(text) {
+                if (!text) return null;
+                let t = text.replace(/[₹,\s]/g, "").trim();
+                if (t === "-" || t === "" || t.toLowerCase() === "n/a") return null;
+                let multiplier = 1;
+                if (/cr$/i.test(t)) {
+                    multiplier = 10000000;
+                    t = t.replace(/cr/i, "");
+                } else if (/l$/i.test(t)) {
+                    multiplier = 100000;
+                    t = t.replace(/l/i, "");
+                } else if (/k$/i.test(t)) {
+                    multiplier = 1000;
+                    t = t.replace(/k/i, "");
+                }
+                const val = parseFloat(t);
+                return isNaN(val) ? null : val * multiplier;
+            }
+
+            function formatCrL(val) {
+                if (val === null || val === undefined || isNaN(val)) return "";
+                const sign = val < 0 ? "-" : "";
+                const abs  = Math.abs(val);
+                if (abs >= 1e7)  return sign + (abs / 1e7).toFixed(2)  + " Cr";
+                if (abs >= 1e5)  return sign + (abs / 1e5).toFixed(2)  + " L";
+                if (abs >= 1e3)  return sign + (abs / 1e3).toFixed(2)  + " K";
+                return sign + abs.toFixed(2);
+            }
+
+            let html = `
+            <html lang="en" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <!--[if gte mso 9]>
+                <xml>
+                    <x:ExcelWorkbook>
+                        <x:ExcelWorksheets>
+                            <x:ExcelWorksheet>
+                                <x:Name>Asset Wise Data</x:Name>
+                                <x:WorksheetOptions>
+                                    <x:DisplayGridlines/>
+                                </x:WorksheetOptions>
+                            </x:ExcelWorksheet>
+                        </x:ExcelWorksheets>
+                    </x:ExcelWorkbook>
+                </xml>
+                <![endif]-->
+                <meta charset="utf-8">
+                <style>
+                    table { border-collapse: collapse; font-family: Calibri, Arial, sans-serif; font-size: 11pt; }
+                    th  { background-color: #1e293b; color: #ffffff; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 12px; }
+                    td  { border: 1px solid #cbd5e1; padding: 6px 12px; }
+                    .r   { text-align: right; }
+                    .l   { text-align: left; }
+                    .c   { text-align: center; }
+                    .total-cell { font-weight: bold; background-color: #f1f5f9; border-top: 2px solid #0f172a; border-bottom: 2px double #0f172a; }
+                </style>
+            </head>
+            <body>
+                <table>
+            `;
+
+            const headerRow  = document.getElementById("header-row");
+            const subtotalRow = document.getElementById("subtotal-row");
+            const rows = Array.from(table.querySelectorAll("tbody tr.asset-row")).filter(r => r.style.display !== "none");
+
+            function isColumnVisible(index) {
+                if (!headerRow) return true;
+                const cell = headerRow.cells[index];
+                return cell && cell.style.display !== "none";
+            }
+
+            function renderCell(tag, text, colIndex, isTotal) {
+                const isFirst = (colIndex === 0);
+                const extraClass = isTotal ? " total-cell" : "";
+                if (isFirst) return `<${tag} class="l${extraClass}">${text}</${tag}>`;
+
+                if (text.includes("₹")) {
+                    const raw = parseInrText(text);
+                    return raw !== null
+                        ? `<${tag} class="r${extraClass}">${formatCrL(raw)}</${tag}>`
+                        : `<${tag} class="l${extraClass}">${text}</${tag}>`;
+                }
+                if (text.includes("%")) {
+                    return `<${tag} class="r${extraClass}">${text}</${tag}>`;
+                }
+                const tryNum = parseFloat(text.replace(/,/g, ""));
+                if (!isNaN(tryNum) && text.trim() !== "" && !/[a-zA-Z₹%]/.test(text)) {
+                    return `<${tag} class="r${extraClass}">${text}</${tag}>`;
+                }
+                return `<${tag} class="l${extraClass}">${text}</${tag}>`;
+            }
+
+            // Header row
+            if (headerRow) {
+                html += "<tr>";
+                for (let i = 0; i < headerRow.cells.length; i++) {
+                    if (isColumnVisible(i)) {
+                        const headerText = headerRow.cells[i].textContent.replace(/[▲▼↕⇅]/g, "").trim();
+                        html += `<th>${headerText}</th>`;
+                    }
+                }
+                html += "</tr>";
+            }
+
+            // Data rows
+            let visibleSNo = 1;
+            rows.forEach(row => {
+                html += "<tr>";
+                for (let i = 0; i < row.cells.length; i++) {
+                    if (isColumnVisible(i)) {
+                        const text = row.cells[i].textContent.trim();
+                        if (i === 0) {
+                            html += `<td class="c">${visibleSNo++}</td>`;
+                        } else {
+                            html += renderCell("td", text, i, false);
+                        }
+                    }
+                }
+                html += "</tr>";
+            });
+
+            // Subtotal / Total row at bottom
+            if (subtotalRow) {
+                html += "<tr>";
+                for (let i = 0; i < subtotalRow.cells.length; i++) {
+                    if (isColumnVisible(i)) {
+                        html += renderCell("td", subtotalRow.cells[i].textContent.trim(), i, true);
+                    }
+                }
+                html += "</tr>";
+            }
+
+            html += "</table></body></html>";
+
+            const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement("a");
+            a.href     = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Client-side HTML Table to Excel Exporter for Summary Tables with formatCrL Formatting & Auto Sum Total Row
+        function exportSummaryTableToExcel(tableId, filenamePrefix) {
+            const tableEl = document.getElementById(tableId);
+            if (!tableEl) return;
+
+            const activeTab = document.querySelector(".acct-tab-btn.active");
+            const accountName = activeTab ? activeTab.textContent.trim().replace(/\s+/g, "_") : "Account";
+            const filename = `${accountName}_${filenamePrefix}.xls`;
+
+            function parseInrText(text) {
+                if (!text) return null;
+                let t = text.replace(/[₹,\s]/g, "").trim();
+                if (t === "-" || t === "" || t.toLowerCase() === "n/a") return null;
+                let multiplier = 1;
+                if (/cr$/i.test(t)) {
+                    multiplier = 10000000;
+                    t = t.replace(/cr/i, "");
+                } else if (/l$/i.test(t)) {
+                    multiplier = 100000;
+                    t = t.replace(/l/i, "");
+                } else if (/k$/i.test(t)) {
+                    multiplier = 1000;
+                    t = t.replace(/k/i, "");
+                }
+                const val = parseFloat(t);
+                return isNaN(val) ? null : val * multiplier;
+            }
+
+            function formatCrL(val) {
+                if (val === null || val === undefined || isNaN(val)) return "";
+                const sign = val < 0 ? "-" : "";
+                const abs  = Math.abs(val);
+                if (abs >= 1e7)  return sign + (abs / 1e7).toFixed(2)  + " Cr";
+                if (abs >= 1e5)  return sign + (abs / 1e5).toFixed(2)  + " L";
+                if (abs >= 1e3)  return sign + (abs / 1e3).toFixed(2)  + " K";
+                return sign + abs.toFixed(2);
+            }
+
+            const portfolioXirrAttr = tableEl.getAttribute("data-portfolio-xirr");
+            const portfolioXirr = portfolioXirrAttr ? parseFloat(portfolioXirrAttr) : null;
+
+            let html = `
+            <html lang="en" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <!--[if gte mso 9]>
+                <xml>
+                    <x:ExcelWorkbook>
+                        <x:ExcelWorksheets>
+                            <x:ExcelWorksheet>
+                                <x:Name>${filenamePrefix}</x:Name>
+                                <x:WorksheetOptions>
+                                    <x:DisplayGridlines/>
+                                </x:WorksheetOptions>
+                            </x:ExcelWorksheet>
+                        </x:ExcelWorksheets>
+                    </x:ExcelWorkbook>
+                </xml>
+                <![endif]-->
+                <meta charset="utf-8">
+                <style>
+                    table { border-collapse: collapse; font-family: Calibri, Arial, sans-serif; font-size: 11pt; }
+                    th  { background-color: #1e293b; color: #ffffff; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 12px; }
+                    td  { border: 1px solid #cbd5e1; padding: 6px 12px; }
+                    .r   { text-align: right; }
+                    .l   { text-align: left; }
+                    .c   { text-align: center; }
+                    .total-cell { font-weight: bold; background-color: #f1f5f9; border-top: 2px solid #0f172a; border-bottom: 2px double #0f172a; }
+                </style>
+            </head>
+            <body>
+                <table>
+            `;
+
+            // 1. Header (Row 1)
+            html += `
+                <tr>
+                    <th>${tableId === 'asset-class-table' ? 'Asset Class' : 'Fund Type'}</th>
+                    <th style="text-align: right;">Cost Value</th>
+                    <th style="text-align: right;">Current Value</th>
+                    <th style="text-align: right;">Absolute Return</th>
+                    <th style="text-align: right;">XIRR %</th>
+                    <th style="text-align: right;">Allocation %</th>
+                </tr>
+            `;
+
+            // 2. Data Rows
+            const tbodyRows = Array.from(tableEl.querySelectorAll("tbody tr"));
+            let sumCost = 0;
+            let sumVal  = 0;
+            let sumAlloc = 0;
+
+            tbodyRows.forEach((tr) => {
+                const catName = tr.getAttribute("data-category") || tr.cells[0].textContent.trim();
+                
+                const rawCostAttr = tr.getAttribute("data-cost");
+                const costVal = rawCostAttr !== null && rawCostAttr !== "" ? parseFloat(rawCostAttr) : parseInrText(tr.cells[1].textContent);
+
+                const rawValAttr = tr.getAttribute("data-value");
+                const curVal = rawValAttr !== null && rawValAttr !== "" ? parseFloat(rawValAttr) : parseInrText(tr.cells[2].textContent);
+
+                const rawReturnAttr = tr.getAttribute("data-return");
+                const returnVal = rawReturnAttr !== null && rawReturnAttr !== "" ? parseFloat(rawReturnAttr) : null;
+
+                const rawXirrAttr = tr.getAttribute("data-xirr");
+                const xirrVal = rawXirrAttr !== null && rawXirrAttr !== "" ? parseFloat(rawXirrAttr) : null;
+
+                const rawAllocAttr = tr.getAttribute("data-alloc");
+                const allocVal = rawAllocAttr !== null && rawAllocAttr !== "" ? parseFloat(rawAllocAttr) : null;
+
+                if (costVal !== null && !isNaN(costVal)) sumCost += costVal;
+                if (curVal !== null && !isNaN(curVal)) sumVal += curVal;
+                if (allocVal !== null && !isNaN(allocVal)) sumAlloc += allocVal;
+
+                html += "<tr>";
+                html += `<td class="l" style="font-weight: 600;">${catName}</td>`;
+                html += `<td class="r">${formatCrL(costVal)}</td>`;
+                html += `<td class="r">${formatCrL(curVal)}</td>`;
+                html += `<td class="r">${returnVal !== null && !isNaN(returnVal) ? returnVal.toFixed(2) + "%" : tr.cells[3].textContent.trim()}</td>`;
+                html += `<td class="r">${xirrVal !== null && !isNaN(xirrVal) ? xirrVal.toFixed(2) + "%" : "-"}</td>`;
+                html += `<td class="r">${allocVal !== null && !isNaN(allocVal) ? allocVal.toFixed(2) + "%" : tr.cells[5].textContent.trim()}</td>`;
+                html += "</tr>";
+            });
+
+            // 3. Total / Sum Row (Formatted with the same Lakhs / Crores format)
+            const totalReturn = sumCost > 0 ? ((sumVal - sumCost) / sumCost) * 100 : 0;
+            const totalXirrText = portfolioXirr !== null && !isNaN(portfolioXirr) ? portfolioXirr.toFixed(2) + "%" : "-";
+
+            html += `
+                <tr style="font-weight: bold;">
+                    <td class="total-cell l">Total</td>
+                    <td class="total-cell r">${formatCrL(sumCost)}</td>
+                    <td class="total-cell r">${formatCrL(sumVal)}</td>
+                    <td class="total-cell r">${totalReturn.toFixed(2)}%</td>
+                    <td class="total-cell r">${totalXirrText}</td>
+                    <td class="total-cell r">${(sumAlloc > 0 ? sumAlloc.toFixed(2) : "100.00")}%</td>
+                </tr>
+            `;
+
+            html += "</table></body></html>";
+
+            const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement("a");
+            a.href     = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+    </script>
+</body>
+</html>

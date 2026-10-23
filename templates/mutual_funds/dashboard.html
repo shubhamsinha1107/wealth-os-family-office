@@ -1,0 +1,202 @@
+<!-- templates/mutual_funds/dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mutual Funds Portfolio</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <script src="/static/js/backup.js?v=2"></script>
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/portfolio/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Portfolio Overview</a>
+                        <a href="/mutual-funds/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue); box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <a href="/mutual-funds/" class="nav-link active">Holdings AUM</a>
+                <a href="/mutual-funds/pnl" class="nav-link">Capital Gains (FIFO)</a>
+                <a href="/mutual-funds/performance" class="nav-link">XIRR & CAGR</a>
+                <a href="/mutual-funds/sips" class="nav-link">SIP Tracker</a>
+                <a href="/mutual-funds/transactions" class="nav-link">Transactions Ledger</a>
+                <a href="/mutual-funds/account-report" class="nav-link">Account Report</a>
+                <a href="/mutual-funds/monthly-profits" class="nav-link">Monthly Profits</a>
+                <a href="/mutual-funds/category-alpha" class="nav-link">Category Alpha & Rotation</a>
+                <a href="/mutual-funds/ter-cost" class="nav-link">TER & Broker Costs</a>
+                <a href="/mutual-funds/unique-funds" class="nav-link">Unique Funds</a>
+                <a href="/mutual-funds/underperforming" class="nav-link">Underperformance Diagnostics</a>
+                <a href="/mutual-funds/compare-nav" class="nav-link">Compare NAVs</a>
+                <a href="/mutual-funds/upload" class="nav-link">Upload CAS PDF</a>
+            </div>
+        </header>
+
+        <!-- Account Selector Tabs -->
+        <div class="account-tabs-bar" style="display: flex; gap: 12px; margin-top: 24px; margin-bottom: 20px; flex-wrap: wrap;">
+            {% for a in accounts %}
+                <a href="/mutual-funds/?act={{ a.code }}&advisor={{ selected_advisor }}" class="acct-tab-btn {% if selected_code == a.code %}active{% endif %}" style="background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-secondary); padding: 8px 18px; border-radius: 8px; font-weight: 600; font-size: 13px; text-decoration: none; transition: all 0.2s ease; {% if selected_code == a.code %}color: var(--text-primary); background: var(--accent-blue); border-color: var(--accent-blue); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);{% endif %}">
+                    {{ a.name }}
+                </a>
+            {% endfor %}
+        </div>
+
+        <!-- Filter & Operations Panel -->
+        <div class="glass-card" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+            <!-- Broker / Advisor Filter Form -->
+            <form method="GET" action="/mutual-funds/" id="brokerFilterForm" style="display: flex; align-items: center; gap: 12px; margin: 0;">
+                <input type="hidden" name="act" value="{{ selected_code }}">
+                <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"></path>
+                    </svg>
+                    Broker / Advisor:
+                </label>
+                <select name="advisor" class="select-input" onchange="document.getElementById('brokerFilterForm').submit()" style="background: rgba(15, 23, 42, 0.85); border: 1px solid var(--glass-border); color: var(--text-primary); padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; outline: none; cursor: pointer;">
+                    {% for adv in available_advisors %}
+                        <option value="{{ adv }}" {% if adv == selected_advisor %}selected{% endif %}>
+                            {% if adv == 'ALL' %}ALL BROKERS / ADVISORS{% else %}{{ adv|upper }}{% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+                {% if selected_advisor != 'ALL' %}
+                    <a href="/mutual-funds/?act={{ selected_code }}" style="font-size: 12px; color: #f87171; text-decoration: none; margin-left: 6px;">✕ Reset</a>
+                {% endif %}
+            </form>
+
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="font-weight: 500; font-size: 14px; color: var(--text-secondary);">
+                    Active holdings: <strong>{{ holdings|length }} schemes</strong>
+                </div>
+                <form action="/mutual-funds/sync-nav" method="POST" style="margin: 0;">
+                    <button type="submit" class="btn-primary" style="padding: 7px 14px; font-size: 13px;">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12a7.5 7.5 0 0 0 15 0m-15 0a7.5 7.5 0 1 1 15 0m-15 0H3m16.5 0H21m-1.5 0H12m-8.25 0h8.25"></path>
+                        </svg>
+                        Sync Live NAVs
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {% if success_message %}
+        <div class="alert alert-success">
+            {{ success_message }}
+        </div>
+        {% endif %}
+
+        {% if sync_started %}
+        <div class="alert alert-success" style="background: rgba(59, 130, 246, 0.1); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.2); display: flex; align-items: center; gap: 10px; font-weight: 500;">
+            <span class="spinner" style="border: 2px solid rgba(59, 130, 246, 0.2); border-top: 2px solid var(--accent-blue); border-radius: 50%; width: 14px; height: 14px; display: inline-block; animation: spin 1s linear infinite; flex-shrink: 0;"></span>
+            <span>NAV synchronization is running in the background. Asset valuations will update in 1-2 minutes. Please refresh this page shortly to see the latest figures.</span>
+        </div>
+        <style>
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+        {% endif %}
+
+        <!-- Portfolio Metrics Summary -->
+        <div class="metrics-grid">
+            <div class="glass-card metric-card">
+                <div class="metric-title">Invested Amount</div>
+                <div class="metric-value">₹{{ summary.total_cost|format_inr }}</div>
+                <div class="metric-change" style="color: var(--text-secondary);">Principal Invested</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Current Valuation</div>
+                <div class="metric-value">₹{{ summary.total_value|format_inr }}</div>
+                <div class="metric-change" style="color: var(--text-secondary);">Market Value</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Unrealized profit/loss</div>
+                <div class="metric-value" style="color: {% if summary.total_gain >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                    ₹{{ summary.total_gain|format_inr }}
+                </div>
+                <div class="metric-change {% if summary.total_gain >= 0 %}positive{% else %}negative{% endif %}">
+                    {{ "{:+.2%}".format(summary.total_returns_pct) }} Total Return
+                </div>
+            </div>
+        </div>
+
+        <!-- Holdings Table -->
+        <div class="glass-card" style="padding: 24px;">
+            <div class="table-container" style="margin-top: 0;">
+                <table style="margin-top: 0;">
+                    <thead>
+                        <tr>
+                            <th>Owner</th>
+                            <th>Broker / Advisor</th>
+                            <th>Folio Number</th>
+                            <th>Scheme Name</th>
+                            <th style="text-align: right;">Units Held</th>
+                            <th style="text-align: right;">Avg Cost NAV</th>
+                            <th style="text-align: right;">Cost Value</th>
+                            <th style="text-align: right;">Current NAV</th>
+                            <th style="text-align: right;">Market Value</th>
+                            <th style="text-align: right;">Gain / Loss</th>
+                            <th style="text-align: right;">Returns %</th>
+                            <th style="text-align: center;">As Of Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if holdings %}
+                            {% for h in holdings %}
+                            <tr>
+                                <td style="font-weight: 600; color: #a78bfa;">{{ h.owner }}</td>
+                                <td style="font-size: 12px; font-weight: 600; color: {% if h.advisor == 'DIRECT' %}#34d399{% elif 'PRIME' in h.advisor.upper() %}#60a5fa{% elif 'NEXUS' in h.advisor.upper() %}#fbbf24{% else %}var(--text-secondary){% endif %};">
+                                    {{ h.advisor }}
+                                </td>
+                                <td style="font-family: monospace; color: var(--text-secondary);">{{ h.folio }}</td>
+                                <td style="font-weight: 500; max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ h.scheme }}">
+                                    {{ h.scheme }}
+                                </td>
+                                <td style="text-align: right; font-weight: 500;">{{ "{:,.3f}".format(h.units) }}</td>
+                                <td style="text-align: right; color: var(--text-secondary);">₹{{ "{:,.4f}".format(h.avg_nav) }}</td>
+                                <td style="text-align: right; font-weight: 500;">₹{{ h.cost_value|format_inr }}</td>
+                                <td style="text-align: right; color: var(--accent-blue);">₹{{ "{:,.4f}".format(h.current_nav) if h.current_nav else "N/A" }}</td>
+                                <td style="text-align: right; font-weight: 600;">₹{{ h.current_value|format_inr if h.current_value else "0.00" }}</td>
+                                <td style="text-align: right; font-weight: 600; color: {% if h.gain >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                    ₹{{ h.gain|format_inr }}
+                                </td>
+                                <td style="text-align: right;">
+                                    <span class="badge {% if h.gain >= 0 %}badge-positive{% else %}badge-negative{% endif %}">
+                                        {{ "{:+.2%}".format(h.returns_pct) }}
+                                    </span>
+                                </td>
+                                <td style="text-align: center; color: var(--text-secondary); font-size: 12px;">{{ h.as_of_date }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="11" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                    No mutual fund holdings found in database. Go to <strong>Upload CAS PDF</strong> tab to import your transactions.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

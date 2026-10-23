@@ -1,0 +1,807 @@
+<!-- templates/alternatives/aif_detail.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ fund.fund_name }} - Fund Detail</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="/static/js/backup.js?v=2"></script>
+    <style>
+        :root {
+            --bg-gradient-start: #0f172a;
+            --bg-gradient-end: #020617;
+            --glass-bg: rgba(30, 41, 59, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .module-selector {
+            display: flex;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .module-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .module-link:hover {
+            color: var(--text-primary);
+        }
+
+        .module-link.active {
+            color: var(--text-primary);
+            background: var(--accent-purple);
+            box-shadow: 0 2px 8px 0 rgba(139, 92, 246, 0.3);
+        }
+
+        /* Page title area */
+        .fund-title-section {
+            margin-bottom: 8px;
+        }
+
+        .fund-title-section h2 {
+            font-size: 28px;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(135deg, #f8fafc 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .badge-owner {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .badge-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(139, 92, 246, 0.15);
+            color: #a78bfa;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        /* Fund summary metrics */
+        .fund-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .fund-metric-card {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .fund-metric-card:hover {
+            background: rgba(15, 23, 42, 0.6);
+            border-color: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .metric-sub {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Two-column detail layout */
+        .detail-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+            margin-top: 28px;
+        }
+
+        /* Section cards */
+        .section-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .section-title .icon-txn {
+            background: rgba(59, 130, 246, 0.15);
+        }
+
+        .section-title .icon-val {
+            background: rgba(139, 92, 246, 0.15);
+        }
+
+        .count-badge {
+            background: rgba(148, 163, 184, 0.15);
+            color: var(--text-secondary);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Table styling */
+        .section-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .section-table thead th {
+            padding: 12px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            background: rgba(15, 23, 42, 0.3);
+            border-bottom: 1px solid var(--glass-border);
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .section-table tbody td {
+            padding: 12px 16px;
+            font-size: 13px;
+            color: var(--text-primary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            vertical-align: middle;
+        }
+
+        .section-table tbody tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.015);
+        }
+
+        .section-table tbody tr:nth-child(odd) {
+            background: rgba(15, 23, 42, 0.25);
+        }
+
+        .section-table tbody tr:hover {
+            background: rgba(59, 130, 246, 0.08) !important;
+        }
+
+        .section-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Transaction type badges */
+        .badge-drawdown {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .badge-redemption {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        /* Delete button */
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            line-height: 1;
+        }
+
+        .btn-delete:hover {
+            background: rgba(239, 68, 68, 0.25);
+            border-color: rgba(239, 68, 68, 0.4);
+            transform: scale(1.1);
+        }
+
+        /* Form area */
+        .form-area {
+            background: rgba(15, 23, 42, 0.3);
+            border-top: 1px solid var(--glass-border);
+            padding: 20px 24px;
+        }
+
+        .form-area h4 {
+            margin: 0 0 16px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-area h4::before {
+            content: '+';
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-blue);
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-field label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-weight: 600;
+        }
+
+        .form-field input,
+        .form-field select {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .form-field input:focus,
+        .form-field select:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .form-field input::placeholder {
+            color: rgba(148, 163, 184, 0.5);
+        }
+
+        .btn-submit {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 20px;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, #2563eb 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 36px 24px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .empty-state .empty-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+            opacity: 0.4;
+        }
+
+        /* Percentage change pills */
+        .pct-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .pct-positive {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--accent-green);
+        }
+
+        .pct-negative {
+            background: rgba(239, 68, 68, 0.12);
+            color: var(--accent-red);
+        }
+
+        .pct-neutral {
+            background: rgba(148, 163, 184, 0.12);
+            color: var(--text-secondary);
+        }
+
+        /* Fund meta info row */
+        .fund-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .meta-item strong {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .meta-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--text-secondary);
+            opacity: 0.4;
+        }
+
+        /* Notes column */
+        .notes-text {
+            max-width: 150px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .detail-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .fund-metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .header-top {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+
+            .fund-title-section h2 {
+                font-size: 22px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .fund-metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metric-value {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ========== HEADER ========== -->
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div class="header-top">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div class="module-selector">
+                        <a href="/mutual-funds/" class="module-link">Mutual Funds</a>
+                        <a href="/equities/" class="module-link">Equities</a>
+                        <a href="/insurance/" class="module-link">Insurance</a>
+                        <a href="/alternatives/unlisted/" class="module-link">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" class="module-link active">AIF / PMS</a>
+                        <a href="/gold/" class="module-link">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nav-tabs" style="justify-content: space-between; align-items: center; width: 100%; padding-right: 12px; box-sizing: border-box;">
+                <div style="display: flex; gap: 8px;">
+                    <a href="/alternatives/aif/" class="nav-link">&larr; Back to AIF Portfolio</a>
+                    <a href="#" class="nav-link active">Fund Detail</a>
+                </div>
+            </div>
+        </header>
+
+        <!-- ========== FUND TITLE ========== -->
+        <div class="fund-title-section" style="margin-top: 8px;">
+            <h2>{{ fund.fund_name }}</h2>
+            <div class="fund-meta">
+                <span class="badge-owner">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+                    {{ fund.owner }}
+                </span>
+                <span class="badge-type">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"/></svg>
+                    {{ fund.fund_type }}
+                </span>
+                {% if fund.manager_name %}
+                <div class="meta-dot"></div>
+                <span class="meta-item">Manager: <strong>{{ fund.manager_name }}</strong></span>
+                {% endif %}
+                {% if fund.investment_date %}
+                <div class="meta-dot"></div>
+                <span class="meta-item">Invested: <strong>{{ fund.investment_date }}</strong></span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ========== FUND SUMMARY METRICS ========== -->
+        <div class="glass-card" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.7) 100%); padding: 28px;">
+            <div class="fund-metrics-grid">
+                <!-- Total Invested -->
+                <div class="fund-metric-card">
+                    <span class="metric-label">Total Invested</span>
+                    <span class="metric-value">₹{{ fund.amount_invested|format_inr }}</span>
+                </div>
+
+                <!-- Current Value -->
+                <div class="fund-metric-card">
+                    <span class="metric-label">Current Value</span>
+                    <span class="metric-value" style="color: var(--accent-blue);">₹{{ fund.current_value|format_inr }}</span>
+                </div>
+
+                <!-- P&L -->
+                <div class="fund-metric-card">
+                    <span class="metric-label">Profit / Loss</span>
+                    <span class="metric-value" style="color: {% if fund.pnl >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                        {% if fund.pnl >= 0 %}+{% endif %}₹{{ fund.pnl|format_inr }}
+                    </span>
+                    <span class="metric-sub" style="color: {% if fund.return_pct >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                        {% if fund.return_pct >= 0 %}▲{% else %}▼{% endif %} {{ "%.2f"|format(fund.return_pct * 100) }}% return
+                    </span>
+                </div>
+
+                <!-- XIRR -->
+                <div class="fund-metric-card">
+                    <span class="metric-label">XIRR</span>
+                    {% if fund.xirr is not none %}
+                    <span class="metric-value" style="color: {% if fund.xirr >= 0 %}#60a5fa{% else %}var(--accent-red){% endif %};">
+                        {{ "%.2f"|format(fund.xirr) }}%
+                    </span>
+                    {% else %}
+                    <span class="metric-value" style="color: var(--text-secondary);">&mdash;</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if fund.notes %}
+            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--glass-border);">
+                <span class="metric-label">Notes</span>
+                <p style="margin: 6px 0 0; font-size: 14px; color: var(--text-secondary); line-height: 1.6;">{{ fund.notes }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ========== TWO-COLUMN DETAIL SECTIONS ========== -->
+        <div class="detail-columns">
+
+            <!-- ===== LEFT: TRANSACTION HISTORY ===== -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <span class="icon icon-txn">📊</span>
+                        Capital Calls &amp; Redemptions
+                    </h3>
+                    <span class="count-badge">{{ transactions|length }} record{{ 's' if transactions|length != 1 }}</span>
+                </div>
+
+                {% if transactions %}
+                <div style="overflow-x: auto;">
+                    <table class="section-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th style="text-align: right;">Amount</th>
+                                <th style="text-align: right;">NAV</th>
+                                <th style="text-align: right;">Units</th>
+                                <th>Notes</th>
+                                <th style="text-align: center; width: 44px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for txn in transactions %}
+                            <tr>
+                                <td style="font-family: monospace; color: var(--text-secondary); white-space: nowrap;">{{ txn.transaction_date }}</td>
+                                <td>
+                                    {% if txn.transaction_type == 'DRAWDOWN' %}
+                                    <span class="badge-drawdown">DRAWDOWN</span>
+                                    {% elif txn.transaction_type == 'REDEMPTION' %}
+                                    <span class="badge-redemption">REDEMPTION</span>
+                                    {% else %}
+                                    <span class="badge-drawdown">{{ txn.transaction_type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: right; font-weight: 600; white-space: nowrap;">₹{{ txn.amount|format_inr }}</td>
+                                <td style="text-align: right; color: var(--text-secondary);">{{ "%.4f"|format(txn.nav) if txn.nav else '—' }}</td>
+                                <td style="text-align: right; color: var(--text-secondary);">{{ "%.4f"|format(txn.units) if txn.units else '—' }}</td>
+                                <td><span class="notes-text" title="{{ txn.notes or '' }}">{{ txn.notes or '—' }}</span></td>
+                                <td style="text-align: center;">
+                                    <form method="post" action="/alternatives/aif/transaction/{{ txn.id }}/delete" style="margin: 0;">
+                                        <button type="submit" class="btn-delete" onclick="return confirm('Delete this transaction?')" title="Delete">✕</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">📋</div>
+                    <p>No transactions recorded yet.</p>
+                </div>
+                {% endif %}
+
+                <!-- Add Transaction Form -->
+                <div class="form-area">
+                    <h4>Add Transaction</h4>
+                    <form method="post" action="/alternatives/aif/{{ fund.id }}/transaction/add">
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label>Date</label>
+                                <input name="transaction_date" type="date" required>
+                            </div>
+                            <div class="form-field">
+                                <label>Type</label>
+                                <select name="transaction_type" required>
+                                    <option value="DRAWDOWN">Drawdown</option>
+                                    <option value="REDEMPTION">Redemption</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label>Amount (₹)</label>
+                                <input name="amount" type="number" step="0.01" placeholder="0.00" required>
+                            </div>
+                            <div class="form-field">
+                                <label>NAV</label>
+                                <input name="nav" type="number" step="0.0001" placeholder="Optional">
+                            </div>
+                            <div class="form-field">
+                                <label>Units</label>
+                                <input name="units" type="number" step="0.0001" placeholder="Optional">
+                            </div>
+                            <div class="form-field">
+                                <label>Notes</label>
+                                <input name="notes" type="text" placeholder="Optional">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-submit">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                            Add Transaction
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ===== RIGHT: VALUATION HISTORY ===== -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <span class="icon icon-val">📈</span>
+                        Monthly Valuations
+                    </h3>
+                    <span class="count-badge">{{ valuations|length }} record{{ 's' if valuations|length != 1 }}</span>
+                </div>
+
+                {% if valuations %}
+                <div style="overflow-x: auto;">
+                    <table class="section-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th style="text-align: right;">Valuation</th>
+                                <th style="text-align: center;">% Change</th>
+                                <th>Notes</th>
+                                <th style="text-align: center; width: 44px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for val in valuations %}
+                            <tr>
+                                <td style="font-family: monospace; color: var(--text-secondary); white-space: nowrap;">{{ val.valuation_date }}</td>
+                                <td style="text-align: right; font-weight: 600; white-space: nowrap;">₹{{ val.valuation_amount|format_inr }}</td>
+                                <td style="text-align: center;">
+                                    {% if val.pct_change is not none %}
+                                    <span class="pct-pill {% if val.pct_change > 0 %}pct-positive{% elif val.pct_change < 0 %}pct-negative{% else %}pct-neutral{% endif %}">
+                                        {% if val.pct_change > 0 %}+{% endif %}{{ "%.2f"|format(val.pct_change * 100) }}%
+                                    </span>
+                                    {% else %}
+                                    <span class="pct-pill pct-neutral">&mdash;</span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="notes-text" title="{{ val.notes or '' }}">{{ val.notes or '—' }}</span></td>
+                                <td style="text-align: center;">
+                                    <form method="post" action="/alternatives/aif/valuation/{{ val.id }}/delete" style="margin: 0;">
+                                        <button type="submit" class="btn-delete" onclick="return confirm('Delete this valuation?')" title="Delete">✕</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">📊</div>
+                    <p>No valuations recorded yet.</p>
+                </div>
+                {% endif %}
+
+                <!-- Add Valuation Form -->
+                <div class="form-area">
+                    <h4>Add Valuation</h4>
+                    <form method="post" action="/alternatives/aif/{{ fund.id }}/valuation/add">
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label>Date</label>
+                                <input name="valuation_date" type="date" required>
+                            </div>
+                            <div class="form-field">
+                                <label>Amount (₹)</label>
+                                <input name="valuation_amount" type="number" step="0.01" placeholder="0.00" required>
+                            </div>
+                            <div class="form-field" style="grid-column: span 1;">
+                                <label>Notes</label>
+                                <input name="notes" type="text" placeholder="Optional">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-submit">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                            Add Valuation
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+        <!-- end detail-columns -->
+
+    </div>
+    <!-- end container -->
+</body>
+</html>

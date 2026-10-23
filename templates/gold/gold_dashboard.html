@@ -1,0 +1,899 @@
+<!-- templates/gold/gold_dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gold &amp; SGB Portfolio</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=5">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="/static/js/backup.js?v=2"></script>
+    <style>
+        .tab-link {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        .tab-link:hover {
+            color: var(--text-primary);
+        }
+        .tab-link.active {
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--accent-blue);
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .excel-filter {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 5px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            outline: none;
+            font-family: inherit;
+            transition: border-color 0.2s ease;
+        }
+        .excel-filter:focus {
+            border-color: var(--accent-blue);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <h1>Gold &amp; SGB Portfolio</h1>
+                    <div style="font-size: 13px; color: var(--text-secondary);">Reporting date: <strong style="color: var(--text-primary);">{{ as_of_date }}</strong></div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/portfolio/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Portfolio Overview</a>
+                        <a href="/mutual-funds/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue); box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs" style="border-bottom: 1px solid var(--glass-border); padding-bottom: 0;">
+                <button class="tab-link active" onclick="openTab(event, 'consolidated-tab')">Consolidated SGB Portfolio</button>
+                <button class="tab-link" onclick="openTab(event, 'primary-tab')">Primary Market SGBs</button>
+                <button class="tab-link" onclick="openTab(event, 'secondary-tab')">Secondary Market SGBs</button>
+                <button class="tab-link" onclick="openTab(event, 'all-holdings-tab')">All SGB Holdings</button>
+                <button class="tab-link" onclick="openTab(event, 'sgb-dates-tab')">SGB Purchase &amp; Maturity Details</button>
+            </div>
+        </header>
+
+        {% if upload_messages %}
+            {% for msg in upload_messages %}
+            <div class="glass-card" style="padding: 16px 24px; margin-bottom: 24px; border-color: {% if msg.type == 'success' %}var(--accent-green){% else %}var(--accent-red){% endif %}; background: rgba({% if msg.type == 'success' %}16, 185, 129{% else %}239, 68, 68{% endif %}, 0.15);">
+                <div style="font-weight: 600; color: {% if msg.type == 'success' %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                    {% if msg.type == 'success' %}✓ Success{% else %}⚠ Error{% endif %}
+                </div>
+                <div style="font-size: 14px; margin-top: 4px; color: var(--text-primary);">{{ msg.text }}</div>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Portfolio Metrics Summary -->
+        <div class="metrics-grid">
+            <div class="glass-card metric-card">
+                <div class="metric-title">Total Gold Invested</div>
+                <div class="metric-value">₹{{ summary.total_cost|format_inr }}</div>
+                <div class="metric-change" style="color: var(--text-secondary);">Capital Deployed</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Current Valuation</div>
+                <div class="metric-value">₹{{ summary.total_value|format_inr }}</div>
+                <div class="metric-change" style="color: var(--text-secondary);">Market Value</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Absolute Gain</div>
+                <div class="metric-value" style="color: {% if summary.total_pnl >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                    ₹{{ summary.total_pnl|format_inr }}
+                </div>
+                <div class="metric-change {% if summary.total_pnl >= 0 %}positive{% else %}negative{% endif %}">
+                    {% if summary.total_pnl >= 0 %}▲{% else %}▼{% endif %} Unrealized P&amp;L
+                </div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">Overall Return</div>
+                <div class="metric-value">
+                    <span class="badge {% if summary.total_returns_pct >= 0 %}badge-positive{% else %}badge-negative{% endif %}" style="font-size: 20px; padding: 6px 14px;">
+                        {{ "{:+.2f}".format(summary.total_returns_pct * 100) }}%
+                    </span>
+                </div>
+                <div class="metric-change" style="color: var(--text-secondary);">{{ summary.count }} Bond Issue{{ 's' if summary.count != 1 else '' }}</div>
+            </div>
+        </div>
+
+        <!-- Operations Panel (Search + Export + Upload) -->
+        <div class="glass-card" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                <!-- Search -->
+                <div style="position: relative;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.3-4.3"></path>
+                    </svg>
+                    <input type="text" id="searchInput" placeholder="Search SGB series or ISIN..." oninput="filterAllTables()" style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px 12px 8px 36px; color: var(--text-primary); font-size: 13px; font-family: inherit; width: 280px; transition: border-color 0.2s ease;" onfocus="this.style.borderColor='var(--accent-blue)'" onblur="this.style.borderColor='var(--glass-border)'">
+                </div>
+                
+                <!-- Export button -->
+                <a href="/gold/export-sgb" class="btn" style="padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); border: 1px solid rgba(234, 179, 8, 0.3); color: #000; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s ease;">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path>
+                    </svg>
+                    Export SGB Schedule
+                </a>
+            </div>
+            
+            <!-- Upload Excel positions report form -->
+            <form action="/gold/upload" method="POST" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 12px; margin: 0; background: rgba(255,255,255,0.03); padding: 8px 16px; border-radius: 10px; border: 1px dashed var(--glass-border);">
+                <label for="excelFile" style="font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer;">Upload Positions Excel:</label>
+                <input type="file" id="excelFile" name="file" accept=".xlsx" required style="font-size: 12px; color: var(--text-secondary); width: 180px;">
+                <button type="submit" class="btn-primary" style="padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                    Import SGBs
+                </button>
+            </form>
+        </div>
+
+        {% macro render_sgb_table(rows, totals, table_type) %}
+        <div class="table-container" style="margin-top: 0; overflow-x: auto;">
+            <table style="margin-top: 0; width: 100%; min-width: 1200px;">
+                <thead>
+                    <tr>
+                        <th rowspan="2" style="width: 150px;">Series</th>
+                        <th rowspan="2" style="width: 120px;">ISIN</th>
+                        <th rowspan="2" style="width: 120px;">Maturity</th>
+                        <th rowspan="2" style="text-align: right; width: 90px;">CMP</th>
+                        <th colspan="3" style="text-align: center; border-left: 1px solid rgba(255,255,255,0.08);">PATRIARCH</th>
+                        <th colspan="3" style="text-align: center; border-left: 1px solid rgba(255,255,255,0.08);">MR</th>
+                        <th colspan="3" style="text-align: center; border-left: 1px solid rgba(255,255,255,0.08);">VG</th>
+                        <th colspan="3" style="text-align: center; border-left: 1px solid rgba(255,255,255,0.08);">SR</th>
+                        <th colspan="5" style="text-align: center; border-left: 1px solid rgba(255,255,255,0.08);">TOTAL</th>
+                    </tr>
+                    <tr style="font-size: 11px; color: var(--text-secondary);">
+                        <!-- PATRIARCH -->
+                        <th style="text-align: right; border-left: 1px solid rgba(255,255,255,0.08);">Qty</th>
+                        <th style="text-align: right;">Avg</th>
+                        <th style="text-align: right;">Value</th>
+                        <!-- MR -->
+                        <th style="text-align: right; border-left: 1px solid rgba(255,255,255,0.08);">Qty</th>
+                        <th style="text-align: right;">Avg</th>
+                        <th style="text-align: right;">Value</th>
+                        <!-- VG -->
+                        <th style="text-align: right; border-left: 1px solid rgba(255,255,255,0.08);">Qty</th>
+                        <th style="text-align: right;">Avg</th>
+                        <th style="text-align: right;">Value</th>
+                        <!-- SR -->
+                        <th style="text-align: right; border-left: 1px solid rgba(255,255,255,0.08);">Qty</th>
+                        <th style="text-align: right;">Avg</th>
+                        <th style="text-align: right;">Value</th>
+                        <!-- TOTAL -->
+                        <th style="text-align: right; border-left: 1px solid rgba(255,255,255,0.08);">Qty</th>
+                        <th style="text-align: right;">Cost</th>
+                        <th style="text-align: right;">Value</th>
+                        <th style="text-align: right;">P&amp;L</th>
+                        <th style="text-align: right;">Return</th>
+                    </tr>
+                </thead>
+                <tbody class="sgb-table-body">
+                    {% if rows %}
+                        {% for r in rows %}
+                        <tr class="holding-row">
+                            <td style="font-weight: 600; color: #facc15;">{{ r.series }}</td>
+                            <td style="font-family: monospace; font-size: 11px; color: var(--text-secondary);">{{ r.isin }}</td>
+                            <td style="color: var(--text-secondary); white-space: nowrap;">{{ r.maturity_date }}</td>
+                            <td style="text-align: right; font-weight: 500;">₹{{ r.last_price|format_inr }}</td>
+                            
+                            <!-- PATRIARCH -->
+                            <td style="text-align: right; border-left: 1px solid rgba(255,255,255,0.05); color: #c084fc; font-weight: 500;">
+                                {% if r.holdings.PATRIARCH.qty > 0 %}{{ "{:,.0f}".format(r.holdings.PATRIARCH.qty) }}{% else %}—{% endif %}
+                            </td>
+                            <td style="text-align: right; color: var(--text-secondary);">
+                                {% if r.holdings.PATRIARCH.qty > 0 %}₹{{ r.holdings.PATRIARCH.avg|format_inr }}{% else %}—{% endif %}
+                            </td>
+                            <td style="text-align: right; color: #c084fc;">
+                                {% if r.holdings.PATRIARCH.qty > 0 %}₹{{ (r.holdings.PATRIARCH.qty * r.last_price)|format_inr }}{% else %}—{% endif %}
+                            </td>
+                            
+                            <!-- MR -->
+                            <td style="text-align: right; border-left: 1px solid rgba(255,255,255,0.05); color: #fbbf24; font-weight: 500;">
+                                {% if r.holdings.MR.qty > 0 %}{{ "{:,.0f}".format(r.holdings.MR.qty) }}{% else %}—{% endif %}
+                            </td>
+                            <td style="text-align: right; color: var(--text-secondary);">
+                                {% if r.holdings.MR.qty > 0 %}₹{{ r.holdings.MR.avg|format_inr }}{% else %}—{% endif %}
+                            </td>
+                            <td style="text-align: right; color: #fbbf24;">
+                                {% if r.holdings.MR.qty > 0 %}₹{{ (r.holdings.MR.qty * r.last_price)|format_inr }}{% else %}—{% endif %}
+                            </td>
+                            
+                            <!-- VG -->
+                            <td style="text-align: right; border-left: 1px solid rgba(255,255,255,0.05); color: #34d399; font-weight: 500;">
+                                {% if r.holdings.VG.qty > 0 %}{{ "{:,.0f}".format(r.holdings.VG.qty) }}{% else %}—{% endif %}
+                            </td>
+                            <td style="text-align: right; color: var(--text-secondary);">
+                                {% if r.holdings.VG.qty > 0 %}₹{{ r.holdings.VG.avg|format_inr }}{% else %}—{% endif %}
+                            </td>
+                            <td style="text-align: right; color: #34d399;">
+                                {% if r.holdings.VG.qty > 0 %}₹{{ (r.holdings.VG.qty * r.last_price)|format_inr }}{% else %}—{% endif %}
+                            </td>
+                            
+                            <!-- SR -->
+                            <td style="text-align: right; border-left: 1px solid rgba(255,255,255,0.05); color: #60a5fa; font-weight: 500;">
+                                {% if r.holdings.SR.qty > 0 %}{{ "{:,.0f}".format(r.holdings.SR.qty) }}{% else %}—{% endif %}
+                            </td>
+                            <td style="text-align: right; color: var(--text-secondary);">
+                                {% if r.holdings.SR.qty > 0 %}₹{{ r.holdings.SR.avg|format_inr }}{% else %}—{% endif %}
+                            </td>
+                            <td style="text-align: right; color: #60a5fa;">
+                                {% if r.holdings.SR.qty > 0 %}₹{{ (r.holdings.SR.qty * r.last_price)|format_inr }}{% else %}—{% endif %}
+                            </td>
+                            
+                            <!-- TOTAL -->
+                            <td style="text-align: right; border-left: 1px solid rgba(255,255,255,0.08); font-weight: 600; color: var(--text-primary);">
+                                {% if r.total_qty > 0 %}{{ "{:,.0f}".format(r.total_qty) }}{% else %}—{% endif %}
+                            </td>
+                            <td style="text-align: right; font-weight: 600; color: var(--text-secondary);">
+                                {% if r.total_qty > 0 %}₹{{ r.total_cost|format_inr }}{% else %}—{% endif %}
+                            </td>
+                            <td style="text-align: right; font-weight: 600; color: #fbbf24;">
+                                {% if r.total_qty > 0 %}₹{{ r.current_value|format_inr }}{% else %}—{% endif %}
+                            </td>
+                            <td style="text-align: right; font-weight: 600; color: {% if r.pnl >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                {% if r.total_qty > 0 %}{{ "+" if r.pnl >= 0 else "" }}₹{{ r.pnl|format_inr }}{% else %}—{% endif %}
+                            </td>
+                            <td style="text-align: right;">
+                                {% if r.total_qty > 0 %}
+                                <span class="badge {% if r.return_pct >= 0 %}badge-positive{% else %}badge-negative{% endif %}">
+                                    {{ "{:+.2f}".format(r.return_pct * 100) }}%
+                                </span>
+                                {% else %}—{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        <!-- Totals Row -->
+                        <tr style="font-weight: 700; background: rgba(255,255,255,0.04); border-top: 2px solid var(--glass-border);">
+                            <td colspan="4">TOTAL / WEIGHTED AVERAGE</td>
+                            
+                            <!-- PATRIARCH -->
+                            <td style="text-align: right; border-left: 1px solid rgba(255,255,255,0.05); color: #c084fc;">
+                                {{ "{:,.0f}".format(totals.PATRIARCH.qty) }}
+                            </td>
+                            <td style="text-align: right; color: var(--text-secondary);">
+                                ₹{{ totals.PATRIARCH.avg|format_inr }}
+                            </td>
+                            <td style="text-align: right; color: #c084fc;">
+                                ₹{{ (totals.PATRIARCH.cost)|format_inr }}
+                            </td>
+                            
+                            <!-- MR -->
+                            <td style="text-align: right; border-left: 1px solid rgba(255,255,255,0.05); color: #fbbf24;">
+                                {{ "{:,.0f}".format(totals.MR.qty) }}
+                            </td>
+                            <td style="text-align: right; color: var(--text-secondary);">
+                                ₹{{ totals.MR.avg|format_inr }}
+                            </td>
+                            <td style="text-align: right; color: #fbbf24;">
+                                ₹{{ (totals.MR.cost)|format_inr }}
+                            </td>
+                            
+                            <!-- VG -->
+                            <td style="text-align: right; border-left: 1px solid rgba(255,255,255,0.05); color: #34d399;">
+                                {{ "{:,.0f}".format(totals.VG.qty) }}
+                            </td>
+                            <td style="text-align: right; color: var(--text-secondary);">
+                                ₹{{ totals.VG.avg|format_inr }}
+                            </td>
+                            <td style="text-align: right; color: #34d399;">
+                                ₹{{ (totals.VG.cost)|format_inr }}
+                            </td>
+                            
+                            <!-- SR -->
+                            <td style="text-align: right; border-left: 1px solid rgba(255,255,255,0.05); color: #60a5fa;">
+                                {{ "{:,.0f}".format(totals.SR.qty) }}
+                            </td>
+                            <td style="text-align: right; color: var(--text-secondary);">
+                                ₹{{ totals.SR.avg|format_inr }}
+                            </td>
+                            <td style="text-align: right; color: #60a5fa;">
+                                ₹{{ (totals.SR.cost)|format_inr }}
+                            </td>
+                            
+                            <!-- TOTAL -->
+                            <td style="text-align: right; border-left: 1px solid rgba(255,255,255,0.08); color: var(--text-primary);">
+                                {{ "{:,.0f}".format(totals.TOTAL.qty) }}
+                            </td>
+                            <td style="text-align: right; color: var(--text-secondary);">
+                                ₹{{ totals.TOTAL.cost|format_inr }}
+                            </td>
+                            <td style="text-align: right; color: #fbbf24;">
+                                <!-- To estimate current value we can sum person values -->
+                                {% set total_est_value = (totals.TOTAL.qty * rows[0].last_price) if rows else 0 %}
+                                ₹{{ total_est_value|format_inr }}
+                            </td>
+                            <td style="text-align: right; color: {% if total_est_value - totals.TOTAL.cost >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                {{ "+" if total_est_value - totals.TOTAL.cost >= 0 else "" }}₹{{ (total_est_value - totals.TOTAL.cost)|format_inr }}
+                            </td>
+                            <td style="text-align: right;">
+                                <span class="badge {% if total_est_value - totals.TOTAL.cost >= 0 %}badge-positive{% else %}badge-negative{% endif %}">
+                                    {{ "{:+.2f}".format(((total_est_value - totals.TOTAL.cost) / totals.TOTAL.cost * 100) if totals.TOTAL.cost > 0 else 0) }}%
+                                </span>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="21" style="text-align: center; padding: 60px 40px; color: var(--text-secondary);">
+                                <div style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">No Sovereign Gold Bonds found for this category</div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        {% endmacro %}
+
+        <!-- Tab contents -->
+        <div class="glass-card" style="padding: 24px; margin-bottom: 24px;">
+            <div id="consolidated-tab" class="tab-content" style="display: block;">
+                <h2 style="margin-bottom: 16px;">Consolidated SGB Portfolio</h2>
+                {{ render_sgb_table(consolidated, grand_totals.consolidated, 'consolidated') }}
+            </div>
+            
+            <div id="primary-tab" class="tab-content">
+                <h2 style="margin-bottom: 16px;">Primary Market SGB Portfolio</h2>
+                {{ render_sgb_table(primary, grand_totals.primary, 'primary') }}
+            </div>
+            
+            <div id="secondary-tab" class="tab-content">
+                <h2 style="margin-bottom: 16px;">Secondary Market SGB Portfolio</h2>
+                {{ render_sgb_table(secondary, grand_totals.secondary, 'secondary') }}
+            </div>
+
+            <div id="all-holdings-tab" class="tab-content">
+                <h2 style="margin-bottom: 16px;">All SGB Holdings (Flat List)</h2>
+                <div class="table-container" style="margin-top: 0; overflow-x: auto;">
+                    <table id="flat-holdings-table" style="margin-top: 0; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Owner</th>
+                                <th>Broker</th>
+                                <th>SGB Series Name</th>
+                                <th>ISIN</th>
+                                <th>Maturity Date</th>
+                                <th style="text-align: right;">Qty (Grams)</th>
+                                <th style="text-align: right;">Avg Price / Gram</th>
+                                <th style="text-align: right;">Total Cost</th>
+                                <th style="text-align: right;">Current Price</th>
+                                <th style="text-align: right;">Current Value</th>
+                                <th style="text-align: right;">P&amp;L</th>
+                                <th style="text-align: right;">Return %</th>
+                            </tr>
+                            <tr class="filter-row" style="background: rgba(15, 23, 42, 0.45); border-bottom: 2px solid var(--glass-border);">
+                                <th><input type="text" class="excel-filter" data-col="0" placeholder="Filter Owner..."></th>
+                                <th><input type="text" class="excel-filter" data-col="1" placeholder="Filter Broker..."></th>
+                                <th><input type="text" class="excel-filter" data-col="2" placeholder="Filter Series..."></th>
+                                <th><input type="text" class="excel-filter" data-col="3" placeholder="Filter ISIN..."></th>
+                                <th><input type="text" class="excel-filter" data-col="4" placeholder="Filter Maturity..."></th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if holdings %}
+                                {% for h in holdings %}
+                                <tr class="holding-row">
+                                    <td style="font-weight: 600; color: #c084fc;">{{ h.owner }}</td>
+                                    <td style="font-weight: 500; color: var(--text-secondary);">{{ h.broker }}</td>
+                                    <td style="font-weight: 600; color: #facc15;" title="{{ h.description }}">{{ h.series }}</td>
+                                    <td style="font-family: monospace; font-size: 12px; color: var(--text-secondary);">{{ h.isin }}</td>
+                                    <td style="color: var(--text-secondary); white-space: nowrap;">{{ h.maturity_date }}</td>
+                                    <td style="text-align: right; font-weight: 500;">{{ "{:,.2f}".format(h.units) }}</td>
+                                    <td style="text-align: right; font-weight: 500;">₹{{ h.purchase_price|format_inr }}</td>
+                                    <td style="text-align: right; font-weight: 600;">₹{{ h.total_cost|format_inr }}</td>
+                                    <td style="text-align: right; font-weight: 500;">₹{{ h.current_price|format_inr }}</td>
+                                    <td style="text-align: right; font-weight: 600; color: #fbbf24;">₹{{ h.current_value|format_inr }}</td>
+                                    <td style="text-align: right; font-weight: 600; color: {% if h.pnl >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                        {{ "+" if h.pnl >= 0 else "" }}₹{{ h.pnl|format_inr }}
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <span class="badge {% if h.return_pct >= 0 %}badge-positive{% else %}badge-negative{% endif %}">
+                                            {{ "{:+.2f}".format(h.return_pct * 100) }}%
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="12" style="text-align: center; padding: 60px 40px; color: var(--text-secondary);">
+                                        No holdings found.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="sgb-dates-tab" class="tab-content">
+                <h2 style="margin-bottom: 16px;">SGB Purchase &amp; Maturity Details</h2>
+                <div class="table-container" style="margin-top: 0; overflow-x: auto;">
+                    <table id="detailed-dates-table" style="margin-top: 0; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>SGB Series</th>
+                                <th>A/C</th>
+                                <th>Broker</th>
+                                <th>Tax</th>
+                                <th style="text-align: right;">Qty (Grams)</th>
+                                <th>Purchase Date</th>
+                                <th>Maturity Date</th>
+                                <th>Long Term</th>
+                                <th style="text-align: right;">Days to LT</th>
+                                <th style="text-align: right;">Purchase Price</th>
+                                <th style="text-align: right;">Current Price</th>
+                                <th style="text-align: right;">Cost</th>
+                                <th style="text-align: right;">Total Value</th>
+                                <th style="text-align: right;">Profit</th>
+                            </tr>
+                            <tr class="filter-row" style="background: rgba(15, 23, 42, 0.45); border-bottom: 2px solid var(--glass-border);">
+                                <th><input type="text" class="excel-filter" data-col="0" placeholder="Filter Series..."></th>
+                                <th><input type="text" class="excel-filter" data-col="1" placeholder="Filter A/C..."></th>
+                                <th><input type="text" class="excel-filter" data-col="2" placeholder="Filter Broker..."></th>
+                                <th><input type="text" class="excel-filter" data-col="3" placeholder="Filter Tax..."></th>
+                                <th></th>
+                                <th><input type="text" class="excel-filter" data-col="5" placeholder="Filter Purchase..."></th>
+                                <th><input type="text" class="excel-filter" data-col="6" placeholder="Filter Maturity..."></th>
+                                <th><input type="text" class="excel-filter" data-col="7" placeholder="Filter Long Term..."></th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if holdings %}
+                                {% set t_qty = namespace(val=0) %}
+                                {% set t_cost = namespace(val=0) %}
+                                {% set t_val = namespace(val=0) %}
+                                {% for h in holdings %}
+                                    {% set t_qty.val = t_qty.val + h.units %}
+                                    {% set t_cost.val = t_cost.val + h.total_cost %}
+                                    {% set t_val.val = t_val.val + h.current_value %}
+                                <tr class="holding-row">
+                                    <td style="font-weight: 600; color: #facc15;" title="{{ h.description }}">{{ h.series }}</td>
+                                    <td style="font-weight: 600; color: #c084fc;">{{ h.owner }}</td>
+                                    <td style="font-weight: 500; color: var(--text-secondary);">{{ h.broker }}</td>
+                                    <td style="font-weight: 600; color: {% if h.tax == '0%' %}#34d399{% elif h.tax == '12.5%' %}#60a5fa{% else %}#f87171{% endif %};">{{ h.tax }}</td>
+                                    <td style="text-align: right; font-weight: 500;" data-val="{{ h.units }}">{{ "{:,.2f}".format(h.units) }}</td>
+                                    <td style="color: var(--text-secondary); white-space: nowrap;">{{ h.purchase_date }}</td>
+                                    <td style="color: var(--text-secondary); white-space: nowrap;">{{ h.maturity_date }}</td>
+                                    <td style="font-weight: 600; color: {% if h.is_long_term == 'Yes' %}#34d399{% else %}#f87171{% endif %};">{{ h.is_long_term }}</td>
+                                    <td style="text-align: right; color: var(--text-secondary);">{% if h.days_to_lt > 0 %}{{ h.days_to_lt }}{% else %}—{% endif %}</td>
+                                    <td style="text-align: right; font-weight: 500;" data-val="{{ h.purchase_price }}">{{ h.purchase_price|format_sgb_k }}</td>
+                                    <td style="text-align: right; font-weight: 500;" data-val="{{ h.current_price }}">{{ h.current_price|format_sgb_k }}</td>
+                                    <td style="text-align: right; font-weight: 600;" data-val="{{ h.total_cost }}">{{ h.total_cost|format_sgb_l }}</td>
+                                    <td style="text-align: right; font-weight: 600; color: #fbbf24;" data-val="{{ h.current_value }}">{{ h.current_value|format_sgb_l }}</td>
+                                    <td style="text-align: right; font-weight: 600; color: {% if h.pnl >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};" data-val="{{ h.pnl }}">
+                                        {{ h.pnl|format_sgb_l }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                <!-- Totals Row -->
+                                <tr style="font-weight: 700; background: rgba(255,255,255,0.04); border-top: 2px solid var(--glass-border);">
+                                    <td colspan="4">TOTAL / WEIGHTED AVERAGE</td>
+                                    <td style="text-align: right;" id="tot-qty" data-val="{{ t_qty.val }}">{{ "{:,.2f}".format(t_qty.val) }}</td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td style="text-align: right; color: var(--text-secondary);" id="tot-avg-purchase">
+                                        {{ ((t_cost.val / t_qty.val) if t_qty.val > 0 else 0)|format_sgb_k }}
+                                    </td>
+                                    <td style="text-align: right; color: var(--text-secondary);" id="tot-avg-current">
+                                        {{ ((t_val.val / t_qty.val) if t_qty.val > 0 else 0)|format_sgb_k }}
+                                    </td>
+                                    <td style="text-align: right; color: var(--text-primary);" id="tot-cost">{{ t_cost.val|format_sgb_l }}</td>
+                                    <td style="text-align: right; color: #fbbf24;" id="tot-value">{{ t_val.val|format_sgb_l }}</td>
+                                    <td style="text-align: right; color: {% if t_val.val - t_cost.val >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};" id="tot-profit">
+                                        {{ (t_val.val - t_cost.val)|format_sgb_l }}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="14" style="text-align: center; padding: 60px 40px; color: var(--text-secondary);">
+                                        No holdings found.
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SGB Market Summary (Pivoted) -->
+        <div class="glass-card" style="padding: 24px; margin-bottom: 24px;">
+            <h2>SGB Market Summary Table</h2>
+            <div class="table-container" style="margin-top: 16px;">
+                <table style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Market Segment</th>
+                            <th style="text-align: right; color: #c084fc;">PATRIARCH Qty</th>
+                            <th style="text-align: right; color: #fbbf24;">MR Qty</th>
+                            <th style="text-align: right; color: #34d399;">VG Qty</th>
+                            <th style="text-align: right; color: #60a5fa;">SR Qty</th>
+                            <th style="text-align: right; font-weight: bold;">Total Qty</th>
+                            <th style="text-align: right;">Weighted Avg</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-weight: 600;">PRIMARY</td>
+                            <td style="text-align: right; color: #c084fc;">{{ "{:,.0f}".format(grand_totals.primary.PATRIARCH.qty) if grand_totals.primary.PATRIARCH.qty > 0 else "—" }}</td>
+                            <td style="text-align: right; color: #fbbf24;">{{ "{:,.0f}".format(grand_totals.primary.MR.qty) if grand_totals.primary.MR.qty > 0 else "—" }}</td>
+                            <td style="text-align: right; color: #34d399;">{{ "{:,.0f}".format(grand_totals.primary.VG.qty) if grand_totals.primary.VG.qty > 0 else "—" }}</td>
+                            <td style="text-align: right; color: #60a5fa;">{{ "{:,.0f}".format(grand_totals.primary.SR.qty) if grand_totals.primary.SR.qty > 0 else "—" }}</td>
+                            <td style="text-align: right; font-weight: 700; color: var(--text-primary);">{{ "{:,.0f}".format(grand_totals.primary.TOTAL.qty) }}</td>
+                            <td style="text-align: right; font-weight: 500;">₹{{ grand_totals.primary.TOTAL.avg|format_inr }}</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 600;">SECONDARY</td>
+                            <td style="text-align: right; color: #c084fc;">{{ "{:,.0f}".format(grand_totals.secondary.PATRIARCH.qty) if grand_totals.secondary.PATRIARCH.qty > 0 else "—" }}</td>
+                            <td style="text-align: right; color: #fbbf24;">{{ "{:,.0f}".format(grand_totals.secondary.MR.qty) if grand_totals.secondary.MR.qty > 0 else "—" }}</td>
+                            <td style="text-align: right; color: #34d399;">{{ "{:,.0f}".format(grand_totals.secondary.VG.qty) if grand_totals.secondary.VG.qty > 0 else "—" }}</td>
+                            <td style="text-align: right; color: #60a5fa;">{{ "{:,.0f}".format(grand_totals.secondary.SR.qty) if grand_totals.secondary.SR.qty > 0 else "—" }}</td>
+                            <td style="text-align: right; font-weight: 700; color: var(--text-primary);">{{ "{:,.0f}".format(grand_totals.secondary.TOTAL.qty) }}</td>
+                            <td style="text-align: right; font-weight: 500;">₹{{ grand_totals.secondary.TOTAL.avg|format_inr }}</td>
+                        </tr>
+                        <tr style="font-weight: 700; background: rgba(255,255,255,0.03); border-top: 2px solid var(--glass-border);">
+                            <td>TOTAL SGBs</td>
+                            <td style="text-align: right; color: #c084fc;">{{ "{:,.0f}".format(grand_totals.consolidated.PATRIARCH.qty) }}</td>
+                            <td style="text-align: right; color: #fbbf24;">{{ "{:,.0f}".format(grand_totals.consolidated.MR.qty) }}</td>
+                            <td style="text-align: right; color: #34d399;">{{ "{:,.0f}".format(grand_totals.consolidated.VG.qty) }}</td>
+                            <td style="text-align: right; color: #60a5fa;">{{ "{:,.0f}".format(grand_totals.consolidated.SR.qty) }}</td>
+                            <td style="text-align: right; color: #fbbf24;">{{ "{:,.0f}".format(grand_totals.consolidated.TOTAL.qty) }}</td>
+                            <td style="text-align: right; color: #fbbf24;">₹{{ grand_totals.consolidated.TOTAL.avg|format_inr }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Broker Breakdown Detail tables (Side by Side) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 24px; margin-bottom: 24px;">
+            
+            <!-- Primary Market Broker Table -->
+            <div class="glass-card" style="padding: 24px;">
+                <h2>Primary Market Broker Detail</h2>
+                <div class="table-container" style="margin-top: 16px;">
+                    <table style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Broker</th>
+                                <th>Metric</th>
+                                <th style="text-align: right; color: #c084fc;">PATRIARCH</th>
+                                <th style="text-align: right; color: #fbbf24;">MR</th>
+                                <th style="text-align: right; color: #34d399;">VG</th>
+                                <th style="text-align: right; color: #60a5fa;">SR</th>
+                                <th style="text-align: right; font-weight: bold;">TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for broker, p_data in broker_primary.items() %}
+                            <tr style="border-top: 1px solid rgba(255,255,255,0.05);">
+                                <td rowspan="2" style="font-weight: 600; vertical-align: middle;">{{ broker }}</td>
+                                <td style="font-size: 11px; color: var(--text-secondary);">Qty</td>
+                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.PATRIARCH.qty) if p_data.PATRIARCH.qty > 0 else "—" }}</td>
+                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.MR.qty) if p_data.MR.qty > 0 else "—" }}</td>
+                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.VG.qty) if p_data.VG.qty > 0 else "—" }}</td>
+                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.SR.qty) if p_data.SR.qty > 0 else "—" }}</td>
+                                <td style="text-align: right; font-weight: bold;">{{ "{:,.0f}".format(p_data.TOTAL.qty) }}</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <td style="font-size: 11px; color: var(--text-secondary);">Avg</td>
+                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.PATRIARCH.avg|format_inr if p_data.PATRIARCH.qty > 0 else "—" }}</td>
+                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.MR.avg|format_inr if p_data.MR.qty > 0 else "—" }}</td>
+                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.VG.avg|format_inr if p_data.VG.qty > 0 else "—" }}</td>
+                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.SR.avg|format_inr if p_data.SR.qty > 0 else "—" }}</td>
+                                <td style="text-align: right; font-weight: bold; color: var(--text-secondary);">₹{{ p_data.TOTAL.avg|format_inr }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Secondary Market Broker Table -->
+            <div class="glass-card" style="padding: 24px;">
+                <h2>Secondary Market Broker Detail</h2>
+                <div class="table-container" style="margin-top: 16px;">
+                    <table style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Broker</th>
+                                <th>Metric</th>
+                                <th style="text-align: right; color: #c084fc;">PATRIARCH</th>
+                                <th style="text-align: right; color: #fbbf24;">MR</th>
+                                <th style="text-align: right; color: #34d399;">VG</th>
+                                <th style="text-align: right; color: #60a5fa;">SR</th>
+                                <th style="text-align: right; font-weight: bold;">TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for broker, p_data in broker_secondary.items() %}
+                            <!-- Show only brokers that have holdings in secondary market -->
+                            {% if p_data.TOTAL.qty > 0 %}
+                            <tr style="border-top: 1px solid rgba(255,255,255,0.05);">
+                                <td rowspan="2" style="font-weight: 600; vertical-align: middle;">{{ broker }}</td>
+                                <td style="font-size: 11px; color: var(--text-secondary);">Qty</td>
+                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.PATRIARCH.qty) if p_data.PATRIARCH.qty > 0 else "—" }}</td>
+                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.MR.qty) if p_data.MR.qty > 0 else "—" }}</td>
+                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.VG.qty) if p_data.VG.qty > 0 else "—" }}</td>
+                                <td style="text-align: right;">{{ "{:,.0f}".format(p_data.SR.qty) if p_data.SR.qty > 0 else "—" }}</td>
+                                <td style="text-align: right; font-weight: bold;">{{ "{:,.0f}".format(p_data.TOTAL.qty) }}</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <td style="font-size: 11px; color: var(--text-secondary);">Avg</td>
+                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.PATRIARCH.avg|format_inr if p_data.PATRIARCH.qty > 0 else "—" }}</td>
+                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.MR.avg|format_inr if p_data.MR.qty > 0 else "—" }}</td>
+                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.VG.avg|format_inr if p_data.VG.qty > 0 else "—" }}</td>
+                                <td style="text-align: right; color: var(--text-secondary);">{{ "₹" ~ p_data.SR.avg|format_inr if p_data.SR.qty > 0 else "—" }}</td>
+                                <td style="text-align: right; font-weight: bold; color: var(--text-secondary);">₹{{ p_data.TOTAL.avg|format_inr }}</td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tab-link");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+        
+        document.addEventListener("DOMContentLoaded", function() {
+            const excelFilters = document.querySelectorAll(".excel-filter");
+            excelFilters.forEach(input => {
+                input.addEventListener("input", filterAllTables);
+            });
+        });
+
+        function filterAllTables() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            // 1. Filter rows in pivoted tables (Consolidated, Primary, Secondary)
+            const pivotedRows = document.querySelectorAll('.tab-content:not(#all-holdings-tab):not(#sgb-dates-tab) .holding-row');
+            pivotedRows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
+
+            // 2. Filter rows in flat list table (combining global search and column filters)
+            const flatRows = document.querySelectorAll('#flat-holdings-table tbody tr.holding-row');
+            const colFilters = document.querySelectorAll('#all-holdings-tab .excel-filter');
+            const filterValues = {};
+            
+            colFilters.forEach(input => {
+                const colIndex = parseInt(input.getAttribute("data-col"));
+                const val = input.value.toLowerCase().trim();
+                if (val !== "") {
+                    filterValues[colIndex] = val;
+                }
+            });
+
+            flatRows.forEach(row => {
+                const cells = row.querySelectorAll("td");
+                const rowText = row.textContent.toLowerCase();
+                
+                // Check global search first
+                if (query && !rowText.includes(query)) {
+                    row.style.display = 'none';
+                    return;
+                }
+
+                // Check column-wise filters
+                for (const colIndex in filterValues) {
+                    if (cells[colIndex]) {
+                        const cellText = cells[colIndex].textContent.toLowerCase().trim();
+                        const filterText = filterValues[colIndex];
+                        if (!cellText.includes(filterText)) {
+                            row.style.display = 'none';
+                            return;
+                        }
+                    }
+                }
+
+                row.style.display = '';
+            });
+
+            // 3. Filter rows in detailed dates table (combining global search and column filters)
+            const detailedRows = document.querySelectorAll('#detailed-dates-table tbody tr.holding-row');
+            const detailedFilters = document.querySelectorAll('#sgb-dates-tab .excel-filter');
+            const detailedFilterValues = {};
+            
+            detailedFilters.forEach(input => {
+                const colIndex = parseInt(input.getAttribute("data-col"));
+                const val = input.value.toLowerCase().trim();
+                if (val !== "") {
+                    detailedFilterValues[colIndex] = val;
+                }
+            });
+
+            detailedRows.forEach(row => {
+                const cells = row.querySelectorAll("td");
+                const rowText = row.textContent.toLowerCase();
+                
+                // Check global search first
+                if (query && !rowText.includes(query)) {
+                    row.style.display = 'none';
+                    return;
+                }
+
+                // Check column-wise filters
+                for (const colIndex in detailedFilterValues) {
+                    if (cells[colIndex]) {
+                        const cellText = cells[colIndex].textContent.toLowerCase().trim();
+                        const filterText = detailedFilterValues[colIndex];
+                        if (!cellText.includes(filterText)) {
+                            row.style.display = 'none';
+                            return;
+                        }
+                    }
+                }
+
+                row.style.display = '';
+            });
+
+            // Recalculate totals dynamically
+            updateDetailedTableTotals();
+        }
+
+        function formatINR(num) {
+            if (isNaN(num) || num === null || num === undefined) return "0.00";
+            let isNegative = num < 0;
+            let absNum = Math.abs(num);
+            
+            let rounded = Math.round(absNum * 100) / 100;
+            let parts = rounded.toFixed(2).split(".");
+            let integerPart = parts[0];
+            let decimalPart = parts[1];
+            
+            let lastThree = integerPart.substring(integerPart.length - 3);
+            let otherParts = integerPart.substring(0, integerPart.length - 3);
+            if (otherParts !== '') {
+                lastThree = ',' + lastThree;
+            }
+            let res = otherParts.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + lastThree;
+            return (isNegative ? "-" : "") + res + "." + decimalPart;
+        }
+
+        function formatK(num) {
+            if (isNaN(num) || num === null || num === undefined) return "0.0 K";
+            return (num / 1000).toFixed(1) + " K";
+        }
+
+        function formatL(num) {
+            if (isNaN(num) || num === null || num === undefined) return "0.00 L";
+            let isNegative = num < 0;
+            let absNum = Math.abs(num);
+            return (isNegative ? "-" : "") + (absNum / 100000).toFixed(2) + " L";
+        }
+
+        function updateDetailedTableTotals() {
+            const rows = document.querySelectorAll('#detailed-dates-table tbody tr.holding-row');
+            let totalQty = 0;
+            let totalCost = 0;
+            let totalValue = 0;
+            
+            rows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    const cells = row.querySelectorAll('td');
+                    
+                    // Qty is in col index 4
+                    const qty = parseFloat(cells[4].getAttribute('data-val')) || 0;
+                    
+                    // Cost is in col index 11
+                    const cost = parseFloat(cells[11].getAttribute('data-val')) || 0;
+                    
+                    // Value is in col index 12
+                    const val = parseFloat(cells[12].getAttribute('data-val')) || 0;
+                    
+                    totalQty += qty;
+                    totalCost += cost;
+                    totalValue += val;
+                }
+            });
+            
+            const avgPurchasePrice = totalQty > 0 ? (totalCost / totalQty) : 0;
+            const avgCurrentPrice = totalQty > 0 ? (totalValue / totalQty) : 0;
+            const netProfit = totalValue - totalCost;
+            
+            const qtyEl = document.getElementById('tot-qty');
+            const avgPurchaseEl = document.getElementById('tot-avg-purchase');
+            const avgCurrentEl = document.getElementById('tot-avg-current');
+            const costEl = document.getElementById('tot-cost');
+            const valueEl = document.getElementById('tot-value');
+            const profitEl = document.getElementById('tot-profit');
+            
+            if (qtyEl) {
+                qtyEl.textContent = totalQty.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                qtyEl.setAttribute('data-val', totalQty);
+            }
+            if (avgPurchaseEl) {
+                avgPurchaseEl.textContent = "₹" + formatK(avgPurchasePrice);
+            }
+            if (avgCurrentEl) {
+                avgCurrentEl.textContent = "₹" + formatK(avgCurrentPrice);
+            }
+            if (costEl) {
+                costEl.textContent = "₹" + formatL(totalCost);
+            }
+            if (valueEl) {
+                valueEl.textContent = "₹" + formatL(totalValue);
+            }
+            
+            if (profitEl) {
+                profitEl.textContent = (netProfit >= 0 ? "+" : "-") + "₹" + formatL(Math.abs(netProfit));
+                if (netProfit >= 0) {
+                    profitEl.style.color = "var(--accent-green)";
+                } else {
+                    profitEl.style.color = "var(--accent-red)";
+                }
+            }
+        }
+    </script>
+</body>
+</html>

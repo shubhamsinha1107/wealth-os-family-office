@@ -1,0 +1,379 @@
+<!-- templates/mutual_funds/category_alpha.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Category Alpha & Tactical Rotation Matrix</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <script src="/static/js/backup.js?v=2" defer></script>
+    <style>
+        .account-tabs-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .acct-tab-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .acct-tab-btn:hover {
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+        .acct-tab-btn.active {
+            color: var(--text-primary);
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.4);
+        }
+        .alpha-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .badge-accumulate {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .badge-hold {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        .badge-trim {
+            background: rgba(234, 88, 12, 0.15);
+            color: #fb923c;
+            border: 1px solid rgba(234, 88, 12, 0.3);
+        }
+        .badge-rotate {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .quick-date-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .quick-date-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/portfolio/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Portfolio Overview</a>
+                        <a href="/mutual-funds/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue); box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Sub-tabs -->
+            <div class="nav-tabs">
+                <a href="/mutual-funds/" class="nav-link">Holdings AUM</a>
+                <a href="/mutual-funds/pnl" class="nav-link">Capital Gains (FIFO)</a>
+                <a href="/mutual-funds/performance" class="nav-link">XIRR & CAGR</a>
+                <a href="/mutual-funds/sips" class="nav-link">SIP Tracker</a>
+                <a href="/mutual-funds/transactions" class="nav-link">Transactions Ledger</a>
+                <a href="/mutual-funds/account-report" class="nav-link">Account Report</a>
+                <a href="/mutual-funds/monthly-profits" class="nav-link">Monthly Profits</a>
+                <a href="/mutual-funds/category-alpha" class="nav-link active">Category Alpha & Rotation</a>
+                <a href="/mutual-funds/ter-cost" class="nav-link">TER & Broker Costs</a>
+                <a href="/mutual-funds/unique-funds" class="nav-link">Unique Funds</a>
+                <a href="/mutual-funds/underperforming" class="nav-link">Underperformance Diagnostics</a>
+                <a href="/mutual-funds/compare-nav" class="nav-link">Compare NAVs</a>
+                <a href="/mutual-funds/upload" class="nav-link">Upload CAS PDF</a>
+            </div>
+        </header>
+
+        <!-- Account Selector Tabs -->
+        <div class="account-tabs-bar" style="margin-top: 24px;">
+            {% for a in accounts %}
+                <a href="/mutual-funds/category-alpha?act={{ a.code }}&advisor={{ selected_advisor }}&benchmark={{ benchmark_mode }}&as_of_date={{ as_of_date }}" class="acct-tab-btn {% if selected_code == a.code %}active{% endif %}">
+                    {{ a.name }}
+                </a>
+            {% endfor %}
+        </div>
+
+        <!-- Filter & Point-in-Time Date Panel -->
+        <div class="glass-card" style="padding: 16px 24px; margin-bottom: 24px;">
+            <form method="GET" action="/mutual-funds/category-alpha" id="filterForm" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin: 0;">
+                <input type="hidden" name="act" value="{{ selected_code }}">
+                
+                <div style="display: flex; align-items: center; gap: 18px; flex-wrap: wrap;">
+                    <!-- Advisor Filter -->
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary);">Advisor:</label>
+                        <select name="advisor" class="select-input" onchange="document.getElementById('filterForm').submit()" style="background: rgba(15, 23, 42, 0.8); border: 1px solid var(--glass-border); color: var(--text-primary); padding: 7px 12px; border-radius: 8px; font-size: 13px;">
+                            {% for adv in available_advisors %}
+                                <option value="{{ adv }}" {% if adv == selected_advisor %}selected{% endif %}>{{ adv }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Benchmark Mode Selector -->
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="font-size: 13px; font-weight: 600; color: #38bdf8; display: flex; align-items: center; gap: 5px;">
+                            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"></path>
+                            </svg>
+                            Benchmark:
+                        </label>
+                        <select name="benchmark" class="select-input" onchange="document.getElementById('filterForm').submit()" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.4); color: var(--text-primary); padding: 7px 12px; border-radius: 8px; font-size: 13px; font-weight: 500;">
+                            <option value="CATEGORY" {% if benchmark_mode == 'CATEGORY' %}selected{% endif %}>Category Benchmarks (Relative)</option>
+                            <option value="NIFTY" {% if benchmark_mode == 'NIFTY' %}selected{% endif %}>Nifty 50 TRI (Market Alpha)</option>
+                            <option value="HURDLE_12" {% if benchmark_mode == 'HURDLE_12' %}selected{% endif %}>12% Hurdle Rate (Absolute Alpha)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Point in Time Date Selector -->
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <label style="font-size: 13px; font-weight: 600; color: #a78bfa; display: flex; align-items: center; gap: 6px;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"></path>
+                        </svg>
+                        Point-in-Time As Of:
+                    </label>
+                    <input type="date" name="as_of_date" value="{{ as_of_date }}" onchange="document.getElementById('filterForm').submit()" style="background: rgba(15, 23, 42, 0.8); border: 1px solid var(--glass-border); color: var(--text-primary); padding: 7px 12px; border-radius: 8px; font-size: 13px;">
+                    
+                    <!-- Quick Date Jump Buttons -->
+                    <button type="button" class="quick-date-btn" onclick="setDateAndSubmit('')">Today</button>
+                    <button type="button" class="quick-date-btn" onclick="setDateAndSubmit('2026-06-01')">01 Jun 2026</button>
+                    <button type="button" class="quick-date-btn" onclick="setDateAndSubmit('2026-01-01')">01 Jan 2026</button>
+                    <button type="button" class="quick-date-btn" onclick="setDateAndSubmit('2025-01-01')">01 Jan 2025</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="metrics-grid">
+            <div class="glass-card metric-card">
+                <div class="metric-title">Portfolio Valuation</div>
+                <div class="metric-value">₹{{ (total_portfolio_value / 10000000)|round(2) }} Cr</div>
+                <div class="metric-change" style="color: var(--text-secondary);">As of {{ eval_date }}</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">🟢 Move In / Accumulate</div>
+                <div class="metric-value" style="color: var(--accent-green);">{{ counts.accumulate }} Categories</div>
+                <div class="metric-change positive">Expanding 3M Alpha</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">🟠 Take Profit / Trim</div>
+                <div class="metric-value" style="color: #fb923c;">{{ counts.trim }} Categories</div>
+                <div class="metric-change" style="color: #fb923c;">Above Risk Cap</div>
+            </div>
+            <div class="glass-card metric-card">
+                <div class="metric-title">🔴 Move Out / Rotate</div>
+                <div class="metric-value" style="color: var(--accent-red);">{{ counts.rotate_out }} Categories</div>
+                <div class="metric-change negative">Persistent Negative Alpha</div>
+            </div>
+        </div>
+
+        <!-- Bullion Allocation Guardrail Alert -->
+        {% if bullion_combined_weight > 35.0 %}
+        <div class="glass-card" style="padding: 16px 24px; margin-bottom: 24px; border-left: 4px solid var(--accent-amber); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong style="color: #fbbf24; font-size: 15px;">⚠️ Bullion Concentration Alert: {{ "%.1f"|format(bullion_combined_weight) }}% Total AUM</strong>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
+                    Combined Gold & Silver allocation exceeds the 35% portfolio risk ceiling. Recommended action: Trim Silver/Gold profits and rotate into Arbitrage/Liquid funds.
+                </div>
+            </div>
+            <div style="font-family: monospace; font-size: 14px; color: #fbbf24; font-weight: 700;">
+                Target: &le; 30-35%
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Category Alpha Table -->
+        <div class="glass-card" style="padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="margin: 0; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" fill="none" stroke="var(--accent-blue)" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"></path>
+                    </svg>
+                    Category Alpha Matrix & Tactical Decision Engine
+                </h3>
+                <div style="font-size: 13px; color: var(--text-secondary);">
+                    Evaluating <strong>{{ categories|length }} categories</strong> as of <strong>{{ eval_date }}</strong>
+                </div>
+            </div>
+
+            <div class="table-container" style="margin-top: 0;">
+                <table style="margin-top: 0;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">Category & Benchmark</th>
+                            <th style="text-align: right;">Valuation</th>
+                            <th style="text-align: right;">Weight (%)</th>
+                            <th style="text-align: right;">Gain (%)</th>
+                            <th style="text-align: center;">1M Alpha</th>
+                            <th style="text-align: center;">3M Alpha</th>
+                            <th style="text-align: center;">6M Alpha</th>
+                            <th style="text-align: center;">1Y Alpha</th>
+                            <th style="text-align: center;">Sharpe</th>
+                            <th style="text-align: left; padding-left: 16px; min-width: 220px;">Tactical Signal & Recommendation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if categories %}
+                            {% for c in categories %}
+                            <tr>
+                                <!-- Category & Benchmark -->
+                                <td style="text-align: left;">
+                                    <div style="font-weight: 600; color: #a78bfa; font-size: 14px;">
+                                        {{ c.category }}
+                                    </div>
+                                    <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+                                        vs {{ c.benchmark_name }} ({{ c.schemes_count }} schemes)
+                                    </div>
+                                </td>
+
+                                <!-- Valuation -->
+                                <td style="text-align: right; font-weight: 600; font-family: monospace;">
+                                    ₹{{ (c.current_value / 10000000)|round(2) }} Cr
+                                </td>
+
+                                <!-- Weight vs Cap -->
+                                <td style="text-align: right; font-family: monospace;">
+                                    <span style="font-weight: 700; color: {% if c.weight_pct > c.risk_cap_pct %}#fb923c{% else %}var(--text-primary){% endif %};">
+                                        {{ "%.1f"|format(c.weight_pct) }}%
+                                    </span>
+                                    <div style="font-size: 10px; color: var(--text-secondary);">
+                                        Cap: {{ "%.0f"|format(c.risk_cap_pct) }}%
+                                    </div>
+                                </td>
+
+                                <!-- Unrealized Gain % -->
+                                <td style="text-align: right; font-weight: 600; font-family: monospace; color: {% if c.unrealized_gain_pct >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                    {% if c.unrealized_gain_pct > 0 %}+{% endif %}{{ "%.1f"|format(c.unrealized_gain_pct) }}%
+                                </td>
+
+                                <!-- 1M Alpha -->
+                                <td style="text-align: center; font-family: monospace;">
+                                    <span style="font-weight: 700; color: {% if c.alpha['1m'] >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                        {% if c.alpha['1m'] > 0 %}+{% endif %}{{ "%.2f"|format(c.alpha['1m']) }}%
+                                    </span>
+                                    <div style="font-size: 10px; color: var(--text-secondary);">
+                                        {{ "%.1f"|format(c.perf['ret_1m']) }} vs {{ "%.1f"|format(c.perf['bm_1m']) }}
+                                    </div>
+                                </td>
+
+                                <!-- 3M Alpha -->
+                                <td style="text-align: center; font-family: monospace;">
+                                    <span style="font-weight: 700; color: {% if c.alpha['3m'] >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                        {% if c.alpha['3m'] > 0 %}+{% endif %}{{ "%.2f"|format(c.alpha['3m']) }}%
+                                    </span>
+                                    <div style="font-size: 10px; color: var(--text-secondary);">
+                                        {{ "%.1f"|format(c.perf['ret_3m']) }} vs {{ "%.1f"|format(c.perf['bm_3m']) }}
+                                    </div>
+                                </td>
+
+                                <!-- 6M Alpha -->
+                                <td style="text-align: center; font-family: monospace;">
+                                    <span style="font-weight: 700; color: {% if c.alpha['6m'] >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                        {% if c.alpha['6m'] > 0 %}+{% endif %}{{ "%.2f"|format(c.alpha['6m']) }}%
+                                    </span>
+                                    <div style="font-size: 10px; color: var(--text-secondary);">
+                                        {{ "%.1f"|format(c.perf['ret_6m']) }} vs {{ "%.1f"|format(c.perf['bm_6m']) }}
+                                    </div>
+                                </td>
+
+                                <!-- 1Y Alpha -->
+                                <td style="text-align: center; font-family: monospace;">
+                                    <span style="font-weight: 700; color: {% if c.alpha['1y'] >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %};">
+                                        {% if c.alpha['1y'] > 0 %}+{% endif %}{{ "%.2f"|format(c.alpha['1y']) }}%
+                                    </span>
+                                    <div style="font-size: 10px; color: var(--text-secondary);">
+                                        {{ "%.1f"|format(c.perf['ret_1y']) }} vs {{ "%.1f"|format(c.perf['bm_1y']) }}
+                                    </div>
+                                </td>
+
+                                <!-- Sharpe -->
+                                <td style="text-align: center; font-weight: 600; font-family: monospace; color: {% if c.sharpe >= 1.0 %}var(--accent-green){% elif c.sharpe < 0 %}var(--accent-red){% else %}var(--text-primary){% endif %};">
+                                    {{ "%.2f"|format(c.sharpe) }}
+                                </td>
+
+                                <!-- Tactical Signal & Rationale -->
+                                <td style="text-align: left; padding-left: 16px;">
+                                    <div>
+                                        {% if c.action_badge == 'ACCUMULATE' %}
+                                            <span class="alpha-badge badge-accumulate">{{ c.action_label }}</span>
+                                        {% elif c.action_badge == 'TRIM_PROFIT' %}
+                                            <span class="alpha-badge badge-trim">{{ c.action_label }}</span>
+                                        {% elif c.action_badge == 'ROTATE_OUT' %}
+                                            <span class="alpha-badge badge-rotate">{{ c.action_label }}</span>
+                                        {% else %}
+                                            <span class="alpha-badge badge-hold">{{ c.action_label }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; line-height: 1.3;">
+                                        {{ c.action_desc }}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="10" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                    No category holdings found for the selected filters.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setDateAndSubmit(dt) {
+            document.querySelector('input[name="as_of_date"]').value = dt;
+            document.getElementById('filterForm').submit();
+        }
+    </script>
+</body>
+</html>

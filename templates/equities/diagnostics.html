@@ -1,0 +1,149 @@
+<!-- templates/equities/diagnostics.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equity Files Health & Diagnostics</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                    <a href="/mutual-funds/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;">Mutual Funds</a>
+                    <a href="/equities/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue);">Equities</a>
+                    <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;">Gold (SGB)</a>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <a href="/equities/" class="nav-link">Holdings AUM</a>
+                <a href="/equities/pnl" class="nav-link">Capital Gains (FIFO)</a>
+                <a href="/equities/summary" class="nav-link">Summary by A/C</a>
+                <a href="/equities/transactions" class="nav-link">Transactions Ledger</a>
+                <a href="/equities/unmatched" class="nav-link">Fix Unmatched Buys</a>
+                <a href="/equities/diagnostics" class="nav-link active">File Health Check</a>
+                <a href="/equities/performance" class="nav-link">Performance (Dietz)</a>
+            </div>
+        </header>
+
+        <!-- Summary Cards -->
+        <div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div class="glass-card metric-card" style="padding: 18px 20px; border-left: 4px solid #3b82f6;">
+                <div class="metric-title" style="font-size: 11px; text-transform: uppercase;">Total Files Scanned</div>
+                <div class="metric-value" style="font-size: 24px; font-weight: 700; color: white; margin: 6px 0;">
+                    {{ file_validation.total_files }}
+                </div>
+                <div class="metric-change" style="font-size: 11px; color: var(--text-secondary);">In DATA/DATA/ (CBL, JM, NUV)</div>
+            </div>
+
+            <div class="glass-card metric-card" style="padding: 18px 20px; border-left: 4px solid var(--accent-green);">
+                <div class="metric-title" style="font-size: 11px; text-transform: uppercase;">Transaction Ledgers</div>
+                <div class="metric-value" style="font-size: 24px; font-weight: 700; color: var(--accent-green); margin: 6px 0;">
+                    {{ file_validation.valid_files }}
+                </div>
+                <div class="metric-change" style="font-size: 11px; color: var(--text-secondary);">Ready & active for ingestion</div>
+            </div>
+
+            <div class="glass-card metric-card" style="padding: 18px 20px; border-left: 4px solid #6366f1;">
+                <div class="metric-title" style="font-size: 11px; text-transform: uppercase;">Summary Sheets / Other</div>
+                <div class="metric-value" style="font-size: 24px; font-weight: 700; color: #818cf8; margin: 6px 0;">
+                    {{ file_validation.invalid_count }}
+                </div>
+                <div class="metric-change" style="font-size: 11px; color: var(--text-secondary);">Capital Gains summary sheets</div>
+            </div>
+
+            <div class="glass-card metric-card" style="padding: 18px 20px; border-left: 4px solid #f59e0b;">
+                <div class="metric-title" style="font-size: 11px; text-transform: uppercase;">Multi-Broker Row Routing</div>
+                <div class="metric-value" style="font-size: 24px; font-weight: 700; color: #f59e0b; margin: 6px 0;">
+                    {{ file_validation.warning_count }}
+                </div>
+                <div class="metric-change" style="font-size: 11px; color: var(--text-secondary);">Auto-routed by row broker</div>
+            </div>
+        </div>
+
+        <!-- File Health Table -->
+        <div class="glass-card" style="padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div>
+                    <h3 style="margin: 0 0 4px 0; font-size: 16px; color: white;">Excel Files Health Matrix</h3>
+                    <p style="margin: 0; font-size: 12px; color: var(--text-secondary);">
+                        You can update any Excel file in <code>DATA/DATA/</code> in-place anytime. Click Recalculate to sync changes.
+                    </p>
+                </div>
+                <a href="/equities/recalculate" class="btn-primary" style="padding: 8px 16px; font-size: 13px; text-decoration: none; display: flex; align-items: center; gap: 6px;">
+                    🔄 Recalculate & Ingest Data
+                </a>
+            </div>
+
+            <div class="table-container" style="margin-top: 0; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--glass-border); text-align: left; color: var(--text-secondary);">
+                            <th style="padding: 10px;">Folder</th>
+                            <th style="padding: 10px;">File Name</th>
+                            <th style="padding: 10px;">Folder Broker</th>
+                            <th style="padding: 10px;">Detected Header</th>
+                            <th style="padding: 10px; text-align: center;">Format</th>
+                            <th style="padding: 10px; text-align: center;">Status</th>
+                            <th style="padding: 10px;">Diagnostics & Information</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for f in file_validation.files %}
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); background: {% if not f.is_valid %}rgba(99, 102, 241, 0.05){% elif f.warnings %}rgba(245, 158, 11, 0.05){% else %}transparent{% endif %};">
+                            <td style="padding: 10px; font-weight: 600; color: #94a3b8;">{{ f.folder }}</td>
+                            <td style="padding: 10px; font-family: monospace; font-weight: 600; color: white;">{{ f.filename }}</td>
+                            <td style="padding: 10px; color: var(--text-secondary);">{{ f.filename_broker }} ({{ f.folder }})</td>
+                            <td style="padding: 10px;">
+                                <span style="font-weight: 600; color: #e2e8f0;">
+                                    {{ f.detected_broker }}
+                                </span>
+                                {% if f.detected_owner != 'Unknown' %}
+                                <span style="color: #94a3b8; font-size: 11px;">({{ f.detected_owner }})</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 10px; text-align: center;">
+                                {% if f.format_type == 'TRANSACTION_LEDGER' %}
+                                <span style="background: rgba(16, 185, 129, 0.2); color: #34d399; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Transactions</span>
+                                {% else %}
+                                <span style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Capital Gains Summary</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 10px; text-align: center;">
+                                {% if f.is_valid and not f.warnings %}
+                                <span style="background: rgba(16, 185, 129, 0.2); color: #34d399; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">✓ READY</span>
+                                {% elif f.is_valid and f.warnings %}
+                                <span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">ℹ️ AUTO-ROUTED</span>
+                                {% else %}
+                                <span style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">ℹ️ SUMMARY SHEET</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 10px;">
+                                {% if not f.is_valid %}
+                                <div style="color: #a5b4fc; font-weight: 500;">
+                                    {% for iss in f.issues %}
+                                    • {{ iss }}<br>
+                                    {% endfor %}
+                                </div>
+                                {% elif f.warnings %}
+                                <div style="color: #fbbf24; font-size: 11px;">
+                                    {% for w in f.warnings %}
+                                    • {{ w }}<br>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <span style="color: #64748b;">Ready ({{ f.row_count }} rows)</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

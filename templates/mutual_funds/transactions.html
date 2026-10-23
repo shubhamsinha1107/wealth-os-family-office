@@ -1,0 +1,776 @@
+<!-- templates/mutual_funds/transactions.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions Ledger</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <script src="/static/js/backup.js?v=2"></script>
+    <style>
+        .ledger-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .search-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-family: inherit;
+            width: 320px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .search-box:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        .btn-rerun {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
+        .btn-rerun:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+            filter: brightness(1.1);
+        }
+        .btn-rerun:active {
+            transform: translateY(1px);
+        }
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 18px !important;
+        }
+        .sortable::after {
+            content: '↕';
+            position: absolute;
+            right: 6px;
+            color: var(--text-secondary);
+            opacity: 0.5;
+            font-size: 11px;
+        }
+        .sortable.asc::after {
+            content: '▲';
+            color: var(--accent-blue);
+            opacity: 1;
+        }
+        .sortable.desc::after {
+            content: '▼';
+            color: var(--accent-blue);
+            opacity: 1;
+        }
+        .editable-date {
+            font-family: monospace;
+            color: var(--accent-blue);
+            cursor: pointer;
+            border-bottom: 1px dashed rgba(59, 130, 246, 0.4);
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+        }
+        .editable-date:hover {
+            background: rgba(59, 130, 246, 0.15);
+        }
+        .date-input {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--accent-blue);
+            color: white;
+            font-family: monospace;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+            outline: none;
+        }
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--glass-border);
+            padding: 16px 24px;
+            border-radius: 8px;
+            color: white;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .toast.success {
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+        .toast.error {
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+        
+        .badge-unsold {
+            background: rgba(59, 130, 246, 0.1);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        .badge-partially-sold {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+        .badge-fully-sold {
+            background: rgba(148, 163, 184, 0.1);
+            color: #94a3b8;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s ease;
+        }
+        .checkbox-label:hover {
+            color: var(--text-primary);
+        }
+        .checkbox-input {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border: 1px solid var(--glass-border);
+            border-radius: 4px;
+            background: rgba(15, 23, 42, 0.6);
+            cursor: pointer;
+            display: grid;
+            place-content: center;
+            transition: all 0.2s ease;
+        }
+        .checkbox-input:checked {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+        }
+        .checkbox-input:checked::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            background-color: white;
+            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+        }
+        .checkbox-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/mutual-funds/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue); box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <a href="/mutual-funds/" class="nav-link">Holdings AUM</a>
+                <a href="/mutual-funds/pnl" class="nav-link">Capital Gains (FIFO)</a>
+                <a href="/mutual-funds/performance" class="nav-link">XIRR & CAGR</a>
+                <a href="/mutual-funds/sips" class="nav-link">SIP Tracker</a>
+                <a href="/mutual-funds/transactions" class="nav-link active">Transactions Ledger</a>
+                <a href="/mutual-funds/account-report" class="nav-link">Account Report</a>
+                <a href="/mutual-funds/monthly-profits" class="nav-link">Monthly Profits</a>
+                <a href="/mutual-funds/unique-funds" class="nav-link">Unique Funds</a>
+                <a href="/mutual-funds/underperforming" class="nav-link">Underperformance Diagnostics</a>
+                <a href="/mutual-funds/compare-nav" class="nav-link">Compare NAVs</a>
+
+                <a href="/mutual-funds/upload" class="nav-link">Upload CAS PDF</a>
+            </div>
+        </header>
+
+        <!-- Controls panel -->
+        <div class="glass-card" style="padding: 20px; display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px; overflow: visible !important; position: relative; z-index: 50;">
+            <!-- Row 1: Search & Filter Inputs -->
+            <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="searchInput" class="search-box" value="{{ q }}" placeholder="Search scheme, owner, folio, notes..." style="width: 250px;">
+                
+                <!-- Custom Multiselect for Txn Types -->
+                <div style="position: relative; display: inline-block;">
+                    <button type="button" id="typeDropdownBtn" class="search-box" style="width: 180px; text-align: left; display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 10px 14px;">
+                        <span id="selectedTypesText">All Txn Types</span>
+                        <span style="font-size: 10px; color: var(--text-secondary);">▼</span>
+                    </button>
+                    <div id="typeDropdownContent" class="glass-card" style="display: none; position: absolute; left: 0; top: calc(100% + 8px); z-index: 100; min-width: 220px; padding: 12px; flex-direction: column; gap: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+                        {% for t_type in all_txn_types %}
+                        <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; justify-content: flex-start; cursor: pointer; padding: 2px 4px;">
+                            <input type="checkbox" class="type-checkbox checkbox-input" value="{{ t_type }}" {% if t_type in selected_types %}checked{% endif %}>
+                            <span>{{ t_type }}</span>
+                        </label>
+                        {% endfor %}
+                        <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--glass-border); padding-top: 8px; margin-top: 4px;">
+                            <button type="button" id="btnApplyTypes" class="btn" style="padding: 4px 8px; font-size: 11px; border-radius: 4px; background: var(--accent-blue); color: white; border: none; cursor: pointer;">Apply</button>
+                            <button type="button" id="btnClearTypes" style="background: none; border: none; color: var(--text-secondary); font-size: 11px; cursor: pointer;">Clear All</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Multiselect for Asset Classes -->
+                <div style="position: relative; display: inline-block;">
+                    <button type="button" id="assetDropdownBtn" class="search-box" style="width: 180px; text-align: left; display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 10px 14px;">
+                        <span id="selectedAssetsText">All Asset Classes</span>
+                        <span style="font-size: 10px; color: var(--text-secondary);">▼</span>
+                    </button>
+                    <div id="assetDropdownContent" class="glass-card" style="display: none; position: absolute; left: 0; top: calc(100% + 8px); z-index: 100; min-width: 200px; padding: 12px; flex-direction: column; gap: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+                        {% set asset_types = ['EQUITY', 'LIQUID', 'GOLD', 'SILVER'] %}
+                        {% for a_type in asset_types %}
+                        <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; justify-content: flex-start; cursor: pointer; padding: 2px 4px;">
+                            <input type="checkbox" class="asset-checkbox checkbox-input" value="{{ a_type }}" {% if a_type in selected_assets %}checked{% endif %}>
+                            <span>{{ a_type }}</span>
+                        </label>
+                        {% endfor %}
+                        <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--glass-border); padding-top: 8px; margin-top: 4px;">
+                            <button type="button" id="btnApplyAssets" class="btn" style="padding: 4px 8px; font-size: 11px; border-radius: 4px; background: var(--accent-blue); color: white; border: none; cursor: pointer;">Apply</button>
+                            <button type="button" id="btnClearAssets" style="background: none; border: none; color: var(--text-secondary); font-size: 11px; cursor: pointer;">Clear All</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date Range Filters -->
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span style="font-size: 13px; color: var(--text-secondary); font-weight: 500;">Date Range:</span>
+                    <input type="date" id="startDateInput" class="search-box" value="{{ start_date }}" style="width: 140px; padding: 8px 12px;" placeholder="Start Date">
+                    <span style="color: var(--text-secondary);">to</span>
+                    <input type="date" id="endDateInput" class="search-box" value="{{ end_date }}" style="width: 140px; padding: 8px 12px;" placeholder="End Date">
+                </div>
+
+                <!-- Date Preset Quick Buttons -->
+                <div style="display: flex; gap: 6px;">
+                    <button type="button" onclick="setDatePreset('mtd')" class="btn-secondary" style="padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;">MTD</button>
+                    <button type="button" onclick="setDatePreset('3m')" class="btn-secondary" style="padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;">3M</button>
+                    <button type="button" onclick="setDatePreset('6m')" class="btn-secondary" style="padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;">6M</button>
+                    <button type="button" onclick="setDatePreset('ytd')" class="btn-secondary" style="padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;">YTD</button>
+                    <button type="button" onclick="setDatePreset('clear')" class="btn-secondary" style="padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; color: var(--text-secondary);">Reset</button>
+                </div>
+            </div>
+
+            <!-- Row 2: Status, Switches & Action Button -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 14px;">
+                <div style="display: flex; align-items: center; gap: 24px;">
+                    <div class="checkbox-container">
+                        <label class="checkbox-label" title="Only show transactions in the current and previous financial years to speed up loading">
+                            <input type="checkbox" id="limitFyCheckbox" class="checkbox-input" {% if show_only_recent_fy %}checked{% endif %}>
+                            <span>Current & Last FY Only</span>
+                        </label>
+                        
+                        <label class="checkbox-label" title="Hide purchase lots that have been fully redeemed (units = 0)">
+                            <input type="checkbox" id="hideSoldCheckbox" class="checkbox-input" {% if exclude_sold_lots %}checked{% endif %}>
+                            <span>Hide Fully Sold Lots</span>
+                        </label>
+                    </div>
+
+                    <div style="font-size: 14px; color: var(--text-secondary);">
+                        Matched: <strong style="color: var(--text-primary);">{{ total_count }}</strong> transactions
+                    </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <!-- Export Excel Button -->
+                    <button onclick="exportExcel()" class="btn" style="padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 14px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.4); color: white; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path>
+                        </svg>
+                        <span>Export Excel</span>
+                    </button>
+                    
+                    <button id="btnRerun" class="btn-rerun">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"></path>
+                        </svg>
+                        <span>Recalculate FIFO & Holdings</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subtotals Summary Cards -->
+        <div class="glass-card" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; padding: 16px 24px; margin-bottom: 16px;">
+            <div style="text-align: center; padding: 8px;">
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Purchases Subtotal</div>
+                <div style="font-size: 20px; font-weight: 700; color: #10b981;">₹{{ subtotals.purchases|format_inr }}</div>
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Purchase, SIP, Switch In, Div Reinv</div>
+            </div>
+            <div style="text-align: center; padding: 8px; border-left: 1px solid var(--glass-border); border-right: 1px solid var(--glass-border);">
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Redemptions Subtotal</div>
+                <div style="font-size: 20px; font-weight: 700; color: #f87171;">₹{{ subtotals.redemptions|format_inr }}</div>
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Redemption, Switch Out, Div Payout</div>
+            </div>
+            <div style="text-align: center; padding: 8px;">
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Net Flow Subtotal</div>
+                <div style="font-size: 20px; font-weight: 700; color: {% if subtotals.net >= 0 %}#60a5fa{% else %}#f87171{% endif %};">
+                    ₹{{ subtotals.net|format_inr }}
+                </div>
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Net Capital Flow (In - Out)</div>
+            </div>
+        </div>
+
+        <!-- Detailed Transactions Table -->
+        <div class="glass-card" style="padding: 24px;">
+            <div class="table-container" style="margin-top: 0;">
+                <table id="transactionsTable" style="margin-top: 0;">
+                    <thead>
+                        <tr>
+                            <th class="sortable {% if sort == 'owner' %}{{ order }}{% endif %}" data-col="owner" style="padding-left: 24px;">Owner</th>
+                            <th class="sortable {% if sort == 'folio' %}{{ order }}{% endif %}" data-col="folio">Folio</th>
+                            <th class="sortable {% if sort == 'scheme' %}{{ order }}{% endif %}" data-col="scheme">Scheme Name</th>
+                            <th class="sortable {% if sort == 'asset_class' %}{{ order }}{% endif %}" data-col="asset_class">Asset Class</th>
+                            <th class="sortable {% if sort == 'date' %}{{ order }}{% endif %}" data-col="date">Date <span style="font-size: 10px; font-weight: normal; color: var(--text-secondary); display: block;">Double-click to edit</span></th>
+                            <th class="sortable {% if sort == 'type' %}{{ order }}{% endif %}" data-col="type">Type</th>
+                            <th>Lot Status</th>
+                            <th class="sortable {% if sort == 'units' %}{{ order }}{% endif %}" data-col="units" style="text-align: right;">Units</th>
+                            <th class="sortable {% if sort == 'nav' %}{{ order }}{% endif %}" data-col="nav" style="text-align: right;">NAV</th>
+                            <th class="sortable {% if sort == 'amount' %}{{ order }}{% endif %}" data-col="amount" style="text-align: right;">Amount</th>
+                            <th style="padding-right: 24px;">Description / Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        {% for t in transactions %}
+                        <tr class="txn-row" data-id="{{ t.id }}">
+                            <td class="owner-cell" style="padding-left: 24px; font-weight: 600; color: #a78bfa;">{{ t.owner }}</td>
+                            <td style="font-family: monospace; color: var(--text-secondary); font-size: 12px;">{{ t.folio }}</td>
+                            <td class="scheme-cell" style="max-width: 200px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ t.scheme }}">
+                                {{ t.scheme }}
+                            </td>
+                            <td style="font-weight: 500; font-size: 13px; color: var(--text-secondary);">
+                                {{ t.asset_class }}
+                            </td>
+                            <td>
+                                <span class="editable-date" title="Double click to edit date" data-val="{{ t.date }}">{{ t.date }}</span>
+                            </td>
+                            <td>
+                                <span class="badge {% if t.type in ['PURCHASE', 'PURCHASE_SIP', 'SWITCH_IN'] %}badge-positive{% else %}badge-negative{% endif %}" style="font-size: 11px;">
+                                    {{ t.type }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if t.is_purchase %}
+                                    <span class="badge {% if t.lot_status == 'Unsold' %}badge-unsold{% elif t.lot_status == 'Partially Sold' %}badge-partially-sold{% else %}badge-fully-sold{% endif %}" style="font-size: 11px;" title="{{ t.remaining_units }} / {{ t.units }} units remaining">
+                                        {{ t.lot_status }}
+                                        {% if t.lot_status == 'Partially Sold' %}
+                                            ({{ "{:,.2f}".format(t.remaining_units) }} left)
+                                        {% endif %}
+                                    </span>
+                                {% else %}
+                                    <span style="color: var(--text-secondary); font-size: 12px; font-style: italic;">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="number-cell" style="text-align: right; font-weight: 500;" data-val="{{ t.units }}">{{ "{:,.3f}".format(t.units) }}</td>
+                            <td class="number-cell" style="text-align: right;" data-val="{{ t.nav }}">₹{{ "{:,.4f}".format(t.nav) }}</td>
+                            <td class="number-cell" style="text-align: right; font-weight: 600;" data-val="{{ t.amount }}">₹{{ t.amount|format_inr }}</td>
+                            <td class="notes-cell" style="padding-right: 24px; color: var(--text-secondary); font-size: 13px; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ t.notes }}">
+                                {{ t.notes }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination controls -->
+        {% if total_pages > 1 %}
+        <div class="glass-card pagination-controls" style="display: flex; justify-content: center; align-items: center; gap: 16px; padding: 16px 24px; margin-top: 16px; margin-bottom: 24px;">
+            <a href="?q={{ q }}&page={{ page - 1 }}&sort={{ sort }}&order={{ order }}&limit_fy={{ limit_fy }}&hide_sold={{ hide_sold }}&types={{ types_str }}&asset_classes={{ asset_classes_str }}&start_date={{ start_date }}&end_date={{ end_date }}" class="btn-secondary {% if page <= 1 %}disabled{% endif %}" style="text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 14px; display: inline-flex; align-items: center;">
+                &larr; Previous
+            </a>
+            <span style="font-size: 14px; color: var(--text-secondary);">
+                Page <strong>{{ page }}</strong> of <strong>{{ total_pages }}</strong>
+            </span>
+            <a href="?q={{ q }}&page={{ page + 1 }}&sort={{ sort }}&order={{ order }}&limit_fy={{ limit_fy }}&hide_sold={{ hide_sold }}&types={{ types_str }}&asset_classes={{ asset_classes_str }}&start_date={{ start_date }}&end_date={{ end_date }}" class="btn-secondary {% if page >= total_pages %}disabled{% endif %}" style="text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 14px; display: inline-flex; align-items: center;">
+                Next &rarr;
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span id="toastIcon"></span>
+        <span id="toastMessage"></span>
+    </div>
+
+    <script>
+        // Get inputs references
+        const searchInput = document.getElementById('searchInput');
+        const limitFyCheckbox = document.getElementById('limitFyCheckbox');
+        const hideSoldCheckbox = document.getElementById('hideSoldCheckbox');
+        const startDateInput = document.getElementById('startDateInput');
+        const endDateInput = document.getElementById('endDateInput');
+
+        function exportExcel() {
+            const query = searchInput.value.trim();
+            const limitFy = limitFyCheckbox.checked;
+            const hideSold = hideSoldCheckbox.checked;
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+            
+            const selectedCheckboxes = document.querySelectorAll('.type-checkbox:checked');
+            const types = Array.from(selectedCheckboxes).map(cb => cb.value).join(',');
+
+            const selectedAssetCheckboxes = document.querySelectorAll('.asset-checkbox:checked');
+            const assetClasses = Array.from(selectedAssetCheckboxes).map(cb => cb.value).join(',');
+            
+            window.location.href = `/mutual-funds/transactions/export-xlsx?q=${encodeURIComponent(query)}&sort={{ sort }}&order={{ order }}&limit_fy=${limitFy}&hide_sold=${hideSold}&types=${encodeURIComponent(types)}&asset_classes=${encodeURIComponent(assetClasses)}&start_date=${startDate}&end_date=${endDate}`;
+        }
+
+        function performSearch(page = 1, sort = '{{ sort }}', order = '{{ order }}') {
+            const query = searchInput.value.trim();
+            const limitFy = limitFyCheckbox.checked;
+            const hideSold = hideSoldCheckbox.checked;
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+            
+            const selectedCheckboxes = document.querySelectorAll('.type-checkbox:checked');
+            const types = Array.from(selectedCheckboxes).map(cb => cb.value).join(',');
+
+            const selectedAssetCheckboxes = document.querySelectorAll('.asset-checkbox:checked');
+            const assetClasses = Array.from(selectedAssetCheckboxes).map(cb => cb.value).join(',');
+            
+            window.location.href = `?q=${encodeURIComponent(query)}&page=${page}&sort=${sort}&order=${order}&limit_fy=${limitFy}&hide_sold=${hideSold}&types=${encodeURIComponent(types)}&asset_classes=${encodeURIComponent(assetClasses)}&start_date=${startDate}&end_date=${endDate}`;
+        }
+
+        // --- 1. Server-Side Filtering/Search via Enter Key ---
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                performSearch(1);
+            }
+        });
+
+        // Trigger live search on checkbox changes
+        limitFyCheckbox.addEventListener('change', () => performSearch(1));
+        hideSoldCheckbox.addEventListener('change', () => performSearch(1));
+        startDateInput.addEventListener('change', () => performSearch(1));
+        endDateInput.addEventListener('change', () => performSearch(1));
+
+        // --- 2. Custom Transaction Type Dropdown Toggle ---
+        const typeDropdownBtn = document.getElementById('typeDropdownBtn');
+        const typeDropdownContent = document.getElementById('typeDropdownContent');
+        const btnApplyTypes = document.getElementById('btnApplyTypes');
+        const btnClearTypes = document.getElementById('btnClearTypes');
+        const typeCheckboxes = document.querySelectorAll('.type-checkbox');
+        const selectedTypesText = document.getElementById('selectedTypesText');
+
+        typeDropdownBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isHidden = typeDropdownContent.style.display === 'none' || typeDropdownContent.style.display === '';
+            typeDropdownContent.style.display = isHidden ? 'flex' : 'none';
+            // Close other dropdowns
+            assetDropdownContent.style.display = 'none';
+        });
+
+        typeDropdownContent.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+        function updateTypesBtnText() {
+            const checked = document.querySelectorAll('.type-checkbox:checked');
+            if (checked.length === 0) {
+                selectedTypesText.textContent = 'All Txn Types';
+            } else if (checked.length === 1) {
+                selectedTypesText.textContent = checked[0].value;
+            } else if (checked.length <= 2) {
+                selectedTypesText.textContent = Array.from(checked).map(cb => cb.value).join(', ');
+            } else {
+                selectedTypesText.textContent = `${checked.length} Types Selected`;
+            }
+        }
+
+        updateTypesBtnText();
+
+        btnApplyTypes.addEventListener('click', function() {
+            typeDropdownContent.style.display = 'none';
+            performSearch(1);
+        });
+
+        btnClearTypes.addEventListener('click', function() {
+            typeCheckboxes.forEach(cb => cb.checked = false);
+            updateTypesBtnText();
+            typeDropdownContent.style.display = 'none';
+            performSearch(1);
+        });
+
+        typeCheckboxes.forEach(cb => {
+            cb.addEventListener('change', updateTypesBtnText);
+        });
+
+        // --- Custom Asset Class Dropdown Toggle ---
+        const assetDropdownBtn = document.getElementById('assetDropdownBtn');
+        const assetDropdownContent = document.getElementById('assetDropdownContent');
+        const btnApplyAssets = document.getElementById('btnApplyAssets');
+        const btnClearAssets = document.getElementById('btnClearAssets');
+        const assetCheckboxes = document.querySelectorAll('.asset-checkbox');
+        const selectedAssetsText = document.getElementById('selectedAssetsText');
+
+        assetDropdownBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isHidden = assetDropdownContent.style.display === 'none' || assetDropdownContent.style.display === '';
+            assetDropdownContent.style.display = isHidden ? 'flex' : 'none';
+            // Close other dropdowns
+            typeDropdownContent.style.display = 'none';
+        });
+
+        assetDropdownContent.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+        // Global click handler to close dropdowns
+        document.addEventListener('click', function() {
+            typeDropdownContent.style.display = 'none';
+            assetDropdownContent.style.display = 'none';
+        });
+
+        function updateAssetsBtnText() {
+            const checked = document.querySelectorAll('.asset-checkbox:checked');
+            if (checked.length === 0) {
+                selectedAssetsText.textContent = 'All Asset Classes';
+            } else if (checked.length === 1) {
+                selectedAssetsText.textContent = checked[0].value;
+            } else if (checked.length <= 2) {
+                selectedAssetsText.textContent = Array.from(checked).map(cb => cb.value).join(', ');
+            } else {
+                selectedAssetsText.textContent = `${checked.length} Classes Selected`;
+            }
+        }
+
+        updateAssetsBtnText();
+
+        btnApplyAssets.addEventListener('click', function() {
+            assetDropdownContent.style.display = 'none';
+            performSearch(1);
+        });
+
+        btnClearAssets.addEventListener('click', function() {
+            assetCheckboxes.forEach(cb => cb.checked = false);
+            updateAssetsBtnText();
+            assetDropdownContent.style.display = 'none';
+            performSearch(1);
+        });
+
+        assetCheckboxes.forEach(cb => {
+            cb.addEventListener('change', updateAssetsBtnText);
+        });
+
+        // --- 3. Date Preset Setter ---
+        function setDatePreset(preset) {
+            const today = new Date();
+            const format = (d) => d.toISOString().split('T')[0];
+            
+            let start = '';
+            let end = format(today);
+
+            if (preset === 'mtd') {
+                start = format(new Date(today.getFullYear(), today.getMonth(), 1));
+            } else if (preset === '3m') {
+                const d = new Date();
+                d.setDate(today.getDate() - 90);
+                start = format(d);
+            } else if (preset === '6m') {
+                const d = new Date();
+                d.setDate(today.getDate() - 180);
+                start = format(d);
+            } else if (preset === 'ytd') {
+                let fyYear = today.getFullYear();
+                if (today.getMonth() < 3) {
+                    fyYear -= 1;
+                }
+                start = format(new Date(fyYear, 3, 1));
+            } else if (preset === 'clear') {
+                start = '';
+                end = '';
+            }
+
+            startDateInput.value = start;
+            endDateInput.value = end;
+            performSearch(1);
+        }
+
+        // --- 4. Interactive Date Modification via Double-Click ---
+        document.querySelectorAll('.editable-date').forEach(span => {
+            span.addEventListener('dblclick', function() {
+                const currentVal = this.getAttribute('data-val');
+                const row = this.closest('.txn-row');
+                const txnId = row.getAttribute('data-id');
+
+                const input = document.createElement('input');
+                input.type = 'date';
+                input.value = currentVal;
+                input.className = 'date-input';
+
+                this.style.display = 'none';
+                this.parentNode.insertBefore(input, this);
+                input.focus();
+
+                const saveDate = async () => {
+                    const newVal = input.value;
+                    if (newVal === currentVal) {
+                        input.remove();
+                        this.style.display = '';
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('date_str', newVal);
+
+                    try {
+                        const response = await fetch(`/mutual-funds/transactions/${txnId}/update-date`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const res = await response.json();
+                        
+                        if (res.success) {
+                            this.setAttribute('data-val', newVal);
+                            this.textContent = newVal;
+                            showToast(`Date updated successfully to ${newVal}! Click "Recalculate FIFO & Holdings" to apply updates.`, 'success');
+                        } else {
+                            showToast(`Failed to update date: ${res.error}`, 'error');
+                        }
+                    } catch (err) {
+                        showToast(`Server connection error: ${err}`, 'error');
+                    }
+
+                    input.remove();
+                    this.style.display = '';
+                };
+
+                input.addEventListener('blur', saveDate);
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        saveDate();
+                    } else if (e.key === 'Escape') {
+                        input.remove();
+                        span.style.display = '';
+                    }
+                });
+            });
+        });
+
+        // --- 5. Server-Side Column Sorting via URL Parameters ---
+        const headers = document.querySelectorAll('.sortable');
+        headers.forEach(header => {
+            header.addEventListener('click', function() {
+                const col = this.getAttribute('data-col');
+                let newOrder = 'asc';
+                if ('{{ sort }}' === col && '{{ order }}' === 'asc') {
+                    newOrder = 'desc';
+                }
+                // Also pass current types and date bounds
+                const query = searchInput.value.trim();
+                const limitFy = limitFyCheckbox.checked;
+                const hideSold = hideSoldCheckbox.checked;
+                const startDate = startDateInput.value;
+                const endDate = endDateInput.value;
+                const selectedCheckboxes = document.querySelectorAll('.type-checkbox:checked');
+                const types = Array.from(selectedCheckboxes).map(cb => cb.value).join(',');
+                const selectedAssetCheckboxes = document.querySelectorAll('.asset-checkbox:checked');
+                const assetClasses = Array.from(selectedAssetCheckboxes).map(cb => cb.value).join(',');
+                
+                window.location.href = `?q=${encodeURIComponent(query)}&page=1&sort=${col}&order=${newOrder}&limit_fy=${limitFy}&hide_sold=${hideSold}&types=${encodeURIComponent(types)}&asset_classes=${encodeURIComponent(assetClasses)}&start_date=${startDate}&end_date=${endDate}`;
+            });
+        });
+
+        // --- 6. Recalculate FIFO & Holdings Engine Rerun Button ---
+        const btnRerun = document.getElementById('btnRerun');
+        btnRerun.addEventListener('click', async function() {
+            const span = this.querySelector('span');
+            const origText = span.textContent;
+            span.textContent = 'Recalculating... Please wait...';
+            this.disabled = true;
+            this.style.opacity = '0.7';
+
+            try {
+                const response = await fetch('/mutual-funds/rerun', { method: 'POST' });
+                const res = await response.json();
+                
+                if (res.success) {
+                    showToast(res.message, 'success');
+                } else {
+                    showToast(`Recalculation failed: ${res.error}`, 'error');
+                }
+            } catch (err) {
+                showToast(`Server connection error: ${err}`, 'error');
+            }
+
+            span.textContent = origText;
+            this.disabled = false;
+            this.style.opacity = '';
+        });
+
+        // --- 7. Toast Notifications Helper ---
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastMessage = document.getElementById('toastMessage');
+
+            toast.className = `toast show ${type}`;
+            toastMessage.textContent = message;
+            
+            if (type === 'success') {
+                toastIcon.innerHTML = '✔';
+                toastIcon.style.color = '#10b981';
+            } else {
+                toastIcon.innerHTML = '❌';
+                toastIcon.style.color = '#ef4444';
+            }
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+    </script>
+</body>
+</html>

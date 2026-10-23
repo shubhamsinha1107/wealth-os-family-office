@@ -1,0 +1,127 @@
+<!-- templates/equities/transactions.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equities Transactions</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <script src="/static/js/backup.js?v=2"></script>
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/mutual-funds/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue); box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <a href="/equities/" class="nav-link">Holdings AUM</a>
+                <a href="/equities/pnl" class="nav-link">Capital Gains (FIFO)</a>
+                <a href="/equities/summary" class="nav-link">Summary by A/C</a>
+                <a href="/equities/transactions" class="nav-link active">Transactions Ledger</a>
+                <a href="/equities/unmatched" class="nav-link">Fix Unmatched Buys</a>
+                <a href="/equities/performance" class="nav-link">Performance (Dietz)</a>
+            </div>
+        </header>
+
+        <!-- Filters Form -->
+        <div class="glass-card" style="padding: 16px 24px;">
+            <form action="/equities/transactions" method="GET" style="display: flex; gap: 16px; align-items: center; margin: 0; flex-wrap: wrap;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 12px; font-weight: 500; color: var(--text-secondary);">Owner / Member</label>
+                    <select name="person_id" style="background: #1e293b; border: 1px solid var(--glass-border); color: white; padding: 6px 12px; border-radius: 6px; outline: none; font-size: 13px;" onchange="this.form.submit()">
+                        <option value="">All Members</option>
+                        {% for p in persons %}
+                        <option value="{{ p.id }}" {% if selected_person == p.id %}selected{% endif %}>{{ p.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 12px; font-weight: 500; color: var(--text-secondary);">Symbol Search</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" name="symbol" value="{{ selected_symbol or '' }}" placeholder="e.g. RELIANCE" style="background: #1e293b; border: 1px solid var(--glass-border); color: white; padding: 6px 12px; border-radius: 6px; outline: none; font-size: 13px; min-width: 150px;">
+                        <button type="submit" class="btn-primary" style="padding: 6px 14px; font-size: 13px;">Filter</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Transactions Table -->
+        <div class="glass-card" style="padding: 24px;">
+            <div style="margin-bottom: 12px; font-size: 14px; color: var(--text-secondary);">
+                Showing latest <strong>{{ transactions|length }}</strong> transactions
+            </div>
+            <div class="table-container" style="margin-top: 0;">
+                <table style="margin-top: 0;">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Owner</th>
+                            <th>Broker</th>
+                            <th>Symbol</th>
+                            <th>Type</th>
+                            <th style="text-align: right;">Quantity</th>
+                            <th style="text-align: right;">Price</th>
+                            <th style="text-align: right;">Brokerage</th>
+                            <th style="text-align: right;">Net Amount</th>
+                            <th style="text-align: left; padding-left: 20px;">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if transactions %}
+                            {% for item in transactions %}
+                            {% set t = item[0] %}
+                            <tr>
+                                <td style="font-size: 13px; color: var(--text-secondary);">{{ t.transaction_date }}</td>
+                                <td style="font-weight: 600; color: #a78bfa;">{{ item.owner_name }}</td>
+                                <td style="color: var(--text-secondary); font-size: 12px;">{{ item.broker_name }}</td>
+                                <td style="font-family: monospace; font-weight: 600; color: var(--accent-blue);">{{ t.symbol }}</td>
+                                <td style="font-weight: 600;">
+                                    <span class="badge {% if t.transaction_type.name == 'BUY' %}badge-positive{% elif t.transaction_type.name == 'SELL' %}badge-negative{% else %}badge-neutral{% endif %}">
+                                        {{ t.transaction_type.name }}
+                                    </span>
+                                </td>
+                                <td style="text-align: right; font-weight: 500;">{{ "{:,.2f}".format(t.quantity) }}</td>
+                                <td style="text-align: right; color: var(--text-secondary);">
+                                    ₹{{ "{:,.2f}".format(t.price) if t.price else "-" }}
+                                </td>
+                                <td style="text-align: right; color: var(--text-secondary); font-size: 12px;">
+                                    ₹{{ "{:,.2f}".format(t.brokerage) if t.brokerage else "-" }}
+                                </td>
+                                <td style="text-align: right; font-weight: 600;">₹{{ t.net_amount|format_inr }}</td>
+                                <td style="text-align: left; padding-left: 20px; font-size: 12px; color: var(--text-secondary);">
+                                    {{ t.notes or "" }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="10" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                    No transactions match the selected filters.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

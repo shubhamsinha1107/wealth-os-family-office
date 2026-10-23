@@ -1,0 +1,27 @@
+SOURCE-AVAILABLE PORTFOLIO SHOWCASE LICENSE
+Copyright (c) 2026 Shubham Sinha. All rights reserved.
+
+This source code, repository, software architecture, schemas, and design systems ("the Software") 
+are made publicly available strictly for portfolio evaluation, technical review, and non-commercial 
+demonstration purposes.
+
+1. PERMITTED USE (SHOWCASE & EVALUATION ONLY):
+   You are granted a non-exclusive, non-transferable, revocable license to:
+   a) View, read, and inspect the source code for the sole purpose of evaluating the author's technical capabilities, system architecture, and code quality.
+   b) Clone and execute the code locally on a private machine solely for personal evaluation, testing, or educational demonstration.
+
+2. PROHIBITED USES (STRICTLY FORBIDDEN):
+   You may NOT, under any circumstances:
+   a) Commercial Use: Use, run, host, deploy, integrate, or operate the Software or any portion thereof for any commercial, business, enterprise, or profit-generating activity, including but not limited to wealth management, family office operations, advisory services, or SaaS offerings.
+   b) Redistribution & Sublicensing: Copy, redistribute, publish, mirror, sublicense, sell, lease, rent, or distribute this Software (or any derivative work) under any other brand, name, or repository.
+   c) Derivative Works: Modify, adapt, or build commercial derivative products, platforms, or services based upon this codebase or its underlying architectural logic.
+   d) Reverse Engineering Core IP: Attempt to reverse engineer, reconstruct, or appropriate the author's proprietary calculation models, corporate actions heuristics, or financial engines.
+
+3. INTELLECTUAL PROPERTY OWNERSHIP:
+   All copyright, patents, trade secrets, trademarks, architectural designs, database schemas, and intellectual property rights in and to the Software remain the exclusive property of Shubham Sinha. No ownership or commercial rights are transferred by granting access to this repository.
+
+4. DISCLAIMER OF WARRANTY:
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR OR COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+5. INQUIRIES & COMMERCIAL LICENSING:
+   For enterprise licensing, commercial usage permissions, consulting engagements, or full deployment inquiries, please contact the author directly via GitHub (@shubhamsinha1107).

@@ -1,0 +1,224 @@
+<!-- templates/mutual_funds/pnl_report.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mutual Funds Capital Gains (FIFO)</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <script src="/static/js/backup.js?v=2"></script>
+    <style>
+        .fy-selector {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/mutual-funds/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue); box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <a href="/mutual-funds/" class="nav-link">Holdings AUM</a>
+                <a href="/mutual-funds/pnl" class="nav-link active">Capital Gains (FIFO)</a>
+                <a href="/mutual-funds/performance" class="nav-link">XIRR & CAGR</a>
+                <a href="/mutual-funds/sips" class="nav-link">SIP Tracker</a>
+                <a href="/mutual-funds/transactions" class="nav-link">Transactions Ledger</a>
+                <a href="/mutual-funds/account-report" class="nav-link">Account Report</a>
+                <a href="/mutual-funds/monthly-profits" class="nav-link">Monthly Profits</a>
+                <a href="/mutual-funds/unique-funds" class="nav-link">Unique Funds</a>
+                <a href="/mutual-funds/underperforming" class="nav-link">Underperformance Diagnostics</a>
+                <a href="/mutual-funds/compare-nav" class="nav-link">Compare NAVs</a>
+
+                <a href="/mutual-funds/upload" class="nav-link">Upload CAS PDF</a>
+            </div>
+        </header>
+
+        <!-- Controls panel -->
+        <div class="glass-card" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px;">
+            <div style="font-weight: 600; font-size: 16px;">Realized Gains for Financial Year: <span style="color: var(--accent-blue);">{{ fy }}</span></div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <!-- Recalculate Form -->
+                <form id="recalc-form" action="/mutual-funds/recalculate" method="POST" style="margin: 0; display: none;"></form>
+
+                <form action="/mutual-funds/pnl" method="GET" style="margin: 0; display: flex; gap: 16px; align-items: center;">
+                    <!-- Owner Selector -->
+                    <select name="owner_id" class="fy-selector" onchange="this.form.submit()">
+                        <option value="">All Accounts (Owners)</option>
+                        {% for o in owners %}
+                            <option value="{{ o.id }}" {% if owner_id == o.id %}selected{% endif %}>{{ o.full_name }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <!-- FY Selector -->
+                    <select name="fy" class="fy-selector" onchange="this.form.submit()">
+                        {% for f in fys %}
+                            <option value="{{ f }}" {% if fy == f %}selected{% endif %}>FY {{ f[2:4] }}-{{ f[-2:] }}</option>
+                        {% endfor %}
+                    </select>
+                    
+                    <!-- Date Till Filter -->
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 13px; color: var(--text-secondary);">Till Date:</span>
+                        <input type="date" name="till_date" class="fy-selector" value="{{ till_date or '' }}" onchange="this.form.submit()" style="color-scheme: dark;">
+                    </div>
+                    
+                    <!-- Export to Excel Button -->
+                    <a href="/mutual-funds/export-xlsx?fy={{ fy }}{% if owner_id %}&owner_id={{ owner_id }}{% endif %}{% if till_date %}&till_date={{ till_date }}{% endif %}" class="btn" style="text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white;">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path>
+                        </svg>
+                        <span>Export Excel</span>
+                    </a>
+                </form>
+
+                <!-- Redo Calculation Button -->
+                <button type="submit" form="recalc-form" class="btn" style="padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: 1px solid rgba(245, 158, 11, 0.3); color: white; cursor: pointer;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"></path>
+                    </svg>
+                    <span>Redo Calculation</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tax Category Summary -->
+        <div class="glass-card" style="padding: 24px;">
+            <h2 style="font-size: 18px; font-weight: 600; margin-top: 0; margin-bottom: 20px;">Tax Category Bifurcation</h2>
+            <div class="table-container" style="margin-top: 0;">
+                <table style="margin-top: 0;">
+                    <thead>
+                        <tr>
+                            <th style="padding-left: 24px;">Tax Bracket Category</th>
+                            <th style="text-align: right;">Total Cost Value</th>
+                            <th style="text-align: right;">Total Sale Value</th>
+                            <th style="text-align: right; padding-right: 24px;">Net Capital Gain / Loss</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if summary %}
+                            {% for cat, val in summary.items() %}
+                            <tr>
+                                <td style="padding-left: 24px; font-weight: 600; color: #60a5fa;">{{ cat }}</td>
+                                <td style="text-align: right;">₹{{ val.purchase|format_inr }}</td>
+                                <td style="text-align: right;">₹{{ val.sale|format_inr }}</td>
+                                <td style="text-align: right; font-weight: 700; color: {% if val.gain >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; padding-right: 24px;">
+                                    ₹{{ val.gain|format_inr }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            <tr style="border-top: 2px solid var(--glass-border); background: rgba(255, 255, 255, 0.02);">
+                                <td style="padding-left: 24px; font-weight: 700; color: var(--text-primary);">TOTAL</td>
+                                <td style="text-align: right; font-weight: 700;">₹{{ total_purchase|format_inr }}</td>
+                                <td style="text-align: right; font-weight: 700;">₹{{ total_sale|format_inr }}</td>
+                                <td style="text-align: right; font-weight: 800; color: {% if total_gain >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; padding-right: 24px;">
+                                    ₹{{ total_gain|format_inr }}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4" style="text-align: center; padding: 30px; color: var(--text-secondary);">
+                                    No realized gains tracked for this financial year.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Detailed FIFO Allocations Table -->
+        <div class="glass-card" style="margin-top: 32px; padding: 24px;">
+            <h2 style="font-size: 18px; font-weight: 600; margin-top: 0; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <span>Detailed Realized Sales (FIFO Lots)</span>
+                {% if total_gains_count > 500 %}
+                    <span style="font-size: 13px; font-weight: 500; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 4px 12px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.25);">
+                        Showing first 500 of {{ total_gains_count }} transactions for optimal speed
+                    </span>
+                {% endif %}
+            </h2>
+            <div class="table-container" style="margin-top: 0;">
+                <table style="margin-top: 0;">
+                    <thead>
+                        <tr>
+                            <th style="padding-left: 24px;">Owner</th>
+                            <th>Folio</th>
+                            <th>Scheme Name</th>
+                            <th>Purchase Date</th>
+                            <th style="text-align: right;">Buy NAV</th>
+                            <th>Sale Date</th>
+                            <th style="text-align: right;">Sell NAV</th>
+                            <th style="text-align: right;">Units Sold</th>
+                            <th style="text-align: right;">Cost Value</th>
+                            <th style="text-align: right;">Sale Value</th>
+                            <th style="text-align: right;">Holding Days</th>
+                            <th>Gain Type</th>
+                            <th style="text-align: right; padding-right: 24px;">Net Gain / Loss</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if gains %}
+                            {% for g in gains %}
+                            <tr>
+                                <td style="padding-left: 24px; font-weight: 600; color: #a78bfa;">{{ g.owner }}</td>
+                                <td style="font-family: monospace; color: var(--text-secondary); font-size: 12px;">{{ g.folio }}</td>
+                                <td style="max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ g.scheme }}">
+                                    {{ g.scheme }}
+                                </td>
+                                <td style="color: var(--text-secondary);">{{ g.purchase_date }}</td>
+                                <td style="text-align: right;">₹{{ "{:,.4f}".format(g.purchase_rate) }}</td>
+                                <td style="color: var(--text-secondary);">{{ g.sale_date }}</td>
+                                <td style="text-align: right;">₹{{ "{:,.4f}".format(g.sale_rate) }}</td>
+                                <td style="text-align: right; font-weight: 500;">{{ "{:,.3f}".format(g.units_sold) }}</td>
+                                <td style="text-align: right;">₹{{ g.cost_value|format_inr }}</td>
+                                <td style="text-align: right;">₹{{ g.sale_value|format_inr }}</td>
+                                <td style="text-align: right; font-weight: 500;">{{ g.holding_days }} days</td>
+                                <td>
+                                    <span class="badge {% if g.gain_type == 'LTCG' %}badge-positive{% else %}badge-negative{% endif %}" style="background: rgba(59, 130, 246, 0.1); color: #60a5fa;">
+                                        {{ g.gain_type }}
+                                    </span>
+                                </td>
+                                <td style="text-align: right; font-weight: 700; color: {% if g.gain_loss >= 0 %}var(--accent-green){% else %}var(--accent-red){% endif %}; padding-right: 24px;">
+                                    ₹{{ g.gain_loss|format_inr }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="13" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                    No sales/redemptions matching FIFO parameters in FY {{ fy }}.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

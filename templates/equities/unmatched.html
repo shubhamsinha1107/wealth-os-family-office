@@ -1,0 +1,212 @@
+<!-- templates/equities/unmatched.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Unmatched Buys - Equities</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=4">
+    <script src="/static/js/backup.js?v=2"></script>
+    <style>
+        .unmatched-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .unmatched-table th, .unmatched-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            text-align: left;
+        }
+        .unmatched-table th {
+            background: rgba(15, 23, 42, 0.95);
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .form-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .input-field {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            outline: none;
+            width: 140px;
+        }
+        .input-field:focus {
+            border-color: var(--accent-blue);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="display: flex; flex-direction: column; align-items: stretch; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h1>Family Office Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Backup DB Button -->
+                    <button onclick="triggerDumpBackup()" id="backup-db-btn" class="btn" style="padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: 1px solid rgba(16, 185, 129, 0.3); color: white; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                        </svg>
+                        <span id="backup-btn-text">Backup Database</span>
+                    </button>
+                    <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <a href="/mutual-funds/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Mutual Funds</a>
+                        <a href="/equities/" style="color: var(--text-primary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--accent-blue); box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);">Equities</a>
+                        <a href="/insurance/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Insurance</a>
+                        <a href="/alternatives/unlisted/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Unlisted Shares</a>
+                        <a href="/alternatives/aif/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">AIF / PMS</a>
+                        <a href="/gold/" style="color: var(--text-secondary); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; transition: all 0.2s ease;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-secondary)'">Gold (SGB)</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <a href="/equities/" class="nav-link">Holdings AUM</a>
+                <a href="/equities/pnl" class="nav-link">Capital Gains (FIFO)</a>
+                <a href="/equities/summary" class="nav-link">Summary by A/C</a>
+                <a href="/equities/transactions" class="nav-link">Transactions Ledger</a>
+                <a href="/equities/unmatched" class="nav-link active">Fix Unmatched Buys</a>
+                <a href="/equities/performance" class="nav-link">Performance (Dietz)</a>
+            </div>
+        </header>
+
+        <!-- Notification messages -->
+        <script>
+            // Parse URL parameters to show messages
+            const urlParams = new URLSearchParams(window.location.search);
+            const msg = urlParams.get('success_msg');
+            if (msg) {
+                document.write(`
+                    <div class="alert alert-success" style="margin-bottom: 24px; padding: 12px 20px; border-radius: 8px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; font-weight: 500;">
+                        \${decodeURIComponent(msg)}
+                    </div>
+                `);
+            }
+        </script>
+
+        <!-- Section 1: Unmatched Sales -->
+        <div class="glass-card" style="padding: 24px; margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="margin: 0; font-size: 18px; color: #f59e0b; display: flex; align-items: center; gap: 8px;">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    Unmatched Sales (Missing Purchases)
+                </h2>
+                <span class="badge badge-negative" style="font-size: 13px; padding: 4px 10px;">{{ unmatched|length }} pending</span>
+            </div>
+            
+            <p style="color: var(--text-secondary); font-size: 13px; line-height: 1.5; margin-bottom: 20px;">
+                The following sales have no matching buy transactions in the database (usually due to pre-existing holdings bought before April 2023, transfers, or unlisted conversions). 
+                Enter the buy-side details manually to match them and calculate correct capital gains.
+            </p>
+
+            <div class="table-container" style="margin-top: 0; overflow-x: auto;">
+                <table class="unmatched-table">
+                    <thead>
+                        <tr>
+                            <th>Account (Owner - Broker)</th>
+                            <th>Symbol</th>
+                            <th>Sale Date</th>
+                            <th style="text-align: right;">Qty Sold</th>
+                            <th style="text-align: right;">Sale Price</th>
+                            <th style="text-align: right;">Sale Value</th>
+                            <th>Manually Enter Buy Side Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if unmatched %}
+                            {% for u in unmatched %}
+                            <tr>
+                                <td style="font-weight: 500; color: #cbd5e1;">{{ u.account_name }}</td>
+                                <td style="font-family: monospace; font-weight: 600; color: var(--accent-blue);">{{ u.gain_record.symbol }}</td>
+                                <td>{{ u.gain_record.sale_date }}</td>
+                                <td style="text-align: right; font-weight: 600;">{{ "{:,.2f}".format(u.gain_record.units_sold) }}</td>
+                                <td style="text-align: right; color: var(--text-secondary);">₹{{ "{:,.2f}".format(u.gain_record.sale_rate) }}</td>
+                                <td style="text-align: right; font-weight: 500;">₹{{ "{:,.2f}".format(u.gain_record.sale_value) }}</td>
+                                <td>
+                                    <form action="/equities/unmatched/{{ u.gain_record.id }}/fix" method="POST" class="form-row" style="margin: 0;">
+                                        <input type="date" name="buy_date" required class="input-field" placeholder="Buy Date">
+                                        <input type="number" name="buy_rate" step="0.0001" min="0.0001" required class="input-field" placeholder="Buy Price (Rate)">
+                                        <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 8px 14px; font-size: 12px; border: none; border-radius: 6px; cursor: pointer; color: white;">
+                                            Save Buy
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                    🎉 No unmatched sales found in database! All trades are fully matched.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 2: Manually Added Buys -->
+        <div class="glass-card" style="padding: 24px;">
+            <h2 style="margin: 0 0 16px 0; font-size: 18px; color: #a78bfa; display: flex; align-items: center; gap: 8px;">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                </svg>
+                Manually Added Buy Overrides
+            </h2>
+
+            <div class="table-container" style="margin-top: 0; overflow-x: auto;">
+                <table class="unmatched-table">
+                    <thead>
+                        <tr>
+                            <th>Account (Owner - Broker)</th>
+                            <th>Symbol</th>
+                            <th>Buy Date</th>
+                            <th style="text-align: right;">Qty</th>
+                            <th style="text-align: right;">Buy Price</th>
+                            <th style="text-align: right;">Buy Value</th>
+                            <th>Notes / Reference</th>
+                            <th style="text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if manual_buys %}
+                            {% for m in manual_buys %}
+                            <tr>
+                                <td style="font-weight: 500; color: #cbd5e1;">{{ m.account_name }}</td>
+                                <td style="font-family: monospace; font-weight: 600; color: var(--accent-blue);">{{ m.txn.symbol }}</td>
+                                <td>{{ m.txn.transaction_date }}</td>
+                                <td style="text-align: right; font-weight: 600;">{{ "{:,.2f}".format(m.txn.quantity) }}</td>
+                                <td style="text-align: right; color: var(--text-secondary);">₹{{ "{:,.2f}".format(m.txn.rate) }}</td>
+                                <td style="text-align: right; font-weight: 500;">₹{{ "{:,.2f}".format(m.txn.net_amount) }}</td>
+                                <td style="color: var(--text-secondary); font-size: 12px;">{{ m.txn.notes }}</td>
+                                <td style="text-align: center;">
+                                    <form action="/equities/unmatched/delete-manual/{{ m.txn.id }}" method="POST" style="margin: 0;" onsubmit="return confirm('Are you sure you want to delete this manually entered buy?');">
+                                        <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 6px 12px; font-size: 11px; border: none; border-radius: 6px; cursor: pointer; color: white;">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                    No manual buy overrides exist yet.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
