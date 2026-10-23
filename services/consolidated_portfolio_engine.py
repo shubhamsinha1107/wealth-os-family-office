@@ -340,8 +340,18 @@ def get_consolidated_portfolio_data(db: Session) -> dict:
         categories["Unlisted Shares"][code]["invested"] += cost
         categories["Unlisted Shares"][code]["current"] += curr_val
 
+    if not unlisted_data:
+        db_unlisted = db.query(UnlistedShare).all()
+        for u in db_unlisted:
+            code = person_code_map.get(u.person_id)
+            if code in target_codes:
+                cost = float(u.total_cost or 0)
+                curr_val = float(u.current_value or 0)
+                categories["Unlisted Shares"][code]["invested"] += cost
+                categories["Unlisted Shares"][code]["current"] += curr_val
+
     # ────────────────────────────────────────────────────────
-    # 3. AIF / PMS (FROM EXCEL)
+    # 3. AIF / PMS (FROM EXCEL OR DATABASE FALLBACK)
     # ────────────────────────────────────────────────────────
     aif_file = os.path.join(base_dir, "DATA", "AIF DATA.xlsx")
     aif_data = parse_aif_excel(aif_file)
@@ -355,6 +365,16 @@ def get_consolidated_portfolio_data(db: Session) -> dict:
 
         categories["AIF"][code]["invested"] += cost
         categories["AIF"][code]["current"] += curr_val
+
+    if not aif_data:
+        db_aif = db.query(Alternative).all()
+        for a in db_aif:
+            code = person_code_map.get(a.person_id)
+            if code in target_codes:
+                cost = float(a.amount_invested or 0)
+                curr_val = float(a.current_value or 0)
+                categories["AIF"][code]["invested"] += cost
+                categories["AIF"][code]["current"] += curr_val
 
     # ────────────────────────────────────────────────────────
     # 4. MUTUAL FUNDS (FROM DB - EQUITY MF, GOLD MF, SILVER MF, LIQUID/CASH MF)

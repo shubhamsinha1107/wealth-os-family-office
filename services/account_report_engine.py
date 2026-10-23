@@ -169,8 +169,8 @@ def get_account_report_data(db: Session, person_id: any = None) -> dict:
         holding_row = holdings_map.get(scheme_upper)
         if holding_row and holding_row.current_nav:
             current_nav = float(holding_row.current_nav)
-        elif t.amfi_code and t.amfi_code in amfi_nav_map:
-            current_nav = float(amfi_nav_map[t.amfi_code])
+        elif t.amfi_code and t.amfi_code in amfi_navs_map:
+            current_nav = float(amfi_navs_map[t.amfi_code])
         else:
             current_nav = fallback_navs_map.get(scheme_upper, float(t.nav))
 
