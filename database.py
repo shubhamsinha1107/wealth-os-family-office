@@ -6,9 +6,13 @@ import os
 load_local_env()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
-if os.path.exists('/.dockerenv') and DATABASE_URL:
-    if "@postgres" not in DATABASE_URL and "@db" not in DATABASE_URL:
-        DATABASE_URL = DATABASE_URL.replace("@localhost", "@host.docker.internal").replace("@127.0.0.1", "@host.docker.internal")
+if DATABASE_URL:
+    # Render and Heroku provide postgres:// which SQLAlchemy 2.0 requires as postgresql://
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    if os.path.exists('/.dockerenv'):
+        if "@postgres" not in DATABASE_URL and "@db" not in DATABASE_URL and "dpg-" not in DATABASE_URL and "render.com" not in DATABASE_URL:
+            DATABASE_URL = DATABASE_URL.replace("@localhost", "@host.docker.internal").replace("@127.0.0.1", "@host.docker.internal")
 
 engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True, pool_recycle=3600)
 

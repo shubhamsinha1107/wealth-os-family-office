@@ -15,19 +15,18 @@ def ensure_tables_exist():
     import subprocess
     import sys
 
-    # If running inside Docker and database has not been restored yet, auto-restore latest dump
-    if os.path.exists("/.dockerenv"):
-        try:
-            with engine.connect() as conn:
-                has_persons = conn.execute(
-                    text("SELECT 1 FROM information_schema.schemata WHERE schema_name = 'persons'")
-                ).scalar()
-            if not has_persons:
-                print("Fresh Docker database detected — restoring latest backup from dumps/...")
-                subprocess.run([sys.executable, "seed_mock.py", "--yes"], check=False)
-                engine.dispose()
-        except Exception as e:
-            print(f"Auto-restore check notice: {e}")
+    # If database is fresh and unseeded, automatically populate synthetic mock portfolio
+    try:
+        with engine.connect() as conn:
+            has_persons = conn.execute(
+                text("SELECT 1 FROM information_schema.schemata WHERE schema_name = 'persons'")
+            ).scalar()
+        if not has_persons:
+            print("[STARTUP] Fresh database detected — seeding synthetic mock portfolio...")
+            subprocess.run([sys.executable, "seed_mock.py"], check=False)
+            engine.dispose()
+    except Exception as e:
+        print(f"[STARTUP] Notice during auto-seed check: {e}")
 
     try:
         Base.metadata.create_all(bind=engine)
@@ -76,7 +75,8 @@ def root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
 
 # Reload trigger
 
