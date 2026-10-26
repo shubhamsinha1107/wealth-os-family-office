@@ -1992,26 +1992,11 @@ def update_unique_fund_settings(
 
 @router.post("/backup-db")
 def trigger_database_backup():
-    """Triggers the pg_dump backup to OneDrive by calling backup.py."""
-    import sys
-    import subprocess
-    from pathlib import Path
-    
-    try:
-        # Run backup.py in root of project
-        script_path = Path(__file__).parent.parent / "backup.py"
-        result = subprocess.run(
-            [sys.executable, str(script_path)],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        output = result.stdout
-        return {"success": True, "details": output}
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return {"success": False, "error": str(e)}
+    """Safe demo mode: Simulates backup snapshot without performing physical disk mutations."""
+    return {
+        "success": True,
+        "details": "Demo Mode: PostgreSQL database snapshot simulated successfully. (Physical disk writes and file exports are disabled in public showcase)."
+    }
 
 @router.post("/monthly-profits/sync")
 def sync_monthly_profits():

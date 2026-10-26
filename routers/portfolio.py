@@ -135,7 +135,7 @@ def portfolio_dashboard(request: Request, from_date: str = None, till_date: str 
 
     success_msg = None
     if sync_success:
-        success_msg = "Successfully synchronized AMFI Mutual Fund NAVs and read the latest Global Positions Report!"
+        success_msg = "Demo Mode: Valuation sync simulated successfully (database write operations restricted in public showcase)."
 
     latest_file = get_latest_global_positions_file()
     latest_filename = os.path.basename(latest_file) if latest_file else None
@@ -168,19 +168,9 @@ def portfolio_dashboard(request: Request, from_date: str = None, till_date: str 
 
 @router.post("/sync")
 def sync_portfolio(request: Request, db: Session = Depends(get_db)):
-    """Triggers the Mutual Fund NAV sync and refreshes the database session."""
-    from services.nav_sync import sync_all_active_navs
+    """Safe demo mode: Simulates Mutual Fund NAV sync without modifying database."""
     from fastapi.responses import RedirectResponse
-    from urllib.parse import quote_plus
-    
-    try:
-        # Sync AMFI NAVs
-        sync_all_active_navs(db, fetch_history=False)
-        return RedirectResponse("/portfolio/?sync_success=true", status_code=303)
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return RedirectResponse(f"/portfolio/?error_message={quote_plus(str(e))}", status_code=303)
+    return RedirectResponse("/portfolio/?sync_success=true", status_code=303)
 
 @router.get("/export")
 def export_portfolio_overview(db: Session = Depends(get_db)):

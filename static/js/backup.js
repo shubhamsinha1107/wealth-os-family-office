@@ -17,7 +17,7 @@ async function triggerDumpBackup() {
         });
         const data = await response.json();
         if (data.success) {
-            alert('Database backup completed successfully and saved to OneDrive dumps folder!\n\nDetails:\n' + data.details);
+            alert('Database snapshot simulated successfully!\n\n[Interactive Showcase Mode]\nWrite operations and disk dump commands are safely locked in public portfolio view.');
             textSpan.innerText = 'Backup Complete!';
             setTimeout(() => {
                 textSpan.innerText = 'Backup Database';
