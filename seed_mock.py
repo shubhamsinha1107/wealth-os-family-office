@@ -83,6 +83,7 @@ def clear_existing_data(db):
         "persons.relationships",
         "persons.persons",
     ]
+    db.commit()  # release the session read locks so TRUNCATE below does not wait on them
     with engine.connect() as conn:
         for tbl in tables:
             try:
